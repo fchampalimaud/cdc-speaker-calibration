@@ -38,11 +38,11 @@ in.att_max             = -.1;                           % maximum speaker attenu
 
 in.smooth_fac          = 1;                             % smoothing factor fft
 in.time_cons           = 0.025;                         % time cons to estimate the psd (s)
-in.freq_min            = 5000;                          % minimum frequence to consider to pass band
-in.freq_max            = 20000;                         % maximum frequence to consider to pass band
+in.freq_min            = 5000;                          % minimum frequency to consider to pass band
+in.freq_max            = 20000;                         % maximum frequency to consider to pass band
 in.freq_high           = 4500;                          % freq. for high pass filter after recording
 in.freq_low            = 25000;                         % freq. for low pass filter after recording
-in.amp                 = 0.8; %change to .85 for calibration of headphones!
+in.amp                 = 0.8;                           % change to .85 for calibration of headphones!
 
 
 %% 1) Perform calibration of speaker

@@ -2,7 +2,10 @@
 name = "speaker-calibration"
 version = "0.1.0"
 description = ""
-authors = ["José Grilo <jose.grilo@research.fchampalimaud.org>"]
+authors = [
+    "José Grilo <jose.grilo@research.fchampalimaud.org>",
+    "Naz Belkaya <naz.belkaya@research.fchampalimaud.org>"
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
