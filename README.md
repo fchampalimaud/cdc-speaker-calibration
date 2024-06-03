@@ -28,3 +28,6 @@ To start contributing to the project, follow the steps:
 When using Visual Studio Code, it is recommended that you install the extensions from `.vscode/extensions.json`.
 
 To add dependencies, run `poetry add` instead of `pip install`.
+
+## Note
+Throughout the code, it is possible to find comments/documentation strings containing the "StC" acronym, which stands for "Subject to Change".
