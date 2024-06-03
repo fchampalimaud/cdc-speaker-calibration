@@ -10,15 +10,15 @@ class InputParameters:
     Attributes
     ----------
     fs_adc : int
-        lorem ipsum
-    s_dur_cal : float
-        lorem ipsum
-    s_dur_db : float
-        lorem ipsum
-    s_dur_st : float
-        lorem ipsum
+        the sampling frequency of the ADC (Hz).
+    sound_duration_psd : float
+        duration of the sound used to flatten the power spectral density - PSD - of the equipment (s) ??.
+    sound_duration_db : float
+        duration of the sounds used to calibrate the amplitude response of the equipment (s) ??.
+    sound_duration_test : float
+        duration of the sounds used to test the calibration (s).
     ramp_time : float
-        lorem ipsum
+        ramp time of the sound (s).
     ref : float
         lorem ipsum
     mic_fac : float
@@ -46,9 +46,9 @@ class InputParameters:
     """
 
     fs_adc: int = 250000  # ADC Sampling Frequency (Hz)
-    s_dur_cal: float = 30  # total duration of sound played for calibration (s)
-    s_dur_db: float = 15  # total duration of sound played for dB estimation (s)
-    s_dur_st: float = 5  # total duration of sound played for st (??) estimation (s)
+    sound_duration_psd: float = 30  # total duration of sound played for calibration (s)
+    sound_duration_db: float = 15  # total duration of sound played for dB estimation (s)
+    sound_duration_test: float = 5  # total duration of sound played for st (??) estimation (s)
     ramp_time: float = 0.005  # ramp time (s)
     ref: float = 20e-6  # self.reference pressure (Pa) TODO: ask
     mic_fac: float = 10  # factor on the mic (V/Pa)
