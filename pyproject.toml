@@ -11,6 +11,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 scipy = "^1.13.1"
+pyharp = {git = "https://github.com/harp-tech/pyharp", rev = "5856da12a78169921ad31bb184eb1a419519e3a0"}
+pyyaml = "^6.0.1"
 
 
 [build-system]

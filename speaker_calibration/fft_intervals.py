@@ -3,7 +3,7 @@ from scipy.ndimage import uniform_filter1d
 
 
 # TODO: Search Welch's Method because of the way the power gets divided across bins (that's why the signal is divided in n intervals)
-def fft_intervals(signal, time_cons, fs_ai, smooth_fac):
+def fft_intervals(signal, time_cons, fs_ai, smooth_window):
     n_int = np.floor(signal.size / (time_cons * fs_ai))  # number of intervals
     int_samp = time_cons * fs_ai  # interval in samples
 
@@ -20,7 +20,7 @@ def fft_intervals(signal, time_cons, fs_ai, smooth_fac):
 
     f_vec_h = f_vec[1 : f_vec.size // 2 + 1]
     fft_av = fft_av[1 : f_vec.size // 2 + 1]
-    fft_av = uniform_filter1d(fft_av, smooth_fac)
+    fft_av = uniform_filter1d(fft_av, smooth_window)
 
     freq1 = 2500
     freq2 = 35000
@@ -34,6 +34,6 @@ def fft_intervals(signal, time_cons, fs_ai, smooth_fac):
     sum_fft = 2 * sum(fft_int[n1:n2, :]) / int_samp
     rms_fft = np.sqrt(sum_fft / int_samp)
 
-    RMS = np.mean(rms_fft, 2)
+    rms = np.mean(rms_fft, 2)
 
-    return fft_av, f_vec_h, n_int, int_samp, RMS
+    return fft_av, f_vec_h, n_int, int_samp, rms

@@ -1,0 +1,7 @@
+harp_soundcard: true
+soundcard_com: COM19
+soundcard_id: V2.2 X1047
+soundcard_fs: 192000
+harp_audio_amp: true
+audio_amp_id: V2.1 F1038
+speaker_id: 1
