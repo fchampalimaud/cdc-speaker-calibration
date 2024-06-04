@@ -6,11 +6,10 @@ class InputParameters:
     """
     A class containing the input parameters used for the calibration.
 
-    ...
     Attributes
     ----------
     fs_adc : int
-        the sampling frequency of the ADC (Hz).
+        sampling frequency of the ADC (Hz).
     sound_duration_psd : float
         duration of the sound used to flatten the power spectral density - PSD - of the equipment (s) ??.
     sound_duration_db : float
@@ -19,59 +18,61 @@ class InputParameters:
         duration of the sounds used to test the calibration (s).
     ramp_time : float
         ramp time of the sound (s).
-    ref : float
-        lorem ipsum
-    mic_fac : float
-        lorem ipsum
+    reference_pressure : float
+        reference pressure (Pa).
+    mic_factor : float
+        factor of the microphone (V/Pa).
     att_min : float
-        lorem ipsum
-    att_steps : int
-        lorem ipsum
+        minimum speaker attenuation value (log).
     att_max : float
-        lorem ipsum
+        maximum speaker attenuation value (log).
+    att_steps : int
+        number of attenuation steps.
     smooth_window : int
-        lorem ipsum
-    time_cons : float
-        lorem ipsum
+        number of bins of the moving average smoothing window.
+    time_constant : float
+        duration of each division of the original signal that is used to compute the PSD (s). Used in the function `fft_intervals`.
     freq_min : float
-        lorem ipsum
+        minimum frequency to consider to pass band.
     freq_max : float
-        lorem ipsum
+        maximum frequency to consider to pass band.
     freq_high : float
-        lorem ipsum
+        cutoff frequency of the high pass filter applied to the recorded signal (Hz).
     freq_low : float
-        lorem ipsum
-    amp : float
-        lorem ipsum
+        cutoff frequency of the low pass filter applied to the recorded signal (Hz).
+    amplification : float
+        NOTE: change to .85 for calibration of headphones!
     """
 
-    fs_adc: int = 250000  # ADC Sampling Frequency (Hz)
-    sound_duration_psd: float = 30  # total duration of sound played for calibration (s)
-    sound_duration_db: float = 15  # total duration of sound played for dB estimation (s)
-    sound_duration_test: float = 5  # total duration of sound played for st (??) estimation (s)
-    ramp_time: float = 0.005  # ramp time (s)
-    ref: float = 20e-6  # self.reference pressure (Pa) TODO: ask
-    mic_fac: float = 10  # factor on the mic (V/Pa)
-    att_min: float = -0.65  # minimum speaker attenuation value (log)
-    att_steps: int = 15  # number of attenuation steps
-    att_max: float = -0.1  # maximum speaker attenuation value (log)
-    smooth_window: int = 1  # smoothing window fft (number of bins)
-    time_cons: float = 0.025  # time cons to estimate the psd (s)
-    # TODO: clarify difference between the types of frequencies
-    freq_min: float = 5000  # minimum frequency to consider to pass band
-    freq_max: float = 20000  # maximum frequency to consider to pass band
-    freq_high: float = 4500  # freq. for high pass filter after recording
-    freq_low: float = 25000  # freq. for low pass filter after recording
-    amp: float = 0.8  # NOTE: change to .85 for calibration of headphones!
+    fs_adc: int
+    sound_duration_psd: float
+    sound_duration_db: float
+    sound_duration_test: float
+    ramp_time: float
+    reference_pressure: float
+    mic_factor: float
+    att_min: float
+    att_max: float
+    att_steps: int
+    smooth_window: int
+    time_constant: float
+    freq_min: float
+    freq_max: float
+    freq_high: float
+    freq_low: float
+    amplification: float
 
-    def __init__(self, **args):
+    def __init__(self):
+        # Loads the content of the YAML file into a dictionary
         with open("config/settings.yml", "r") as file:
             settings_dict = yaml.safe_load(file)
-        self.__dict__.update(settings_dict)
-        self.log_att = np.linspace(self.att_min, self.att_max, self.att_steps)
-        self.att_fac = 10**self.log_att
 
-        #     # These parameters are from the runCalibration2.m file
+        # Updates the attributes of the object based on the dictionary generated from the YAML file
+        self.__dict__.update(settings_dict)
+
+        # Initializes new attributes based on the loaded ones
+        self.log_att = np.linspace(self.att_min, self.att_max, self.att_steps)
+        self.att_factor = 10**self.log_att
 
     #     self.n_samp_ai_cal = self.s_dur_cal * self.fs_ai  # number of sound samples for National Instruments (calibration)
 
@@ -92,7 +93,6 @@ class Hardware:
     """
     A class used to represent the equipment being calibrated.
 
-    ...
     Attributes
     ----------
     harp_soundcard : bool
@@ -114,7 +114,7 @@ class Hardware:
     harp_soundcard: bool
     soundcard_com: str
     soundcard_id: str
-    fs_sc: int = 192000
+    fs_sc: int
     harp_audio_amp: bool
     audio_amp_id: str
     speaker_id: int

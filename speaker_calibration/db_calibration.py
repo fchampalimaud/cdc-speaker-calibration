@@ -3,13 +3,23 @@ import numpy as np
 from scipy.signal import butter, sosfilt
 from generate_noise import generate_noise, create_sound_file
 from fft_intervals import fft_intervals
+from classes import Hardware, InputParameters
 
 
 # TODO: Adapt to return all of the calibration points
 # TODO: Organization
-def df_calibration(input_parameters, hardware, cal_factor, f_vec, sig_bef_cal):
+def db_calibration(input_parameters: InputParameters, hardware: Hardware, cal_factor, f_vec, sig_bef_cal):
+    """
+    Lorem ipsum.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    """
     for i in range(input_parameters.att_steps):
-        signal = generate_noise(fs=hardware.soundcard_fs, duration=input_parameters.s_dur_db)
+        signal = generate_noise(fs=hardware.fs_sc, duration=input_parameters.sound_duration_db)
 
         f_vec_sc_h = (np.arange(input_parameters.n_samp_sc_db / 2 + 1) / input_parameters.n_samp_sc_db) * hardware.soundcard_fs
         int_samp = input_parameters.time_cons * input_parameters.adc_fs
