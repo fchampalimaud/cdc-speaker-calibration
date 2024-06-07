@@ -74,20 +74,6 @@ class InputParameters:
         self.log_att = np.linspace(self.att_min, self.att_max, self.att_steps)
         self.att_factor = 10**self.log_att
 
-    #     self.n_samp_ai_cal = self.s_dur_cal * self.fs_ai  # number of sound samples for National Instruments (calibration)
-
-    #     self.n_samp_ai_db = self.s_dur_db * self.fs_ai  # number of sound samples for National Instruments (dB estimation)
-    #     self.time_sc_db = np.arange(1, self.n_samp_sc_db + 1) / self.fs_sc  # time vector for Sound Card (s) (dB estimation)
-    #     self.time_ai_db = np.arange(1, self.n_samp_ai_db + 1) / self.fs_ai  # time vector for National Instruments (s) (dB estimation)
-    #     self.f_vec_sc_db = (np.arange(self.n_samp_sc_db) / self.n_samp_sc_db) * self.fs_sc  # frequency vector for Sound Card (dB estimation)
-    #     self.f_vec_ai_db = (np.arange(self.n_samp_ai_db) / self.n_samp_ai_db) * self.fs_ai  # frequency vector for National Instruments (dB estimation)
-
-    #     self.n_samp_ai_st = self.s_dur_st * self.fs_ai  # number of sound samples for National Instruments (dB estimation)
-    #     self.time_sc_st = np.arange(1, self.n_samp_sc_st + 1) / self.fs_sc  # time vector for Sound Card (s) (dB estimation)
-    #     self.time_ai_st = np.arange(1, self.n_samp_ai_st + 1) / self.fs_ai  # time vector for National Instruments (s) (dB estimation)
-    #     self.f_vec_sc_st = (np.arange(self.n_samp_sc_st - 1) / self.n_samp_sc_st) * self.fs_sc  # frequency vector for Sound Card (dB estimation)
-    #     self.f_vec_ai_st = (np.arange(self.n_samp_ai_st - 1) / self.n_samp_ai_st) * self.fs_ai  # frequency vector for National Instruments (dB estimation)
-
 
 class Hardware:
     """

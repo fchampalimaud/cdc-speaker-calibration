@@ -1,36 +1,53 @@
 import os
 import time
+
 import numpy as np
-from pyharp.device import Device
 from classes import Hardware, InputParameters
-from generate_noise import generate_noise, create_sound_file
 from fft_intervals import fft_intervals
+from generate_noise import create_sound_file, generate_noise
+from pyharp.device import Device
 from pyharp.messages import HarpMessage
 
 
 def psd_calibration(device: Device, input_parameters: InputParameters, hardware: Hardware):
     """
-    Lorem ipsum.
+    Calculates the power spectral density calibration factor to be used with the setup being calibrated.
 
     Parameters
     ----------
+    device : Device
+        the initialized (Harp) Sound Card. This object allows to send and receive messages to and from the device.
+    input_parameters : InputParameters
+        the object containing the input parameters used for the calibration.
+    hardware : Hardware
+        the object containing information regarding the equipment being calibrated.
 
     Returns
     -------
+    calibration_factor : numpy.ndarray
+        the power spectral density calibration factor.
+    recorded_sound : numpy.ndarray
+        the sound recorded with the microphone + DAQ system.
+    fft_bef_cal : numpy.ndarray
+        the fft of the recorded sound.
     """
+    # Generate the noise and upload it to the soundcard
     signal = generate_noise(fs=hardware.fs_sc, duration=input_parameters.sound_duration_psd)
     create_sound_file(signal, "sound.bin")
-    # TODO: add toSoundCard.exe to the project
-    os.system("cmd /c toSoundCard.exe sound.bin 2 0 " + str(hardware.fs_sc))
+    os.system("cmd /c toSoundCard.exe sound.bin 2 0 " + str(hardware.fs_sc))  # TODO: add toSoundCard.exe to the project
 
+    # Play the sound throught the soundcard and recorded it with the microphone + DAQ system
     device.send(HarpMessage.WriteU16(32, 2).frame, False)
     time.sleep(input_parameters.sound_duration_psd)
+    recorded_sound = np.zeros(1000)  # TODO: Record sound
 
-    # TODO: Record sound
-    rec_signal = np.zeros(1000)
+    # Calculate the fft of the recorded sound
+    fft_bef_cal, freq_vector, n_intervals, samples_per_interval, rms = fft_intervals(
+        recorded_sound, input_parameters.time_constant, input_parameters.fs_adc, input_parameters.smooth_window
+    )
 
-    fft_bef_cal, f_vec, n_int, int_samp, rms = fft_intervals(rec_signal, input_parameters.time_constant, input_parameters.fs_adc, input_parameters.smooth_window)
+    # Calculates the power spectral density calibration factor to be used with the setup being calibrated
+    calibration_factor = 1 / fft_bef_cal
+    calibration_factor = np.concatenate((freq_vector, calibration_factor), axis=1)
 
-    cal_factor = 1 / fft_bef_cal
-
-    return cal_factor, f_vec, rec_signal, fft_bef_cal
+    return calibration_factor, recorded_sound, fft_bef_cal  # StC

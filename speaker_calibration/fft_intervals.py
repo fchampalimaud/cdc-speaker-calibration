@@ -3,44 +3,54 @@ from scipy.ndimage import uniform_filter1d
 
 
 # TODO: Search Welch's Method because of the way the power gets divided across bins (that's why the signal is divided in n intervals)
-def fft_intervals(signal: np.ndarray, time_constant: float, fs_adc: float, smooth_window: int = 1):
+def fft_intervals(signal: np.ndarray, time_constant: float, fs_adc: float, smooth_window: int = 1, freq_min: float = 20, freq_max: float = 20000):
     """
-    Lorem ipsum.
+    Calculates the Fast Fourier Transform  (fft) of a signal by dividing it in different intervals and averaging their fft's. This method of calculating the fft makes the fft estimate more accurate.
 
     Parameters
     ----------
+    signal : numpy.ndarray
+        the signal whose fft is being calculated.
+    time_constant : float
+        duration of each division of the original signal that is used to compute the PSD (s).
+    fs_adc : float
+        sampling frequency of the ADC (Hz).
+    smooth_window : int, optional
+        number of bins of the moving average smoothing window.
+    freq_min : float, optional
+        minimum frequency to consider for the root mean square (RMS) calculation (Hz).
+    freq_max : float, optional
+        maximum frequency to consider for the root mean square (RMS) calculation (Hz).
 
     Returns
     -------
+    fft_average : numpy.ndarray
+    freq_vector : numpy.ndarray
+    n_intervals : int
+    samples_per_interval : int
+    rms : float
     """
-    n_int = np.floor(signal.size / (time_constant * fs_adc))  # number of intervals
-    int_samp = time_constant * fs_adc  # interval in samples
+    # Initialization of interval variables
+    samples_per_interval = time_constant * fs_adc
+    n_intervals = np.floor(signal.size / (samples_per_interval))
+    freq_vector = np.fft.rfft(samples_per_interval)
+    fft_intervals = np.zeros((samples_per_interval, n_intervals))
 
-    fft_int = np.zeros(int_samp, n_int - 9)
+    # Calculates the fft for each interval
+    for i in range(n_intervals):
+        signal_fft = signal[i * samples_per_interval : (i + 1) * samples_per_interval]
+        fft_intervals[:, i] = np.abs(np.fft.rfft(signal_fft)) ** 2
 
-    for i in range(5, n_int - 4):
-        sig_fft = signal[i * int_samp + 1 : (i + 1) * int_samp]  # interval to consider
-        fft_int[:, i] = np.abs(np.fft.rfft(sig_fft)) ** 2  # abs value signal
+    # Calculates the average fft and applies a moving average smoothing algorithm
+    fft_average = np.sqrt(np.mean(fft_intervals, axis=1))
+    fft_average = uniform_filter1d(fft_average, smooth_window)
 
-    f_vec = np.fft.rfft(sig_fft.size)  # frequency vector
-    fft_av = np.sqrt(np.mean(fft_int, 2))  # take the mean of all intervals
+    # Calculates the indexes that delimit the frequencies to consider in the RMS calculation
+    i1 = int(freq_min / freq_vector.size)
+    i2 = int(freq_max / freq_vector.size)
 
-    # single-sided spectrum
+    # Calculates the RMS of the signal (and not of the signal's fft)
+    rms_fft = np.sqrt(2 * np.sum(fft_intervals[i1:i2, :], axis=0) / (samples_per_interval**2))
+    rms = np.mean(rms_fft)
 
-    fft_av = uniform_filter1d(fft_av, smooth_window)
-
-    freq1 = 2500
-    freq2 = 35000
-
-    n1 = np.floor(freq1 * time_constant) + 1
-    n2 = np.floor(freq2 * time_constant) + 1
-
-    # f_vec_h_rat = f_vec_h(n1:n2)
-    # N = n2-n1 + 1
-
-    sum_fft = 2 * sum(fft_int[n1:n2, :]) / int_samp
-    rms_fft = np.sqrt(sum_fft / int_samp)
-
-    rms = np.mean(rms_fft, 2)
-
-    return fft_av, f_vec, n_int, int_samp, rms
+    return fft_average, freq_vector, n_intervals, samples_per_interval, rms  # StC

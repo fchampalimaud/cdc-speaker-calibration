@@ -1,13 +1,14 @@
-import numpy as np
 import math
-
-# import matplotlib.pyplot as plt
-from pyharp.device import Device
-from pyharp.messages import HarpMessage  # , MessageType
 
 # from struct import *
 import os
 import time
+
+import numpy as np
+
+# import matplotlib.pyplot as plt
+from pyharp.device import Device
+from pyharp.messages import HarpMessage  # , MessageType
 
 # from threading import Thread, current_thread
 # from multiprocessing import Process, current_process
