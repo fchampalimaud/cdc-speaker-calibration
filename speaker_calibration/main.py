@@ -12,10 +12,10 @@ if __name__ == "__main__":
 
     # TODO Init DAQ (Ni-DAQ or Moku:Go or add the possibility to choose between them)
 
-    calibration_factor, recorded_sound, fft_bef_cal = psd_calibration(device, input_parameters, hardware)
+    calibration_factor, recorded_sound, fft_bef_cal = psd_calibration(device, hardware, input_parameters)
 
     db_spl_aft_cal, db_spl_bef_cal, filtered_signal, fft_aft_cal, rms_sound_aft_cal, signal, rms_fft, db_fft = db_calibration(
-        input_parameters, hardware, calibration_factor, recorded_sound
+        device, hardware, input_parameters, calibration_factor, recorded_sound
     )
 
     fit_parameters = np.polyfit(input_parameters.log_att, db_spl_aft_cal, 1)
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     print("Slope: " + str(fit_parameters[0]))
     print("Intercept: " + str(fit_parameters[1]))
 
-    db_spl_test, db_fft_test = test_calibration(hardware, input_parameters, calibration_factor, fit_parameters[0], fit_parameters[1])
+    db_spl_test, db_fft_test = test_calibration(device, hardware, input_parameters, calibration_factor, fit_parameters[0], fit_parameters[1])
 
     device.disconnect()
 

@@ -31,10 +31,10 @@ def fft_intervals(signal: np.ndarray, time_constant: float, fs_adc: float, smoot
     rms : float
     """
     # Initialization of interval variables
-    samples_per_interval = time_constant * fs_adc
-    n_intervals = np.floor(signal.size / (samples_per_interval))
-    freq_vector = np.fft.rfft(samples_per_interval)
-    fft_intervals = np.zeros((samples_per_interval, n_intervals))
+    samples_per_interval = int(time_constant * fs_adc)
+    n_intervals = int(np.floor(signal.size / (samples_per_interval)))
+    freq_vector = np.fft.rfftfreq(samples_per_interval)
+    fft_intervals = np.zeros((freq_vector.size, n_intervals))
 
     # Calculates the fft for each interval
     for i in range(n_intervals):

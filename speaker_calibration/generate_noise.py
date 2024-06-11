@@ -65,10 +65,10 @@ def generate_noise(
 
     # Truncates the signal between -1 and 1
     if truncate:
-        signal[signal > 1 | signal < -1] = 0
+        signal[(signal > 1) | (signal < -1)] = 0
 
     # Applies a ramp at the beginning and at the end of the signal and the input amplification factor
-    ramp_samples = np.floor(fs * ramp_time)
+    ramp_samples = int(np.floor(fs * ramp_time))
     ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
     ramped_signal = np.concatenate((ramp, np.ones(n_samples - ramp_samples * 2), np.flip(ramp)), axis=None)
     signal = head_phone_amp * np.multiply(signal, ramped_signal)
@@ -88,7 +88,7 @@ def create_sound_file(signal: np.ndarray, filename: str):
         the name of the .bin file.
     """
     # Transforms the signal from values between -1 to 1 into 24-bit integers
-    amplitude24bits = np.pow(2, 31) - 1
+    amplitude24bits = np.power(2, 31) - 1
     wave_left = amplitude24bits * signal
     wave_right = amplitude24bits * signal
 

@@ -1,17 +1,17 @@
-    adc_fs: 250000
-    s_dur_cal: 30
-    s_dur_db: 15
-    s_dur_st: 5
+    fs_adc: 250000
+    sound_duration_psd: 30
+    sound_duration_db: 15
+    sound_duration_test: 5
     ramp_time: 0.005
-    ref: 20e-6
-    mic_fac: 10
+    reference_pressure: 0.00002
+    mic_factor: 10
     att_min: -0.65
-    att_steps: 15
     att_max: -0.1
+    att_steps: 3
     smooth_window: 1
-    time_cons: 0.025
+    time_constant: 0.025
     freq_min: 5000
     freq_max: 20000
     freq_high: 4500
     freq_low: 25000 
-    amp: 0.8
+    amplification: 0.8

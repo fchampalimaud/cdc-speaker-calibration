@@ -9,7 +9,7 @@ from pyharp.device import Device
 from pyharp.messages import HarpMessage
 
 
-def psd_calibration(device: Device, input_parameters: InputParameters, hardware: Hardware):
+def psd_calibration(device: Device, hardware: Hardware, input_parameters: InputParameters):
     """
     Calculates the power spectral density calibration factor to be used with the setup being calibrated.
 
@@ -31,23 +31,23 @@ def psd_calibration(device: Device, input_parameters: InputParameters, hardware:
     fft_bef_cal : numpy.ndarray
         the fft of the recorded sound.
     """
-    # Generate the noise and upload it to the soundcard
+    # Generates the noise and upload it to the soundcard
     signal = generate_noise(fs=hardware.fs_sc, duration=input_parameters.sound_duration_psd)
     create_sound_file(signal, "sound.bin")
-    os.system("cmd /c toSoundCard.exe sound.bin 2 0 " + str(hardware.fs_sc))  # TODO: add toSoundCard.exe to the project
+    os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(hardware.fs_sc))  # TODO: add toSoundCard.exe to the project
 
-    # Play the sound throught the soundcard and recorded it with the microphone + DAQ system
+    # Plays the sound throught the soundcard and recorded it with the microphone + DAQ system
     device.send(HarpMessage.WriteU16(32, 2).frame, False)
     time.sleep(input_parameters.sound_duration_psd)
     recorded_sound = np.zeros(1000)  # TODO: Record sound
 
-    # Calculate the fft of the recorded sound
+    # Calculates the fft of the recorded sound
     fft_bef_cal, freq_vector, n_intervals, samples_per_interval, rms = fft_intervals(
         recorded_sound, input_parameters.time_constant, input_parameters.fs_adc, input_parameters.smooth_window
     )
 
     # Calculates the power spectral density calibration factor to be used with the setup being calibrated
     calibration_factor = 1 / fft_bef_cal
-    calibration_factor = np.concatenate((freq_vector, calibration_factor), axis=1)
+    calibration_factor = np.stack((freq_vector, calibration_factor), axis=1)
 
     return calibration_factor, recorded_sound, fft_bef_cal  # StC
