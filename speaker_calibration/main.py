@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     calibration_factor, psd_signal = psd_calibration(device, hardware, input_parameters)
 
-    db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, device, hardware, input_parameters, calibration_factor, psd_signal)
+    db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, device, hardware, input_parameters, calibration_factor)
 
     fit_parameters = np.polyfit(input_parameters.log_att, db_spl, 1)
     print("Slope: " + str(fit_parameters[0]))
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     att_test = (tdB - fit_parameters[1]) / fit_parameters[0]
     att_test = 10**att_test
 
-    db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, device, hardware, input_parameters, calibration_factor, psd_signal)
+    db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, device, hardware, input_parameters, calibration_factor)
 
     device.disconnect()
 

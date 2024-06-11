@@ -162,17 +162,17 @@ class Signal:
     def record_sound(self, device: Device, input_parameters: InputParameters, filter=False):
         device.send(HarpMessage.WriteU16(32, 2).frame, False)
         time.sleep(input_parameters.sound_duration_psd)
-        self.recorded_signal = np.ones(1000)  # TODO: Record sound
+        self.recorded_sound = np.ones(1000)  # TODO: Record sound
 
         if filter:
             sos = butter(3, [input_parameters.freq_high, input_parameters.freq_low], btype="bandpass", output="sos", fs=input_parameters.fs_adc)
-            self.recorded_signal = sosfilt(sos, self.recorded_signal)
+            self.recorded_sound = sosfilt(sos, self.recorded_sound)
 
     def db_spl_calculation(self, input_parameters: InputParameters):
-        signal_pascal = self.recorded_signal[int(0.1 * self.recorded_signal.size) : int(0.9 * self.recorded_signal.size)] / input_parameters.mic_factor
+        signal_pascal = self.recorded_sound[int(0.1 * self.recorded_sound.size) : int(0.9 * self.recorded_sound.size)] / input_parameters.mic_factor
         self.rms = np.sqrt(np.mean(signal_pascal**2))
         self.db_spl = 20 * np.log10(self.rms / input_parameters.reference_pressure)
 
     def fft_calculation(self, input_parameters: InputParameters):
         self.fft, self.freq_array, self.rms_fft = fft_intervals(self.recorded_sound, input_parameters.time_constant, input_parameters.fs_adc, input_parameters.smooth_window)
-        self.db_fft = 20 * np.log10(self.rms / input_parameters.reference_pressure)
+        self.db_fft = 20 * np.log10(self.rms_fft / input_parameters.reference_pressure)
