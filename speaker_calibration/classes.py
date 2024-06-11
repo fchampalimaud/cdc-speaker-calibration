@@ -1,5 +1,13 @@
+import os
+import time
+
 import numpy as np
 import yaml
+from fft_intervals import fft_intervals
+from generate_noise import create_sound_file, generate_noise
+from pyharp.device import Device
+from pyharp.messages import HarpMessage
+from scipy.signal import butter, sosfilt
 
 
 class InputParameters:
@@ -112,3 +120,59 @@ class Hardware:
 
         # Updates the attributes of the object based on the dictionary generated from the YAML file
         self.__dict__.update(hardware_dict)
+
+
+class Signal:
+    signal: np.ndarray
+    recorded_sound: np.ndarray
+    rms: float
+    db_spl: float
+    fft: np.ndarray
+    rms_fft: float
+    db_fft: float
+    # duration: float
+    freq_array: np.ndarray
+
+    def __init__(
+        self,
+        duration: float,
+        hardware: Hardware,
+        input_parameters: InputParameters,
+        filter: bool = False,
+        calibrate: bool = False,
+        calibration_factor: np.ndarray = np.zeros((1, 2)),
+        attenuation: float = 1,
+    ):
+        self.signal = generate_noise(
+            hardware.fs_sc,
+            duration,
+            input_parameters.amplification * attenuation,
+            input_parameters.ramp_time,
+            filter,
+            input_parameters.freq_min,
+            input_parameters.freq_max,
+            calibrate,
+            calibration_factor,
+        )
+
+    def load_sound(self, hardware: Hardware):
+        create_sound_file(self.signal, "sound.bin")
+        os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(hardware.fs_sc))
+
+    def record_sound(self, device: Device, input_parameters: InputParameters, filter=False):
+        device.send(HarpMessage.WriteU16(32, 2).frame, False)
+        time.sleep(input_parameters.sound_duration_psd)
+        self.recorded_signal = np.ones(1000)  # TODO: Record sound
+
+        if filter:
+            sos = butter(3, [input_parameters.freq_high, input_parameters.freq_low], btype="bandpass", output="sos", fs=input_parameters.fs_adc)
+            self.recorded_signal = sosfilt(sos, self.recorded_signal)
+
+    def db_spl_calculation(self, input_parameters: InputParameters):
+        signal_pascal = self.recorded_signal[int(0.1 * self.recorded_signal.size) : int(0.9 * self.recorded_signal.size)] / input_parameters.mic_factor
+        self.rms = np.sqrt(np.mean(signal_pascal**2))
+        self.db_spl = 20 * np.log10(self.rms / input_parameters.reference_pressure)
+
+    def fft_calculation(self, input_parameters: InputParameters):
+        self.fft, self.freq_array, self.rms_fft = fft_intervals(self.recorded_sound, input_parameters.time_constant, input_parameters.fs_adc, input_parameters.smooth_window)
+        self.db_fft = 20 * np.log10(self.rms / input_parameters.reference_pressure)

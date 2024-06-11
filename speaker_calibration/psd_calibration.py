@@ -1,12 +1,6 @@
-import os
-import time
-
 import numpy as np
-from classes import Hardware, InputParameters
-from fft_intervals import fft_intervals
-from generate_noise import create_sound_file, generate_noise
+from classes import Hardware, InputParameters, Signal
 from pyharp.device import Device
-from pyharp.messages import HarpMessage
 
 
 def psd_calibration(device: Device, hardware: Hardware, input_parameters: InputParameters):
@@ -26,28 +20,22 @@ def psd_calibration(device: Device, hardware: Hardware, input_parameters: InputP
     -------
     calibration_factor : numpy.ndarray
         the power spectral density calibration factor.
-    recorded_sound : numpy.ndarray
-        the sound recorded with the microphone + DAQ system.
-    fft_bef_cal : numpy.ndarray
-        the fft of the recorded sound.
+    signal : Signal
+        # TODO
     """
     # Generates the noise and upload it to the soundcard
-    signal = generate_noise(fs=hardware.fs_sc, duration=input_parameters.sound_duration_psd)
-    create_sound_file(signal, "sound.bin")
-    os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(hardware.fs_sc))  # TODO: add toSoundCard.exe to the project
+    signal = Signal(input_parameters.sound_duration_psd, hardware, input_parameters)
 
     # Plays the sound throught the soundcard and recorded it with the microphone + DAQ system
-    device.send(HarpMessage.WriteU16(32, 2).frame, False)
-    time.sleep(input_parameters.sound_duration_psd)
-    recorded_sound = np.zeros(1000)  # TODO: Record sound
+    signal.load_sound(hardware)
+    signal.record_sound(device, input_parameters)
 
     # Calculates the fft of the recorded sound
-    fft_bef_cal, freq_vector, n_intervals, samples_per_interval, rms = fft_intervals(
-        recorded_sound, input_parameters.time_constant, input_parameters.fs_adc, input_parameters.smooth_window
-    )
+    signal.fft_calculation(input_parameters)
+    signal.db_spl_calculation(input_parameters)
 
     # Calculates the power spectral density calibration factor to be used with the setup being calibrated
-    calibration_factor = 1 / fft_bef_cal
-    calibration_factor = np.stack((freq_vector, calibration_factor), axis=1)
+    calibration_factor = 1 / signal.fft
+    calibration_factor = np.stack((signal.freq_array, calibration_factor), axis=1)
 
-    return calibration_factor, recorded_sound, fft_bef_cal  # StC
+    return calibration_factor, signal  # StC

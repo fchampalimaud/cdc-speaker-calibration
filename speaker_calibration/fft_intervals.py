@@ -53,4 +53,4 @@ def fft_intervals(signal: np.ndarray, time_constant: float, fs_adc: float, smoot
     rms_fft = np.sqrt(2 * np.sum(fft_intervals[i1:i2, :], axis=0) / (samples_per_interval**2))
     rms = np.mean(rms_fft)
 
-    return fft_average, freq_vector, n_intervals, samples_per_interval, rms  # StC
+    return fft_average, freq_vector, rms  # StC

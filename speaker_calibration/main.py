@@ -1,9 +1,8 @@
 import numpy as np
 from classes import Hardware, InputParameters
-from db_calibration import db_calibration
 from psd_calibration import psd_calibration
 from pyharp.device import Device
-from test_calibration import test_calibration
+from get_db import get_db
 
 if __name__ == "__main__":
     input_parameters = InputParameters()
@@ -12,18 +11,19 @@ if __name__ == "__main__":
 
     # TODO Init DAQ (Ni-DAQ or Moku:Go or add the possibility to choose between them)
 
-    calibration_factor, recorded_sound, fft_bef_cal = psd_calibration(device, hardware, input_parameters)
+    calibration_factor, psd_signal = psd_calibration(device, hardware, input_parameters)
 
-    db_spl_aft_cal, db_spl_bef_cal, filtered_signal, fft_aft_cal, rms_sound_aft_cal, signal, rms_fft, db_fft = db_calibration(
-        device, hardware, input_parameters, calibration_factor, recorded_sound
-    )
+    db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, device, hardware, input_parameters, calibration_factor, psd_signal)
 
-    fit_parameters = np.polyfit(input_parameters.log_att, db_spl_aft_cal, 1)
-
+    fit_parameters = np.polyfit(input_parameters.log_att, db_spl, 1)
     print("Slope: " + str(fit_parameters[0]))
     print("Intercept: " + str(fit_parameters[1]))
 
-    db_spl_test, db_fft_test = test_calibration(device, hardware, input_parameters, calibration_factor, fit_parameters[0], fit_parameters[1])
+    tdB = np.arange(70, 50, -10)
+    att_test = (tdB - fit_parameters[1]) / fit_parameters[0]
+    att_test = 10**att_test
+
+    db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, device, hardware, input_parameters, calibration_factor, psd_signal)
 
     device.disconnect()
 
