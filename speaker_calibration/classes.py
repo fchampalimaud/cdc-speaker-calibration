@@ -123,14 +123,42 @@ class Hardware:
 
 
 class Signal:
+    """
+    # A class containing a generated signal and every operation performed over it (load, record, fft, dB calculation, etc).
+
+    Attributes
+    ----------
+    signal : numpy.ndarray
+        the generated signal.
+    fs : float
+        the sampling frequency of the signal (Hz).
+    duration : float
+        the duration of the signal (s).
+    recorded_sound : numpy.ndarray
+        the recorded signal.
+    rms : float
+        the root mean square (RMS) of the signal (s).
+    db_spl : float
+        the dB SPL of the signal.
+    fft : numpy.ndarray
+        the fft of the signal.
+    rms_fft : float
+        the root mean square (RMS) of the signal (s) calculated from the fft.
+    db_fft : float
+        the dB SPL of the signal calculated from the fft.
+    freq_array : numpy.ndarray
+        the frequency array which corresponds to the fft of the signal (Hz).
+    """
+
     signal: np.ndarray
+    fs: float
+    duration: float
     recorded_sound: np.ndarray
     rms: float
     db_spl: float
     fft: np.ndarray
     rms_fft: float
     db_fft: float
-    # duration: float
     freq_array: np.ndarray
 
     def __init__(
@@ -143,6 +171,7 @@ class Signal:
         calibration_factor: np.ndarray = np.zeros((1, 2)),
         attenuation: float = 1,
     ):
+        # Generates the signal
         self.signal = generate_noise(
             hardware.fs_sc,
             duration,
@@ -155,13 +184,32 @@ class Signal:
             calibration_factor,
         )
 
-    def load_sound(self, hardware: Hardware):
-        create_sound_file(self.signal, "sound.bin")
-        os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(hardware.fs_sc))
+        # Inputs the sampling frequency and duration of the signal
+        self.fs = input_parameters.fs_sc
+        self.duration = duration
 
-    def record_sound(self, device: Device, input_parameters: InputParameters, filter=False):
+    def load_sound(self):
+        """
+        Loads the sound to the (Harp) Sound Card.
+        """
+        create_sound_file(self.signal, "sound.bin")
+        os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(self.fs))
+
+    def record_sound(self, device: Device, input_parameters: InputParameters, filter: bool = False):
+        """
+        Plays the signal in the soundcard and records it with a microphone + DAQ system.
+
+        Parameters
+        ----------
+        device : Device
+            the initialized (Harp) Sound Card. This object allows to send and receive messages to and from the device.
+        input_parameters : InputParameters
+            the object containing the input parameters used for the calibration.
+        filter : bool, optional
+            whether to filter the signal.
+        """
         device.send(HarpMessage.WriteU16(32, 2).frame, False)
-        time.sleep(input_parameters.sound_duration_psd)
+        time.sleep(self.duration)
         self.recorded_sound = np.ones(1000)  # TODO: Record sound
 
         if filter:
@@ -169,10 +217,26 @@ class Signal:
             self.recorded_sound = sosfilt(sos, self.recorded_sound)
 
     def db_spl_calculation(self, input_parameters: InputParameters):
+        """
+        Calculates the dB SPL of the recorded signal.
+
+        Parameters
+        ----------
+        input_parameters : InputParameters
+            the object containing the input parameters used for the calibration.
+        """
         signal_pascal = self.recorded_sound[int(0.1 * self.recorded_sound.size) : int(0.9 * self.recorded_sound.size)] / input_parameters.mic_factor
         self.rms = np.sqrt(np.mean(signal_pascal**2))
         self.db_spl = 20 * np.log10(self.rms / input_parameters.reference_pressure)
 
     def fft_calculation(self, input_parameters: InputParameters):
+        """
+        Calculates the fft of the recorded signal.
+
+        Parameters
+        ----------
+        input_parameters : InputParameters
+            the object containing the input parameters used for the calibration.
+        """
         self.fft, self.freq_array, self.rms_fft = fft_intervals(self.recorded_sound, input_parameters.time_constant, input_parameters.fs_adc, input_parameters.smooth_window)
         self.db_fft = 20 * np.log10(self.rms_fft / input_parameters.reference_pressure)

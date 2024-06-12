@@ -10,9 +10,9 @@ def get_db(att_array: np.ndarray, sound_duration: float, device: Device, hardwar
     Parameters
     ----------
     att_array : numpy.ndarray
-        # TODO
+        the array containing the the attenuation to apply to the sound.
     sound_duration : float
-        # TODO
+        the duration of the sound (s).
     device : Device
         the initialized (Harp) Sound Card. This object allows to send and receive messages to and from the device.
     input_parameters : InputParameters
@@ -25,11 +25,11 @@ def get_db(att_array: np.ndarray, sound_duration: float, device: Device, hardwar
     Returns
     -------
     db_spl : numpy.ndarray
-        # TODO
+        the array containing the dB SPL values calculated for the signal.
     db_fft : numpy.ndarray
-        # TODO
+        the array containing the dB SPL values calculated from the fft of each signal.
     signals : numpy.ndarray
-        # TODO
+        the array containing the signals used.
     """
     # Initialization of the output arrays
     signals = np.zeros(att_array.size, dtype=Signal)
@@ -49,7 +49,7 @@ def get_db(att_array: np.ndarray, sound_duration: float, device: Device, hardwar
         )
 
         # Plays the sound throught the soundcard and recorded it with the microphone + DAQ system
-        signals[i].load_sound(hardware)
+        signals[i].load_sound()
         signals[i].record_sound(device, input_parameters)
 
         # Calculates the fft of the recorded sound
@@ -62,4 +62,4 @@ def get_db(att_array: np.ndarray, sound_duration: float, device: Device, hardwar
         print("Attenuation factor: " + str(att_array[i]))
         print("dB SPL after calibration: " + str(db_spl[i]))
 
-    return db_spl, db_fft, signals  # StC
+    return db_spl, db_fft, signals
