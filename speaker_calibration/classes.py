@@ -8,6 +8,7 @@ from generate_noise import create_sound_file, generate_noise
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
 from scipy.signal import butter, sosfilt
+from record_sound import record_sound
 
 
 class InputParameters:
@@ -210,7 +211,7 @@ class Signal:
         """
         device.send(HarpMessage.WriteU16(32, 2).frame, False)
         time.sleep(self.duration)
-        self.recorded_sound = np.ones(1000)  # TODO: Record sound
+        self.recorded_sound, _ = record_sound()  # TODO: Record sound
 
         if filter:
             sos = butter(3, [input_parameters.freq_high, input_parameters.freq_low], btype="bandpass", output="sos", fs=input_parameters.fs_adc)
