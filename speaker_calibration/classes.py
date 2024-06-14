@@ -209,9 +209,9 @@ class Signal:
         filter : bool, optional
             whether to filter the signal.
         """
-        device.send(HarpMessage.WriteU16(32, 2).frame, False)
-        time.sleep(self.duration)
-        self.recorded_sound, _ = record_sound()  # TODO: Record sound
+        # device.send(HarpMessage.WriteU16(32, 2).frame, False)
+        # time.sleep(self.duration)
+        self.recorded_sound, _ = record_sound(input_parameters.fs_adc, self.duration)  # TODO: Record sound
 
         if filter:
             sos = butter(3, [input_parameters.freq_high, input_parameters.freq_low], btype="bandpass", output="sos", fs=input_parameters.fs_adc)

@@ -6,7 +6,7 @@ import numpy as np
 from moku.instruments import Datalogger
 
 
-def record_sound():
+def record_sound(fs: float, duration: float):
     # Connect to your Moku by its ip address using Datalogger('192.168.###.###')
     # or by its serial number using Datalogger(serial=123)
     adc = Datalogger("[fe80:0000:0000:0000:7269:79ff:feb9:62a2%25]", force_connect=True)
@@ -15,21 +15,21 @@ def record_sound():
         # Configure the frontend
         adc.set_frontend(channel=1, impedance="1MOhm", coupling="DC", range="50Vpp")
         adc.enable_input(2, False)
-        adc.generate_waveform(channel=1, type="Off")
         adc.generate_waveform(channel=2, type="Off")
         # Log 100 samples per second
-        adc.set_samplerate(250000)
+        adc.set_samplerate(fs)
         adc.set_acquisition_mode(mode="Precision")
 
         # Stop an existing log, if any, then start a new one. 10 seconds of both
         # channels
-        logFile = adc.start_logging(duration=10)
+        logFile = adc.start_logging(duration=duration)
+        adc.generate_waveform(channel=1, type="Pulse", amplitude=5, offset=2.5, edge_time=16e-9, pulse_width=1e-6, symmetry=50)
 
         # Track progress percentage of the data logging session
         is_logging = True
         while is_logging:
             # Wait for the logging session to progress by sleeping 0.5sec
-            time.sleep(2)
+            time.sleep(1)
             # Get current progress percentage and print it out
             progress = adc.logging_progress()
             remaining_time = int(progress["time_remaining"])

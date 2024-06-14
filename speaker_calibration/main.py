@@ -2,12 +2,15 @@ import numpy as np
 from classes import Hardware, InputParameters
 from psd_calibration import psd_calibration
 from pyharp.device import Device
+from pyharp.messages import HarpMessage
 from get_db import get_db
 
 if __name__ == "__main__":
     input_parameters = InputParameters()
     hardware = Hardware()
     device = Device(hardware.soundcard_com)
+    device.send(HarpMessage.WriteU8(41, 0).frame, False)
+    device.send(HarpMessage.WriteU8(44, 2).frame, False)
 
     # TODO Init DAQ (Ni-DAQ or Moku:Go or add the possibility to choose between them)
 

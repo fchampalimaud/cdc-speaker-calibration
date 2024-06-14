@@ -13,5 +13,5 @@
     freq_min: 5000
     freq_max: 20000
     freq_high: 4500
-    freq_low: 25000 
+    freq_low: 25000
     amplification: 0.8
