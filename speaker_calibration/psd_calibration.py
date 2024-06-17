@@ -1,16 +1,13 @@
 import numpy as np
 from classes import Hardware, InputParameters, Signal
-from pyharp.device import Device
 
 
-def psd_calibration(device: Device, hardware: Hardware, input_parameters: InputParameters):
+def psd_calibration(hardware: Hardware, input_parameters: InputParameters):
     """
     Calculates the power spectral density calibration factor to be used with the setup being calibrated.
 
     Parameters
     ----------
-    device : Device
-        the initialized (Harp) Sound Card. This object allows to send and receive messages to and from the device.
     input_parameters : InputParameters
         the object containing the input parameters used for the calibration.
     hardware : Hardware
@@ -28,7 +25,7 @@ def psd_calibration(device: Device, hardware: Hardware, input_parameters: InputP
 
     # Plays the sound throught the soundcard and recorded it with the microphone + DAQ system
     signal.load_sound()
-    signal.record_sound(device, input_parameters)
+    signal.record_sound(input_parameters)
 
     # Calculates the fft of the recorded sound
     signal.fft_calculation(input_parameters)

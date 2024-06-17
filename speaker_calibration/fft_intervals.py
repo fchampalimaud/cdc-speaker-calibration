@@ -50,7 +50,7 @@ def fft_intervals(signal: np.ndarray, time_constant: float, fs_adc: float, smoot
     i2 = int(freq_max / freq_vector.size)
 
     # Calculates the RMS of the signal (and not of the signal's fft)
-    rms_fft = np.sqrt(2 * np.sum(fft_intervals[i1:i2, :], axis=0) / (samples_per_interval**2))
+    rms_fft = np.sqrt(2 * np.sum(fft_intervals[i1:i2, :], axis=0) / (samples_per_interval**2))  # fft_intervals[i1:i2, :]
     rms = np.mean(rms_fft)
 
     return fft_average, freq_vector, rms  # StC

@@ -1,6 +1,6 @@
 import os
-import time
 import subprocess
+import time
 
 import numpy as np
 from moku.instruments import Datalogger
@@ -18,12 +18,15 @@ def record_sound(fs: float, duration: float):
         adc.generate_waveform(channel=2, type="Off")
         # Log 100 samples per second
         adc.set_samplerate(fs)
-        adc.set_acquisition_mode(mode="Precision")
+        # adc.set_acquisition_mode(mode="Precision")
 
         # Stop an existing log, if any, then start a new one. 10 seconds of both
         # channels
-        logFile = adc.start_logging(duration=duration)
-        adc.generate_waveform(channel=1, type="Pulse", amplitude=5, offset=2.5, edge_time=16e-9, pulse_width=1e-6, symmetry=50)
+        adc.generate_waveform(channel=1, type="DC", dc_level=5)
+        # print("Play")
+        logFile = adc.start_logging(duration=duration, trigger_source="Input1")
+        # print("Acquisition Started")
+        adc.generate_waveform(channel=1, type="Off")
 
         # Track progress percentage of the data logging session
         is_logging = True

@@ -1,14 +1,12 @@
 import os
-import time
 
 import numpy as np
 import yaml
 from fft_intervals import fft_intervals
 from generate_noise import create_sound_file, generate_noise
-from pyharp.device import Device
-from pyharp.messages import HarpMessage
 from scipy.signal import butter, sosfilt
-from record_sound import record_sound
+
+# from record_sound import record_sound
 
 
 class InputParameters:
@@ -125,7 +123,7 @@ class Hardware:
 
 class Signal:
     """
-    # A class containing a generated signal and every operation performed over it (load, record, fft, dB calculation, etc).
+    A class containing a generated signal and every operation performed over it (load, record, fft, dB calculation, etc).
 
     Attributes
     ----------
@@ -186,7 +184,7 @@ class Signal:
         )
 
         # Inputs the sampling frequency and duration of the signal
-        self.fs = input_parameters.fs_sc
+        self.fs = hardware.fs_sc
         self.duration = duration
 
     def load_sound(self):
@@ -196,22 +194,19 @@ class Signal:
         create_sound_file(self.signal, "sound.bin")
         os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(self.fs))
 
-    def record_sound(self, device: Device, input_parameters: InputParameters, filter: bool = False):
+    def record_sound(self, input_parameters: InputParameters, filter: bool = False):
         """
         Plays the signal in the soundcard and records it with a microphone + DAQ system.
 
         Parameters
         ----------
-        device : Device
-            the initialized (Harp) Sound Card. This object allows to send and receive messages to and from the device.
         input_parameters : InputParameters
             the object containing the input parameters used for the calibration.
         filter : bool, optional
             whether to filter the signal.
         """
-        # device.send(HarpMessage.WriteU16(32, 2).frame, False)
-        # time.sleep(self.duration)
-        self.recorded_sound, _ = record_sound(input_parameters.fs_adc, self.duration)  # TODO: Record sound
+        # self.recorded_sound, _ = record_sound(input_parameters.fs_adc, self.duration)
+        self.recorded_sound = self.signal
 
         if filter:
             sos = butter(3, [input_parameters.freq_high, input_parameters.freq_low], btype="bandpass", output="sos", fs=input_parameters.fs_adc)
@@ -230,6 +225,11 @@ class Signal:
         self.rms = np.sqrt(np.mean(signal_pascal**2))
         self.db_spl = 20 * np.log10(self.rms / input_parameters.reference_pressure)
 
+        # TODO: Organize this code
+        fft = np.abs(np.fft.fft(self.recorded_sound)) ** 2
+        self.rms_fft = np.sqrt(np.sum(fft) / (fft.size**2 * input_parameters.mic_factor**2))
+        self.db_fft = 20 * np.log10(self.rms_fft / input_parameters.reference_pressure)
+
     def fft_calculation(self, input_parameters: InputParameters):
         """
         Calculates the fft of the recorded signal.
@@ -239,5 +239,10 @@ class Signal:
         input_parameters : InputParameters
             the object containing the input parameters used for the calibration.
         """
-        self.fft, self.freq_array, self.rms_fft = fft_intervals(self.recorded_sound, input_parameters.time_constant, input_parameters.fs_adc, input_parameters.smooth_window)
+        self.fft, self.freq_array, self.rms_fft = fft_intervals(
+            self.recorded_sound[int(0.1 * self.recorded_sound.size) : int(0.9 * self.recorded_sound.size)],
+            input_parameters.time_constant,
+            input_parameters.fs_adc,
+            input_parameters.smooth_window,
+        )
         self.db_fft = 20 * np.log10(self.rms_fft / input_parameters.reference_pressure)

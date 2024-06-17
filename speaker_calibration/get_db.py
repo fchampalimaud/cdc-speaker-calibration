@@ -1,9 +1,8 @@
 import numpy as np
 from classes import Hardware, InputParameters, Signal
-from pyharp.device import Device
 
 
-def get_db(att_array: np.ndarray, sound_duration: float, device: Device, hardware: Hardware, input_parameters: InputParameters, calibration_factor: np.ndarray):
+def get_db(att_array: np.ndarray, sound_duration: float, hardware: Hardware, input_parameters: InputParameters, calibration_factor: np.ndarray):
     """
     Returns the parameters needed to calculate the dB calibration.
 
@@ -13,8 +12,6 @@ def get_db(att_array: np.ndarray, sound_duration: float, device: Device, hardwar
         the array containing the the attenuation to apply to the sound.
     sound_duration : float
         the duration of the sound (s).
-    device : Device
-        the initialized (Harp) Sound Card. This object allows to send and receive messages to and from the device.
     input_parameters : InputParameters
         the object containing the input parameters used for the calibration.
     hardware : Hardware
@@ -50,7 +47,7 @@ def get_db(att_array: np.ndarray, sound_duration: float, device: Device, hardwar
 
         # Plays the sound throught the soundcard and recorded it with the microphone + DAQ system
         signals[i].load_sound()
-        signals[i].record_sound(device, input_parameters)
+        signals[i].record_sound(input_parameters)
 
         # Calculates the fft of the recorded sound
         signals[i].fft_calculation(input_parameters)
