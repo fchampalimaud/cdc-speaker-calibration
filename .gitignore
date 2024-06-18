@@ -166,3 +166,4 @@ assets/
 sound.bin
 liconvert-windows
 speaker_calibration/soundcard_test.py
+output/

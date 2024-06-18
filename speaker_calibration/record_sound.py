@@ -4,9 +4,11 @@ import time
 
 import numpy as np
 from moku.instruments import Datalogger
+import nidaqmx
+from nidaqmx.constants import READ_ALL_AVAILABLE, AcquisitionType
 
 
-def record_sound(fs: float, duration: float):
+def record_sound_moku(fs: float, duration: float):
     # Connect to your Moku by its ip address using Datalogger('192.168.###.###')
     # or by its serial number using Datalogger(serial=123)
     adc = Datalogger("[fe80:0000:0000:0000:7269:79ff:feb9:62a2%25]", force_connect=True)
@@ -56,3 +58,19 @@ def record_sound(fs: float, duration: float):
         adc.relinquish_ownership()
 
     return v, t
+
+
+def record_sound_nidaq(fs: float, duration: float):
+    with nidaqmx.Task() as ai_task, nidaqmx.Task() as do_task:
+        ai_task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
+        do_task.do_channels.add_do_chan("Dev1/port1/line0")
+        ai_task.timing.cfg_samp_clk_timing(fs, sample_mode=AcquisitionType.FINITE, samps_per_chan=(fs * duration) + 1000)
+
+        ai_task.start()
+        do_task.write(True)
+        time.sleep(duration)
+        recorded_signal = ai_task.read(READ_ALL_AVAILABLE)
+        ai_task.stop()
+        do_task.write(False)
+
+    return np.array(recorded_signal)

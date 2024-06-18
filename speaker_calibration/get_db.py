@@ -58,5 +58,6 @@ def get_db(att_array: np.ndarray, sound_duration: float, hardware: Hardware, inp
 
         print("Attenuation factor: " + str(att_array[i]))
         print("dB SPL after calibration: " + str(db_spl[i]))
+        print("dB SPL after calibration: " + str(db_fft[i]))
 
     return db_spl, db_fft, signals

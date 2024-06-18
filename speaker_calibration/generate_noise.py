@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import butter, sosfilt
 
-
+# TODO: understand noise.m
 def generate_noise(
     fs: int,
     duration: float,

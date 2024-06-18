@@ -6,7 +6,7 @@ from fft_intervals import fft_intervals
 from generate_noise import create_sound_file, generate_noise
 from scipy.signal import butter, sosfilt
 
-# from record_sound import record_sound
+from record_sound import record_sound_moku, record_sound_nidaq
 
 
 class InputParameters:
@@ -205,8 +205,8 @@ class Signal:
         filter : bool, optional
             whether to filter the signal.
         """
-        # self.recorded_sound, _ = record_sound(input_parameters.fs_adc, self.duration)
-        self.recorded_sound = self.signal
+        self.recorded_sound = record_sound_nidaq(input_parameters.fs_adc, self.duration)
+        # self.recorded_sound = self.signal
 
         if filter:
             sos = butter(3, [input_parameters.freq_high, input_parameters.freq_low], btype="bandpass", output="sos", fs=input_parameters.fs_adc)
