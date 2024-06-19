@@ -1,20 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from classes import Hardware, InputParameters
+from classes import Hardware, InputParameters, Signal
 from get_db import get_db
 from psd_calibration import psd_calibration
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
 
-# TODO Init DAQ (Ni-DAQ or Moku:Go or add the possibility to choose between them)
-if __name__ == "__main__":
-    # Reads the input parameters and hardware characteristics and initialize the Harp SoundCard
-    input_parameters = InputParameters()
-    hardware = Hardware()
-    device = Device(hardware.soundcard_com)
-    device.send(HarpMessage.WriteU8(41, 0).frame, False)
-    device.send(HarpMessage.WriteU8(44, 2).frame, False)
 
+def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
     # Initializes the matplotlib figure
     fig = plt.figure()
     ax = fig.subplots(3)
@@ -52,6 +45,63 @@ if __name__ == "__main__":
     np.savetxt("output/calibration_factor.csv", calibration_factor, delimiter=",", fmt="%.2f")
     np.savetxt("output/fit_parameters.csv", fit_parameters, delimiter=",", fmt="%.2f")
 
-    device.disconnect()
+    plt.show()
+
+
+def pure_tone_calibration(device: Device, hardware: Hardware, input_parameters: InputParameters):
+    # Initializes the matplotlib figure
+    fig = plt.figure()
+    ax = fig.subplots(3)
+
+    # Frequency response of the system
+    freq_array = np.logspace(0, 80000, 100)
+    db_array = np.zeros(100)
+    for i in range(100):
+        signal = Signal(1, hardware, input_parameters, freq=freq_array[i])
+        signal.load_sound()
+        signal.record_sound(input_parameters)
+        signal.db_spl_calculation(input_parameters)
+        db_array[i] = signal.db_spl
+    ax[0].plot(freq_array, db_array, "o-")
+
+    # Attenuation test
+    # 1000 Hz Pure Tone
+    signal = Signal(1, hardware, input_parameters, freq=1000)
+    signal.load_sound()
+    signal.record_sound(input_parameters)
+    signal.db_spl_calculation(input_parameters)
+    print("dB SPL original signal: " + str(signal.db_spl))
+
+    # 1000 Hz Pure Tone - Soundcard Attenuated
+    device.send(HarpMessage.WriteU16(50, 80).frame, False)
+    device.send(HarpMessage.WriteU16(53, 80).frame, False)
+    print("dB SPL soundcard attenuated: " + str(signal.db_spl))
+
+    # 1000 Hz Pure Tone - Software Attenuated
+    device.send(HarpMessage.WriteU16(50, 0).frame, False)
+    device.send(HarpMessage.WriteU16(53, 0).frame, False)
+    signal = Signal(1, hardware, input_parameters, attenuation=0.01, freq=1000)
+    signal.load_sound()
+    signal.record_sound(input_parameters)
+    signal.db_spl_calculation(input_parameters)
+    print("dB SPL software attenuated: " + str(signal.db_spl))
 
     plt.show()
+
+
+# TODO Init DAQ (Ni-DAQ or Moku:Go or add the possibility to choose between them)
+if __name__ == "__main__":
+    # Reads the input parameters and hardware characteristics and initialize the Harp SoundCard
+    input_parameters = InputParameters()
+    hardware = Hardware()
+    device = Device(hardware.soundcard_com)
+    device.send(HarpMessage.WriteU8(41, 0).frame, False)
+    device.send(HarpMessage.WriteU8(44, 2).frame, False)
+
+    # Choice of calibration type
+    if input_parameters.sound_type == "noise":
+        noise_calibration(hardware, input_parameters)
+    elif input_parameters.sound_type == "pure tone":
+        pure_tone_calibration(device, hardware, input_parameters)
+
+    device.disconnect()

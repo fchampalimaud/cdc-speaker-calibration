@@ -3,10 +3,9 @@ import os
 import numpy as np
 import yaml
 from fft_intervals import fft_intervals
-from generate_noise import create_sound_file, generate_noise
+from generate_noise import create_sound_file, generate_noise, generate_pure_tone
 from scipy.signal import butter, sosfilt
-
-from record_sound import record_sound_moku, record_sound_nidaq
+from record_sound import record_sound_nidaq
 
 
 class InputParameters:
@@ -49,6 +48,8 @@ class InputParameters:
         cutoff frequency of the low pass filter applied to the recorded signal (Hz).
     amplification : float
         NOTE: change to .85 for calibration of headphones!
+    sound_type : str
+        TODO
     """
 
     fs_adc: int
@@ -68,6 +69,7 @@ class InputParameters:
     freq_high: float
     freq_low: float
     amplification: float
+    sound_type: str
 
     def __init__(self):
         # Loads the content of the YAML file into a dictionary
@@ -169,19 +171,23 @@ class Signal:
         calibrate: bool = False,
         calibration_factor: np.ndarray = np.zeros((1, 2)),
         attenuation: float = 1,
+        freq: float = 1000,
     ):
-        # Generates the signal
-        self.signal = generate_noise(
-            hardware.fs_sc,
-            duration,
-            input_parameters.amplification * attenuation,
-            input_parameters.ramp_time,
-            filter,
-            input_parameters.freq_min,
-            input_parameters.freq_max,
-            calibrate,
-            calibration_factor,
-        )
+        if input_parameters.sound_type == "noise":
+            # Generates the signal
+            self.signal = generate_noise(
+                hardware.fs_sc,
+                duration,
+                input_parameters.amplification * attenuation,
+                input_parameters.ramp_time,
+                filter,
+                input_parameters.freq_min,
+                input_parameters.freq_max,
+                calibrate,
+                calibration_factor,
+            )
+        elif input_parameters.sound_type == "pure tone":
+            self.signal = generate_pure_tone(freq, input_parameters.amplification * attenuation, hardware.fs_sc, duration, input_parameters.ramp_time)
 
         # Inputs the sampling frequency and duration of the signal
         self.fs = hardware.fs_sc

@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.signal import butter, sosfilt
 
+
 # TODO: understand noise.m
 def generate_noise(
     fs: int,
@@ -30,9 +31,9 @@ def generate_noise(
     filter : bool, optional
         whether to filter the signal.
     freq_min : float, optional
-        minimum frequency to consider to pass band.
+        minimum frequency to consider to pass band (Hz).
     freq_max : float, optional
-        maximum frequency to consider to pass band.
+        maximum frequency to consider to pass band (Hz).
     calibrate : bool, optional
         whether to use a calibration factor to flatten the power spectral density of the sound played by the speakers.
     calibration_factor : np.ndarray, optional
@@ -72,6 +73,41 @@ def generate_noise(
     ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
     ramped_signal = np.concatenate((ramp, np.ones(n_samples - ramp_samples * 2), np.flip(ramp)), axis=None)
     signal = head_phone_amp * np.multiply(signal, ramped_signal)
+
+    return signal
+
+
+def generate_pure_tone(freq: float, amplitude: float, fs: int, duration: float, ramp_time: float = 0.005):
+    """
+    Generates a gaussian random noise.
+
+    Parameters
+    ----------
+    freq : float
+        frequency of the sinusoidal signal (Hz).
+    amplitude : float
+        amplitude of the sinusoidal signal.
+    fs : int
+        sampling frequency of the signal being generated (Hz).
+    duration : float
+        duration of the signal generated (s).
+    ramp_time : float, optional
+        ramp time of the signal (s).
+
+    Returns
+    -------
+    signal : numpy.ndarray
+        the generated gaussian random noise.
+    """
+    # Sinusoidal signal generation
+    t = np.linspace(0, duration, int(fs * duration))
+    signal = amplitude * np.sin(2 * np.pi * freq * t)
+
+    # Applies a ramp at the beginning and at the end of the signal
+    ramp_samples = int(np.floor(fs * ramp_time))
+    ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
+    ramped_signal = np.concatenate((ramp, np.ones(t.size - ramp_samples * 2), np.flip(ramp)), axis=None)
+    signal = np.multiply(signal, ramped_signal)
 
     return signal
 

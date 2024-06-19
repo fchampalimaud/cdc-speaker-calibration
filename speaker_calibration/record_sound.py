@@ -8,6 +8,41 @@ import nidaqmx
 from nidaqmx.constants import READ_ALL_AVAILABLE, AcquisitionType
 
 
+def record_sound_nidaq(fs: float, duration: float):
+    """
+    Records the sound played by the Harp Soundcard with the Ni-DAQ
+
+    Parameters
+    ----------
+    fs : int
+        sampling frequency of the Ni-DAQ (Hz).
+    duration : float
+        duration of the sound (s).
+
+    Returns
+    -------
+    recorded_signal : numpy.ndarray
+        the recorded signal by the Ni-DAQ.
+    """
+    with nidaqmx.Task() as ai_task, nidaqmx.Task() as do_task:
+        # Configures the analog input responsible for the sound acquisition and the digital output responsible for triggering the Harp Soundcard
+        ai_task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
+        do_task.do_channels.add_do_chan("Dev1/port1/line0")
+        ai_task.timing.cfg_samp_clk_timing(
+            fs, sample_mode=AcquisitionType.FINITE, samps_per_chan=(fs * duration) + 1000
+        )  # the 1000 extra samples compensate the delay between the start of the acquisition and the start of the sound (StC)
+
+        ai_task.start()
+        # Starts playing the sound with an external digital trigger coming from the Ni-DAQ
+        do_task.write(True)
+        time.sleep(duration)
+        recorded_signal = ai_task.read(READ_ALL_AVAILABLE)
+        ai_task.stop()
+        do_task.write(False)
+
+    return np.array(recorded_signal)
+
+
 def record_sound_moku(fs: float, duration: float):
     # Connect to your Moku by its ip address using Datalogger('192.168.###.###')
     # or by its serial number using Datalogger(serial=123)
@@ -58,19 +93,3 @@ def record_sound_moku(fs: float, duration: float):
         adc.relinquish_ownership()
 
     return v, t
-
-
-def record_sound_nidaq(fs: float, duration: float):
-    with nidaqmx.Task() as ai_task, nidaqmx.Task() as do_task:
-        ai_task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
-        do_task.do_channels.add_do_chan("Dev1/port1/line0")
-        ai_task.timing.cfg_samp_clk_timing(fs, sample_mode=AcquisitionType.FINITE, samps_per_chan=(fs * duration) + 1000)
-
-        ai_task.start()
-        do_task.write(True)
-        time.sleep(duration)
-        recorded_signal = ai_task.read(READ_ALL_AVAILABLE)
-        ai_task.stop()
-        do_task.write(False)
-
-    return np.array(recorded_signal)

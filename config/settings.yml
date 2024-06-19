@@ -15,3 +15,4 @@
     freq_high: 4500
     freq_low: 25000
     amplification: 0.8
+    sound_type: pure tone
