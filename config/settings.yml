@@ -14,5 +14,5 @@
     freq_max: 20000
     freq_high: 4500
     freq_low: 25000
-    amplification: 0.8
-    sound_type: pure tone
+    amplification: 0.1
+    sound_type: noise

@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import welch
 from classes import Hardware, InputParameters, Signal
 
 
@@ -31,8 +32,14 @@ def psd_calibration(hardware: Hardware, input_parameters: InputParameters):
     signal.fft_calculation(input_parameters)
     signal.db_spl_calculation(input_parameters)
 
-    # Calculates the power spectral density calibration factor to be used with the setup being calibrated
-    calibration_factor = 1 / signal.fft
-    calibration_factor = np.stack((signal.freq_array, calibration_factor), axis=1)
+    freq, psd = welch(
+        signal.recorded_sound[int(0.1 * signal.recorded_sound.size) : int(0.9 * signal.recorded_sound.size)],
+        fs=input_parameters.fs_adc,
+        nperseg=input_parameters.time_constant * input_parameters.fs_adc,
+    )
+    calibration_factor = 1 / np.sqrt(psd)
+    calibration_factor = np.stack((freq, calibration_factor), axis=1)
+    # psd_welch_interp = np.interp(freq, f, psd_welch)
+    # cal_factor_welch = cal_factor_welch / (2 * np.sqrt(signal.size))
 
     return calibration_factor, signal
