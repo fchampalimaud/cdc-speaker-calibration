@@ -42,4 +42,4 @@ def psd_calibration(hardware: Hardware, input_parameters: InputParameters):
     # psd_welch_interp = np.interp(freq, f, psd_welch)
     # cal_factor_welch = cal_factor_welch / (2 * np.sqrt(signal.size))
 
-    return calibration_factor, signal
+    return calibration_factor, signal, psd

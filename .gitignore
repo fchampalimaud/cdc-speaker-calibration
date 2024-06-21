@@ -168,5 +168,6 @@ liconvert-windows
 speaker_calibration/test.py
 speaker_calibration/multi_instrument.py
 speaker_calibration/fft_play.py
+speaker_calibration/psd_cal_test.py
 output/
 calibration.txt

@@ -51,20 +51,20 @@ def generate_noise(
     n_samples = int(fs * duration)
     signal = 0.2 * np.random.randn(n_samples)  # We don't want more than 1 hence rescale by 0.2
 
-    # Uses the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
-    if calibrate:
-        freq_vector = np.fft.rfftfreq(duration * fs, d=1 / fs)
-        calibration_interp = np.interp(
-            freq_vector, calibration_factor[:, 0], calibration_factor[:, 1] / (np.sqrt(fs**2 * duration / 2))
-        )  # TODO: understand why 0.5 * calibration_factor.shape[0] * calibration_factor[:, 1]
-        fft = np.fft.rfft(signal)
-        signal = np.fft.irfft(np.multiply(fft, calibration_interp) * np.sqrt(np.mean(fft**2)), n=fs * duration)
-        # signal = calibrated_noise * 0.2 / np.sqrt(np.mean(calibrated_noise**2))
-
     # Applies a 3th-order butterworth band-pass filter to the signal
     if filter:
         sos = butter(3, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs)
         signal = sosfilt(sos, signal)
+        rms_original_signal = np.sqrt(np.mean(signal**2))
+
+    # Uses the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
+    if calibrate:
+        freq_vector = np.fft.rfftfreq(duration * fs, d=1 / fs)
+        calibration_interp = np.interp(freq_vector, calibration_factor[:, 0], calibration_factor[:, 1])
+        fft = np.fft.rfft(signal)
+        signal = np.fft.irfft(fft * calibration_interp, n=fs * duration)
+        signal = sosfilt(sos, signal)
+        signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
 
     # Truncates the signal between -1 and 1
     if truncate:

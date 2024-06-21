@@ -1,5 +1,5 @@
     fs_adc: 250000
-    sound_duration_psd: 30
+    sound_duration_psd: 3
     sound_duration_db: 15
     sound_duration_test: 5
     ramp_time: 0.005
