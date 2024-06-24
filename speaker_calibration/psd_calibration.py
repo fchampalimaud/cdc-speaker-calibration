@@ -22,7 +22,7 @@ def psd_calibration(hardware: Hardware, input_parameters: InputParameters):
         the Signal object used for the PSD calibration.
     """
     # Generates the noise and upload it to the soundcard
-    signal = Signal(input_parameters.sound_duration_psd, hardware, input_parameters)
+    signal = Signal(input_parameters.sound_duration_psd, hardware, input_parameters, attenuation=input_parameters.amplification)
 
     # Plays the sound throught the soundcard and recorded it with the microphone + DAQ system
     signal.load_sound()

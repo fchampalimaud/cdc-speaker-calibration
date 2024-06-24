@@ -178,7 +178,7 @@ class Signal:
             self.signal = generate_noise(
                 hardware.fs_sc,
                 duration,
-                input_parameters.amplification * attenuation,
+                attenuation,
                 input_parameters.ramp_time,
                 filter,
                 input_parameters.freq_min,
@@ -198,7 +198,7 @@ class Signal:
         Loads the sound to the (Harp) Sound Card.
         """
         create_sound_file(self.signal, "sound.bin")
-        os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(self.fs))
+        os.system("cmd /c .\\assets\\net8.0\\toSoundCard.exe sound.bin 2 0 " + str(self.fs))
 
     def record_sound(self, input_parameters: InputParameters, filter: bool = False):
         """
