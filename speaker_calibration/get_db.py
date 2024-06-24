@@ -50,7 +50,6 @@ def get_db(att_array: np.ndarray, sound_duration: float, hardware: Hardware, inp
         signals[i].record_sound(input_parameters)
 
         # Calculates the fft of the recorded sound
-        signals[i].fft_calculation(input_parameters)
         signals[i].db_spl_calculation(input_parameters)
 
         db_spl[i] = signals[i].db_spl

@@ -6,7 +6,6 @@ from psd_calibration import psd_calibration
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
 import time
-from scipy.signal import welch
 
 
 def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
@@ -20,12 +19,6 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
     ax[0].step(calibration_factor[:, 0], calibration_factor[:, 1])
     ax[0].fill_between(calibration_factor[:, 0], calibration_factor[:, 1], step="pre")
     ax[0].set_ylim(0, max(calibration_factor[:, 1]) * 1.1)
-
-    freq, psd_og = welch(
-        psd_signal.signal[int(0.1 * psd_signal.signal.size) : int(0.9 * psd_signal.signal.size)],
-        fs=input_parameters.fs_adc,
-        nperseg=input_parameters.time_constant * hardware.fs_sc,
-    )
 
     # Calculates the dB SPL values for different attenuation factors
     db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, hardware, input_parameters, calibration_factor)
@@ -54,8 +47,6 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
 
     np.savetxt("output/calibration_factor.csv", calibration_factor, delimiter=",", fmt="%f")
     np.savetxt("output/fit_parameters.csv", fit_parameters, delimiter=",", fmt="%f")
-    # np.savetxt("output/signal.csv", psd_signal.signal, delimiter=",", fmt="%f")
-    # np.savetxt("output/recorded_sound.csv", psd_signal.recorded_sound, delimiter=",", fmt="%f")
 
     plt.show()
 
@@ -80,31 +71,32 @@ def pure_tone_calibration(device: Device, hardware: Hardware, input_parameters: 
     ax.plot(freq_array, db_array, "o-")
     ax.set_xscale("log")
 
-    np.savetxt("calibration.txt", db_array)
-    # # Attenuation test
-    # # 1000 Hz Pure Tone
-    # signal = Signal(1, hardware, input_parameters, freq=1000)
-    # signal.load_sound()
-    # signal.record_sound(input_parameters)
-    # signal.db_spl_calculation(input_parameters)
-    # print("dB SPL original signal: " + str(signal.db_spl))
+    np.savetxt("output/calibration.txt", db_array)
 
-    # # 1000 Hz Pure Tone - Soundcard Attenuated
-    # device.send(HarpMessage.WriteU16(34, 12).frame, False)
-    # device.send(HarpMessage.WriteU16(35, 12).frame, False)
-    # time.sleep(1)
-    # signal.record_sound(input_parameters)
-    # signal.db_spl_calculation(input_parameters)
-    # print("dB SPL soundcard attenuated: " + str(signal.db_spl))
+    # Attenuation test
+    # 1000 Hz Pure Tone
+    signal = Signal(1, hardware, input_parameters, freq=1000)
+    signal.load_sound()
+    signal.record_sound(input_parameters)
+    signal.db_spl_calculation(input_parameters)
+    print("dB SPL original signal: " + str(signal.db_spl))
 
-    # # 1000 Hz Pure Tone - Software Attenuated
-    # device.send(HarpMessage.WriteU16(34, 0).frame, False)
-    # device.send(HarpMessage.WriteU16(35, 0).frame, False)
-    # signal = Signal(1, hardware, input_parameters, attenuation=0.5012, freq=1000)
-    # signal.load_sound()
-    # signal.record_sound(input_parameters)
-    # signal.db_spl_calculation(input_parameters)
-    # print("dB SPL software attenuated: " + str(signal.db_spl))
+    # 1000 Hz Pure Tone - Soundcard Attenuated
+    device.send(HarpMessage.WriteU16(34, 12).frame, False)
+    device.send(HarpMessage.WriteU16(35, 12).frame, False)
+    time.sleep(1)
+    signal.record_sound(input_parameters)
+    signal.db_spl_calculation(input_parameters)
+    print("dB SPL soundcard attenuated: " + str(signal.db_spl))
+
+    # 1000 Hz Pure Tone - Software Attenuated
+    device.send(HarpMessage.WriteU16(34, 0).frame, False)
+    device.send(HarpMessage.WriteU16(35, 0).frame, False)
+    signal = Signal(1, hardware, input_parameters, attenuation=0.5012, freq=1000)
+    signal.load_sound()
+    signal.record_sound(input_parameters)
+    signal.db_spl_calculation(input_parameters)
+    print("dB SPL software attenuated: " + str(signal.db_spl))
 
     plt.show()
 

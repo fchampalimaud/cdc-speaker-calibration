@@ -29,7 +29,6 @@ def psd_calibration(hardware: Hardware, input_parameters: InputParameters):
     signal.record_sound(input_parameters)
 
     # Calculates the fft of the recorded sound
-    signal.fft_calculation(input_parameters)
     signal.db_spl_calculation(input_parameters)
 
     freq, psd = welch(
@@ -39,7 +38,5 @@ def psd_calibration(hardware: Hardware, input_parameters: InputParameters):
     )
     calibration_factor = 1 / np.sqrt(psd)
     calibration_factor = np.stack((freq, calibration_factor), axis=1)
-    # psd_welch_interp = np.interp(freq, f, psd_welch)
-    # cal_factor_welch = cal_factor_welch / (2 * np.sqrt(signal.size))
 
     return calibration_factor, signal, psd
