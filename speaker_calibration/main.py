@@ -81,30 +81,30 @@ def pure_tone_calibration(device: Device, hardware: Hardware, input_parameters: 
     ax.set_xscale("log")
 
     np.savetxt("calibration.txt", db_array)
-    # # Attenuation test
-    # # 1000 Hz Pure Tone
-    # signal = Signal(1, hardware, input_parameters, freq=1000)
-    # signal.load_sound()
-    # signal.record_sound(input_parameters)
-    # signal.db_spl_calculation(input_parameters)
-    # print("dB SPL original signal: " + str(signal.db_spl))
+    # Attenuation test
+    # 1000 Hz Pure Tone
+    signal = Signal(1, hardware, input_parameters, freq=1000)
+    signal.load_sound()
+    signal.record_sound(input_parameters)
+    signal.db_spl_calculation(input_parameters)
+    print("dB SPL original signal: " + str(signal.db_spl))
 
-    # # 1000 Hz Pure Tone - Soundcard Attenuated
-    # device.send(HarpMessage.WriteU16(34, 12).frame, False)
-    # device.send(HarpMessage.WriteU16(35, 12).frame, False)
-    # time.sleep(1)
-    # signal.record_sound(input_parameters)
-    # signal.db_spl_calculation(input_parameters)
-    # print("dB SPL soundcard attenuated: " + str(signal.db_spl))
+    # 1000 Hz Pure Tone - Soundcard Attenuated
+    device.send(HarpMessage.WriteU16(34, 12).frame, False)
+    device.send(HarpMessage.WriteU16(35, 12).frame, False)
+    time.sleep(1)
+    signal.record_sound(input_parameters)
+    signal.db_spl_calculation(input_parameters)
+    print("dB SPL soundcard attenuated: " + str(signal.db_spl))
 
-    # # 1000 Hz Pure Tone - Software Attenuated
-    # device.send(HarpMessage.WriteU16(34, 0).frame, False)
-    # device.send(HarpMessage.WriteU16(35, 0).frame, False)
-    # signal = Signal(1, hardware, input_parameters, attenuation=0.5012, freq=1000)
-    # signal.load_sound()
-    # signal.record_sound(input_parameters)
-    # signal.db_spl_calculation(input_parameters)
-    # print("dB SPL software attenuated: " + str(signal.db_spl))
+    # 1000 Hz Pure Tone - Software Attenuated
+    device.send(HarpMessage.WriteU16(34, 0).frame, False)
+    device.send(HarpMessage.WriteU16(35, 0).frame, False)
+    signal = Signal(1, hardware, input_parameters, attenuation=0.5012, freq=1000)
+    signal.load_sound()
+    signal.record_sound(input_parameters)
+    signal.db_spl_calculation(input_parameters)
+    print("dB SPL software attenuated: " + str(signal.db_spl))
 
     plt.show()
 
