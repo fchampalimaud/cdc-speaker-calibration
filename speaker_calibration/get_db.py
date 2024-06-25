@@ -47,7 +47,7 @@ def get_db(att_array: np.ndarray, sound_duration: float, hardware: Hardware, inp
 
         # Plays the sound throught the soundcard and recorded it with the microphone + DAQ system
         signals[i].load_sound()
-        signals[i].record_sound(input_parameters)
+        signals[i].record_sound(input_parameters, filter=True)
 
         # Calculates the fft of the recorded sound
         signals[i].fft_calculation(input_parameters)

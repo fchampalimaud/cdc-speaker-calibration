@@ -187,7 +187,7 @@ class Signal:
                 calibration_factor,
             )
         elif input_parameters.sound_type == "pure tone":
-            self.signal = generate_pure_tone(freq, input_parameters.amplification * attenuation, hardware.fs_sc, duration, input_parameters.ramp_time)
+            self.signal = generate_pure_tone(freq, attenuation, hardware.fs_sc, duration, input_parameters.ramp_time)
 
         # Inputs the sampling frequency and duration of the signal
         self.fs = hardware.fs_sc

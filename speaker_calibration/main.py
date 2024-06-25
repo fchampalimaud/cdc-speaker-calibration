@@ -40,17 +40,17 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
 
     ax[1].plot(input_parameters.log_att, fit_parameters[0] * input_parameters.log_att + fit_parameters[1], "--")
 
-    # Defines new attenuation factors to test the fit performed
-    tdB = np.arange(65, 50, -5)
-    att_test = (tdB - fit_parameters[1]) / fit_parameters[0]
-    att_test = 10**att_test
+    # # Defines new attenuation factors to test the fit performed
+    # tdB = np.arange(65, 50, -5)
+    # att_test = (tdB - fit_parameters[1]) / fit_parameters[0]
+    # att_test = 10**att_test
 
-    # Tests the fit with the new attenuation factors
-    db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, hardware, input_parameters, calibration_factor)
-    # Plots dB SPL vs (new) test logarithmic attenuation factors
-    ax[2].plot(tdB, db_spl_test, "o-")
-    ax[2].plot(tdB, db_fft_test, "o-")
-    ax[2].plot(tdB, tdB, "o-")
+    # # Tests the fit with the new attenuation factors
+    # db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, hardware, input_parameters, calibration_factor)
+    # # Plots dB SPL vs (new) test logarithmic attenuation factors
+    # ax[2].plot(tdB, db_spl_test, "o-")
+    # ax[2].plot(tdB, db_fft_test, "o-")
+    # ax[2].plot(tdB, tdB, "o-")
 
     np.savetxt("output/calibration_factor.csv", calibration_factor, delimiter=",", fmt="%f")
     np.savetxt("output/fit_parameters.csv", fit_parameters, delimiter=",", fmt="%f")
