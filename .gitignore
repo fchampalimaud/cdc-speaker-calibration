@@ -166,5 +166,6 @@ assets/
 sound.bin
 liconvert-windows
 speaker_calibration/matplotlib_test.py
+speaker_calibration/tests.py
 output/
 setup.ps1

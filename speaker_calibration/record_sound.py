@@ -5,7 +5,7 @@ import time
 import numpy as np
 from moku.instruments import Datalogger
 import nidaqmx
-from nidaqmx.constants import READ_ALL_AVAILABLE, AcquisitionType
+from nidaqmx.constants import READ_ALL_AVAILABLE, AcquisitionType, TerminalConfiguration
 
 
 def record_sound_nidaq(fs: float, duration: float):
@@ -26,7 +26,7 @@ def record_sound_nidaq(fs: float, duration: float):
     """
     with nidaqmx.Task() as ai_task, nidaqmx.Task() as do_task:
         # Configures the analog input responsible for the sound acquisition and the digital output responsible for triggering the Harp Soundcard
-        ai_task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
+        ai_task.ai_channels.add_ai_voltage_chan("Dev1/ai1", terminal_config=TerminalConfiguration.RSE)
         do_task.do_channels.add_do_chan("Dev1/port1/line0")
         ai_task.timing.cfg_samp_clk_timing(
             fs, sample_mode=AcquisitionType.FINITE, samps_per_chan=(fs * duration) + 1000
