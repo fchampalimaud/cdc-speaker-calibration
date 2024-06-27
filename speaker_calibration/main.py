@@ -19,9 +19,11 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
     ax[0].plot(np.linspace(0, psd_signal.duration, psd_signal.signal.size), psd_signal.signal)
     ax[0].plot(np.linspace(0, psd_signal.duration, psd_signal.recorded_sound.size), psd_signal.recorded_sound)
     ax[1].plot(calibration_factor[:, 0], psd)
+    ax[1].set_xlim(0, input_parameters.freq_max * 1.1)
     # Plots the PSD calibration factor
     ax[2].step(calibration_factor[:, 0], calibration_factor[:, 1])
     ax[2].fill_between(calibration_factor[:, 0], calibration_factor[:, 1], step="pre")
+    ax[2].set_xlim(0, input_parameters.freq_max * 1.1)
     ax[2].set_ylim(0, max(calibration_factor[:, 1]) * 1.1)
 
     freq, psd_og = welch(
