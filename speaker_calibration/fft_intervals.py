@@ -5,7 +5,7 @@ from scipy.ndimage import uniform_filter1d
 # TODO: Search Welch's Method because of the way the power gets divided across bins (that's why the signal is divided in n intervals)
 def fft_intervals(signal: np.ndarray, time_constant: float, fs_adc: float, smooth_window: int = 1, freq_min: float = 20, freq_max: float = 20000):
     """
-    Calculates the Fast Fourier Transform  (fft) of a signal by dividing it in different intervals and averaging their fft's. This method of calculating the fft makes the fft estimate more accurate.
+    Calculates the Fast Fourier Transform (fft) of a signal by dividing it in different intervals and averaging their fft's. This method of calculating the fft makes the fft estimate more accurate.
 
     Parameters
     ----------
