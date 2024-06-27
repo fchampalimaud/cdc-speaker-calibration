@@ -1,0 +1,5 @@
+site_name: Speaker Calibration Documentation
+nav:
+  - Home: index.md
+theme: 
+  name: readthedocs
