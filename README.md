@@ -1,6 +1,10 @@
 # cdc-speaker-calibration
 
-This repository contains the Python code used during the speaker calibration protocol.
+This repository contains the Python code used during the speaker calibration protocol. 
+
+For now, the setup was only tested in Windows and it still has some rough edges. The limitations for the remaining operating systems are unknown.
+
+The code written for this project was inspired by a MATLAB version of a similar setup written by Juan Castiñeiras. The MATLAB code can be found in the `matlab` folder, in which the main file is `Calibrate.m`.
 
 ## Usage
 ### Prerequisites
@@ -9,34 +13,15 @@ This repository contains the Python code used during the speaker calibration pro
 - Connect the AI1 pin from the Ni-DAQ to the microphone's conditioner and the P1.0 pin (also from the Ni-DAQ) to the Harp SoundCard's IN0 pin (**WARNING**: don't forget the ground pins!).
 
 ### Installation
-1. Install Python 3.12.3.
-2. Install `poetry`:
-
-    ```
-    pip install pipx
-    pipx install poetry
-    ```
-
-3. Clone the repository.
-4. Run `poetry init` inside the project's folder.
-5. Create a virtual environment and install the dependencies:
-
-    ```
-    poetry shell
-    poetry install
-    ```
-
-6. Change the calibration settings according to the needs by changing the `.yml` files that are inside the `config` folder. The `hardware.yml` files contains settings related to the hardware being calibrated while the `settings.yml` are the protocol-specific settings.
-7. Run the `main.py` script. The output files are located at the `output` folder.
+1. Clone the repository (or download it for non-git users).
+2. Change the execution policy to allow local PowerShell scripts to run without signing and click in "Apply". This option can be found in the "Developer Settings" of Windows 10/11.
+3. Run `setup.ps1`.
 
 ## Future Work
-- Add setup PowerShell script
 - Documentation (in spite of the code being almost all commented)
 - Moku:Go support
 
 ## Development
-To start contributing to the project, follow steps 1-5 of the [Installation](#installation) section.
-
 When using Visual Studio Code, it is recommended that you install the extensions from `.vscode/extensions.json`.
 
 To add dependencies, run `poetry add` instead of `pip install`.
