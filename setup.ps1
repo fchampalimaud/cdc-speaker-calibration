@@ -3,14 +3,14 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 # Check if Python is already installed
 if (!(Get-Package -Name Python -ErrorAction SilentlyContinue)) {
     choco install python312 -y
-    $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 }
 
 # Check if pipx is already installed
 if (!(Get-Command pipx -ErrorAction SilentlyContinue)) {
     python -m pip install pipx
     pipx ensurepath
-    $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 }
 
 # Check if Poetry is already installed
