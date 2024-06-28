@@ -1,11 +1,16 @@
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
 # Check if Python is already installed
 if (!(Get-Package -Name Python -ErrorAction SilentlyContinue)) {
-    winget install Python.Python
+    choco install python312 -y
+    $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "User")
 }
 
 # Check if pipx is already installed
 if (!(Get-Command pipx -ErrorAction SilentlyContinue)) {
     python -m pip install pipx
+    pipx ensurepath
+    $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "User")
 }
 
 # Check if Poetry is already installed
