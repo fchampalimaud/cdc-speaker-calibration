@@ -3,6 +3,11 @@ if (!(Test-Path ".\output")) {
     New-Item -ItemType Directory -Path "output" 
 }
 
+# Checks if the assets directory already exists
+if (!(Test-Path ".\assets")) { 
+    New-Item -ItemType Directory -Path "assets" 
+}
+
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
 # Check if Python is already installed
