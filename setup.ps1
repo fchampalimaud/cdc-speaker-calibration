@@ -1,3 +1,8 @@
+# Checks if the output directory already exists
+if (!(Test-Path ".\output")) { 
+    New-Item -ItemType Directory -Path "output" 
+}
+
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
 # Check if Python is already installed
