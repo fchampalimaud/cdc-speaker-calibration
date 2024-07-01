@@ -3,7 +3,6 @@ from scipy.signal import butter, sosfilt
 
 
 # TODO: understand noise.m
-# TODO: attention to frequencies outside the desired range
 def generate_noise(
     fs: int,
     duration: float,

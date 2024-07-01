@@ -6,7 +6,6 @@ from psd_calibration import psd_calibration
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
 import time
-from scipy.signal import welch
 
 
 def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
@@ -25,12 +24,6 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
     ax[2].fill_between(calibration_factor[:, 0], calibration_factor[:, 1], step="pre")
     ax[2].set_xlim(0, input_parameters.freq_max * 1.1)
     ax[2].set_ylim(0, max(calibration_factor[:, 1]) * 1.1)
-
-    freq, psd_og = welch(
-        psd_signal.signal[int(0.1 * psd_signal.signal.size) : int(0.9 * psd_signal.signal.size)],
-        fs=input_parameters.fs_adc,
-        nperseg=input_parameters.time_constant * hardware.fs_sc,
-    )
 
     # Calculates the dB SPL values for different attenuation factors
     db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, hardware, input_parameters, calibration_factor)
@@ -59,8 +52,6 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
 
     np.savetxt("output/calibration_factor_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", calibration_factor, delimiter=",", fmt="%f")
     np.savetxt("output/fit_parameters_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", fit_parameters, delimiter=",", fmt="%f")
-    # np.savetxt("output/signal.csv", psd_signal.signal, delimiter=",", fmt="%f")
-    # np.savetxt("output/recorded_sound.csv", psd_signal.recorded_sound, delimiter=",", fmt="%f")
 
     plt.show()
 
@@ -85,7 +76,8 @@ def pure_tone_calibration(device: Device, hardware: Hardware, input_parameters: 
     ax.plot(freq_array, db_array, "o-")
     ax.set_xscale("log")
 
-    np.savetxt("calibration.txt", db_array)
+    np.savetxt("output/calibration.txt", db_array)
+
     # Attenuation test
     # 1000 Hz Pure Tone
     signal = Signal(1, hardware, input_parameters, freq=1000)

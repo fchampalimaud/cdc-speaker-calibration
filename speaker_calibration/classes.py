@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 import yaml
-from fft_intervals import fft_intervals
 from generate_noise import create_sound_file, generate_noise, generate_pure_tone
 from scipy.signal import butter, sosfilt
 from record_sound import record_sound_nidaq
@@ -236,21 +235,4 @@ class Signal:
         # TODO: Organize this code
         fft = np.abs(np.fft.fft(self.recorded_sound)) ** 2
         self.rms_fft = np.sqrt(np.sum(fft) / (fft.size**2 * input_parameters.mic_factor**2))
-        self.db_fft = 20 * np.log10(self.rms_fft / input_parameters.reference_pressure)
-
-    def fft_calculation(self, input_parameters: InputParameters):
-        """
-        Calculates the fft of the recorded signal.
-
-        Parameters
-        ----------
-        input_parameters : InputParameters
-            the object containing the input parameters used for the calibration.
-        """
-        self.fft, self.freq_array, self.rms_fft = fft_intervals(
-            self.recorded_sound[int(0.1 * self.recorded_sound.size) : int(0.9 * self.recorded_sound.size)],
-            input_parameters.time_constant,
-            input_parameters.fs_adc,
-            input_parameters.smooth_window,
-        )
         self.db_fft = 20 * np.log10(self.rms_fft / input_parameters.reference_pressure)
