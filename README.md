@@ -27,5 +27,10 @@ When using Visual Studio Code, it is recommended that you install the extensions
 
 To add dependencies, run `poetry add` instead of `pip install`.
 
+### Documentation
+To develop the documentation of the project, run `poetry install --only docs` in the command line if the main project is already installed and `poetry install --with docs` if it is not.
+
+After installing the documentation dependencies, run `mkdocs serve` to see the documentation locally at adress `http://127.0.0.1:8000/`.
+
 ### Note
 Throughout the code, it is possible to find comments/documentation strings containing the "StC" acronym, which stands for "Subject to Change".
