@@ -5,3 +5,4 @@ fs_sc: 192000
 harp_audio_amp: true
 audio_amp_id: V2.1 F1038
 speaker_id: 1
+setup_id: 1

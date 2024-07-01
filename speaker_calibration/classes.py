@@ -104,6 +104,8 @@ class Hardware:
         the ID of the audio amplifier. If the audio amplifier is a Harp device, the ID should be of the format "V?.? X????", in which "?" are numbers.
     speaker_id : int
         the ID number of the speaker being calibrated (StC).
+    setup_id : int
+        the ID number of the setup.
     """
 
     harp_soundcard: bool

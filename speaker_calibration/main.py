@@ -57,8 +57,8 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
     ax[4].plot(tdB, db_fft_test, "o-")
     ax[4].plot(tdB, tdB, "o-")
 
-    np.savetxt("output/calibration_factor.csv", calibration_factor, delimiter=",", fmt="%f")
-    np.savetxt("output/fit_parameters.csv", fit_parameters, delimiter=",", fmt="%f")
+    np.savetxt("output/calibration_factor_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", calibration_factor, delimiter=",", fmt="%f")
+    np.savetxt("output/fit_parameters_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", fit_parameters, delimiter=",", fmt="%f")
     # np.savetxt("output/signal.csv", psd_signal.signal, delimiter=",", fmt="%f")
     # np.savetxt("output/recorded_sound.csv", psd_signal.recorded_sound, delimiter=",", fmt="%f")
 
