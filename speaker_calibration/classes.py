@@ -46,9 +46,9 @@ class InputParameters:
     freq_low : float
         cutoff frequency of the low pass filter applied to the recorded signal (Hz).
     amplification : float
-        NOTE: change to .85 for calibration of headphones!
+        amplification to be used in the PSD (power spectral density) calibration step.
     sound_type : str
-        TODO
+        whether the calibration should be made with pure tones or white noise.
     """
 
     fs_adc: int
@@ -233,6 +233,6 @@ class Signal:
         self.db_spl = 20 * np.log10(self.rms / input_parameters.reference_pressure)
 
         # TODO: Organize this code
-        fft = np.abs(np.fft.fft(self.recorded_sound)) ** 2
-        self.rms_fft = np.sqrt(np.sum(fft) / (fft.size**2 * input_parameters.mic_factor**2))
+        self.fft = np.abs(np.fft.fft(self.recorded_sound)) ** 2
+        self.rms_fft = np.sqrt(np.sum(self.fft) / (self.fft.size**2 * input_parameters.mic_factor**2))
         self.db_fft = 20 * np.log10(self.rms_fft / input_parameters.reference_pressure)

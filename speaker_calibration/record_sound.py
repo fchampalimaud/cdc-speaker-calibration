@@ -60,9 +60,7 @@ def record_sound_moku(fs: float, duration: float):
         # Stop an existing log, if any, then start a new one. 10 seconds of both
         # channels
         adc.generate_waveform(channel=1, type="DC", dc_level=5)
-        # print("Play")
         logFile = adc.start_logging(duration=duration, trigger_source="Input1")
-        # print("Acquisition Started")
         adc.generate_waveform(channel=1, type="Off")
 
         # Track progress percentage of the data logging session

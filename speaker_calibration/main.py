@@ -9,6 +9,16 @@ import time
 
 
 def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
+    """
+    Performs the speaker calibration with white noise.
+
+    Parameters
+    ----------
+    hardware : Hardware
+        the object containing information regarding the equipment being calibrated.
+    input_parameters : InputParameters
+        the object containing the input parameters used for the calibration.
+    """
     # Initializes the matplotlib figure
     fig = plt.figure()
     ax = fig.subplots(5)
@@ -29,7 +39,7 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
     db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, hardware, input_parameters, calibration_factor)
     # Plots dB SPL vs logarithmic attenuation factors
     ax[3].plot(input_parameters.log_att, db_spl, "o-")
-    ax[3].plot(input_parameters.log_att, db_fft, "o-")
+    # ax[3].plot(input_parameters.log_att, db_fft, "o-")
 
     # Fits the dB SPL vs logarithmic attenuation to a straight line
     fit_parameters = np.polyfit(input_parameters.log_att, db_spl, 1)
@@ -47,7 +57,7 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
     db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, hardware, input_parameters, calibration_factor)
     # Plots dB SPL vs (new) test logarithmic attenuation factors
     ax[4].plot(tdB, db_spl_test, "o-")
-    ax[4].plot(tdB, db_fft_test, "o-")
+    # ax[4].plot(tdB, db_fft_test, "o-")
     ax[4].plot(tdB, tdB, "o-")
 
     np.savetxt("output/calibration_factor_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", calibration_factor, delimiter=",", fmt="%f")
@@ -57,6 +67,18 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
 
 
 def pure_tone_calibration(device: Device, hardware: Hardware, input_parameters: InputParameters):
+    """
+    Performs the speaker calibration with pure tones.
+
+    Parameters
+    ----------
+    device : Device
+        the object representing the Harp Soundcard.
+    hardware : Hardware
+        the object containing information regarding the equipment being calibrated.
+    input_parameters : InputParameters
+        the object containing the input parameters used for the calibration.
+    """
     # Initializes the matplotlib figure
     fig = plt.figure()
     ax = fig.subplots(1)

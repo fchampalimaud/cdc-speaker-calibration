@@ -20,6 +20,7 @@ The code written for this project was inspired by a MATLAB version of a similar 
 ## Future Work
 - Documentation (in spite of the code being almost all commented)
 - Moku:Go support
+<!-- - Develop dedicated GUI -->
 
 ## Development
 When using Visual Studio Code, it is recommended that you install the extensions from `.vscode/extensions.json`.
