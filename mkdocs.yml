@@ -2,8 +2,9 @@ site_name: Speaker Calibration Documentation
 nav:
   - Home: index.md
   - Speaker Calibration:
+    - Installation: installation.md
     - Protocol: speaker_calibration.md
-  # - Latency Measurements:
-  #   - Protocol: latency.md
-theme: 
+  - Latency Measurements:
+    - Protocol: latency.md
+theme:
   name: readthedocs
