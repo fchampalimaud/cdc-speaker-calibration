@@ -1,0 +1,16 @@
+label,from_,to,increment,spinbox_width
+ADC Sampling Frequency (Hz),0,250000,1,10
+PSD Calibration Sound Duration (s),1,60,1,10
+dB Calibration Sound Duration (s),1,60,1,10
+Test Calibration Sound Duration (s),1,60,1,10
+Ramp Time (s),0.005,1,0.005,10
+Reference Pressure (Pa),0.000001,1,0.000005,10
+Microphone Factor (V/Pa),0,100,0.1,10
+Minimum Attenuation,-10,0,0.1,10
+Maximum Attenuation,-10,0,0.1,10
+Attenuation Steps,1,100,1,10
+Smoothing Window,1,100,1,10
+Time Constant (s),0.001,10,0.001,10
+Minimum Frequency (Hz),0,80000,0.1,10
+Maximum Frequency (Hz),0,80000,0.1,10
+Amplification,0,1,0.01,10
