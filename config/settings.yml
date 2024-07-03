@@ -12,7 +12,5 @@ smooth_window: 1
 time_constant: 0.025
 freq_min: 5000
 freq_max: 20000
-freq_high: 4500
-freq_low: 25000
 amplification: 1
-sound_type: noise
+sound_type: Noise
