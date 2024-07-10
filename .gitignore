@@ -165,5 +165,5 @@ poetry.lock
 assets/
 sound.bin
 liconvert-windows
-speaker_calibration/tests.py
+speaker_calibration/test.py
 output/

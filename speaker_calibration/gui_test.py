@@ -4,6 +4,7 @@ import matplotlib
 import ctypes
 from gui_utils import get_ports
 from configuration_window import ConfigurationWindow
+from main import noise_calibration
 # import matplotlib.pyplot as plt
 
 matplotlib.use("TkAgg")
@@ -59,7 +60,7 @@ class OptionsFrame(ttk.Frame):
         self.logo_label.grid(column=0, row=0)
 
         # button
-        self.run_button = ttk.Button(self, text="Run")
+        self.run_button = ttk.Button(self, text="Run", command=lambda: noise_calibration())
         self.run_button.grid(column=0, row=1)
 
         self.combobox = ttk.Combobox(self, justify="center")
