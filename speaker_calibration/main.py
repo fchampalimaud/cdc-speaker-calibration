@@ -8,7 +8,7 @@ from pyharp.messages import HarpMessage
 import time
 
 
-def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
+def noise_calibration(fs, input_parameters: InputParameters):
     """
     Performs the speaker calibration with white noise.
 
@@ -20,10 +20,10 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
         the object containing the input parameters used for the calibration.
     """
     # Calibrates the hardware in power spectral density (PSD)
-    calibration_factor, psd_signal, psd = psd_calibration(hardware, input_parameters)
+    calibration_factor, psd_signal, psd = psd_calibration(fs, input_parameters)
 
     # Calculates the dB SPL values for different attenuation factors
-    db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, hardware, input_parameters, calibration_factor)
+    db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, fs, input_parameters, calibration_factor)
 
     # Fits the dB SPL vs logarithmic attenuation to a straight line
     fit_parameters = np.polyfit(input_parameters.log_att, db_spl, 1)
@@ -38,8 +38,10 @@ def noise_calibration(hardware: Hardware, input_parameters: InputParameters):
     # # Tests the fit with the new attenuation factors
     # db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, hardware, input_parameters, calibration_factor)
 
-    np.savetxt("output/calibration_factor_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", calibration_factor, delimiter=",", fmt="%f")
-    np.savetxt("output/fit_parameters_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", fit_parameters, delimiter=",", fmt="%f")
+    # np.savetxt("output/calibration_factor_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", calibration_factor, delimiter=",", fmt="%f")
+    # np.savetxt("output/fit_parameters_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", fit_parameters, delimiter=",", fmt="%f")
+
+    return calibration_factor, fit_parameters
 
 
 def pure_tone_calibration(device: Device, hardware: Hardware, input_parameters: InputParameters):

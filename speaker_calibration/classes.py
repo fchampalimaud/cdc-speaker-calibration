@@ -70,10 +70,10 @@ class InputParameters:
     amplification: float
     sound_type: str
 
-    def __init__(self):
-        # Loads the content of the YAML file into a dictionary
-        with open("config/settings.yml", "r") as file:
-            settings_dict = yaml.safe_load(file)
+    def __init__(self, settings_dict):
+        # # Loads the content of the YAML file into a dictionary
+        # with open("config/settings.yml", "r") as file:
+        #     settings_dict = yaml.safe_load(file)
 
         # Updates the attributes of the object based on the dictionary generated from the YAML file
         self.__dict__.update(settings_dict)
@@ -166,7 +166,7 @@ class Signal:
     def __init__(
         self,
         duration: float,
-        hardware: Hardware,
+        fs: float,
         input_parameters: InputParameters,
         filter: bool = False,
         calibrate: bool = False,
@@ -174,10 +174,10 @@ class Signal:
         attenuation: float = 1,
         freq: float = 1000,
     ):
-        if input_parameters.sound_type == "noise":
+        if input_parameters.sound_type == "Noise":
             # Generates the signal
             self.signal = generate_noise(
-                hardware.fs_sc,
+                fs,
                 duration,
                 attenuation,
                 input_parameters.ramp_time,
@@ -187,11 +187,11 @@ class Signal:
                 calibrate,
                 calibration_factor,
             )
-        elif input_parameters.sound_type == "pure tone":
-            self.signal = generate_pure_tone(freq, attenuation, hardware.fs_sc, duration, input_parameters.ramp_time)
+        elif input_parameters.sound_type == "Pure Tone":
+            self.signal = generate_pure_tone(freq, attenuation, fs, duration, input_parameters.ramp_time)
 
         # Inputs the sampling frequency and duration of the signal
-        self.fs = hardware.fs_sc
+        self.fs = fs
         self.duration = duration
 
     def load_sound(self):

@@ -3,6 +3,7 @@ from tkinter import ttk
 import numpy as np
 from gui_utils import spinbox_row
 import yaml
+from classes import InputParameters
 
 
 class ConfigurationWindow(tk.Toplevel):
@@ -14,6 +15,7 @@ class ConfigurationWindow(tk.Toplevel):
         with open("config/settings.yml", "r") as file:
             settings_dict = yaml.safe_load(file)
         settings_array = list(settings_dict.values())
+        self.settings_keys = list(settings_dict.keys())
 
         self.geometry("300x600")
         self.resizable(0, 0)
@@ -31,7 +33,15 @@ class ConfigurationWindow(tk.Toplevel):
             self.grid_rowconfigure(i, weight=1)
             if i < init_config.shape[0]:
                 self.labels[i], self.spinbox_variables[i], self.spinboxes[i] = spinbox_row(
-                    self, init_config[i, 0], float(settings_array[i]), float(init_config[i, 1]), float(init_config[i, 2]), float(init_config[i, 3]), i, int(init_config[i, 4])
+                    self,
+                    init_config[i, 0],
+                    float(settings_array[i]),
+                    float(init_config[i, 1]),
+                    float(init_config[i, 2]),
+                    float(init_config[i, 3]),
+                    i,
+                    int(init_config[i, 4]),
+                    int(init_config[i, 5]),
                 )
 
         # sound_type
@@ -43,3 +53,17 @@ class ConfigurationWindow(tk.Toplevel):
         self.sound_type_cb.grid(row=self.spinboxes.size, column=1, sticky="w")
         self.sound_type_cb["state"] = "readonly"
         self.sound_type_cb["values"] = ("Noise", "Pure Tones")
+
+    def load_input_parameters(self):
+        values = []
+        for i in range(self.spinbox_variables.size):
+            if isinstance(self.spinbox_variables[i], tk.StringVar):
+                values.append(float(self.spinbox_variables[i].get()))
+            else:
+                values.append(int(self.spinbox_variables[i].get()))
+        values.append(self.sound_var.get())
+
+        print(self.settings_keys)
+        print(values)
+
+        self.input_parameters = InputParameters(dict(zip(self.settings_keys, values)))

@@ -2,7 +2,7 @@ import numpy as np
 from classes import Hardware, InputParameters, Signal
 
 
-def get_db(att_array: np.ndarray, sound_duration: float, hardware: Hardware, input_parameters: InputParameters, calibration_factor: np.ndarray):
+def get_db(att_array: np.ndarray, sound_duration: float, fs: float, input_parameters: InputParameters, calibration_factor: np.ndarray):
     """
     Returns the parameters needed to calculate the dB calibration.
 
@@ -37,7 +37,7 @@ def get_db(att_array: np.ndarray, sound_duration: float, hardware: Hardware, inp
         # Generates the noise and upload it to the soundcard
         signals[i] = Signal(
             sound_duration,
-            hardware,
+            fs,
             input_parameters,
             filter=True,
             calibrate=True,
