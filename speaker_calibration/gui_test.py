@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-import matplotlib
 import ctypes
 from configuration_window import ConfigurationWindow
 from hardware_frame import HardwareFrame
@@ -8,44 +7,12 @@ from main import noise_calibration
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
 from serial.serialutil import SerialException
-# import matplotlib.pyplot as plt
-
-matplotlib.use("TkAgg")
-
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+import numpy as np
+from test_frame import TestFrame
+from plot_frame import PlotFrame
 
 myappid = "fchampalimaud.cdc.speaker_calibration.alpha"
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-
-
-class PlotFrame(ttk.Frame):
-    def __init__(self, container):
-        super().__init__(container)
-
-        # prepare data
-        data = {"Python": 11.27, "C": 11.16, "Java": 10.46, "C++": 7.5, "C#": 5.26}
-        languages = data.keys()
-        popularity = data.values()
-
-        # create a figure
-        figure = Figure(figsize=(6, 4), dpi=100)
-
-        # create FigureCanvasTkAgg object
-        figure_canvas = FigureCanvasTkAgg(figure, self)
-
-        # create the toolbar
-        NavigationToolbar2Tk(figure_canvas, self)
-
-        # create axes
-        axes = figure.add_subplot()
-
-        # create the barchart
-        axes.bar(languages, popularity)
-        axes.set_title("Top 5 Programming Languages")
-        axes.set_ylabel("Popularity")
-
-        figure_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
 
 
 class OptionsFrame(ttk.Frame):
@@ -62,25 +29,43 @@ class OptionsFrame(ttk.Frame):
         self.logo_label = tk.Label(self, image=self.logo)
         self.logo_label.grid(column=0, row=0)
 
-        # button
-        self.run_button = ttk.Button(self, text="Run", command=self.run_calibration)
-        self.run_button.grid(column=0, row=1)
-
         self.combobox = ttk.Combobox(self, justify="center")
-        self.combobox.grid(column=0, row=2)
+        self.combobox.grid(column=0, row=1)
 
         # button
         self.config_button = ttk.Button(self, text="Open Configuration Window", command=self.config_window.deiconify)
-        self.config_button.grid(column=0, row=3)
+        self.config_button.grid(column=0, row=2)
 
         # label
         self.hardware_frame = HardwareFrame(self)
-        self.hardware_frame.grid(column=0, row=4)
+        self.hardware_frame.grid(column=0, row=3)
 
         self.hardware_frame.port_cb.bind("<<ComboboxSelected>>", self.connect_soundcard)
 
         self.test_frame = TestFrame(self)
-        self.test_frame.grid(column=0, row=5)
+        self.test_frame.grid(column=0, row=4)
+
+        self.run_frame = ttk.LabelFrame(self)
+        self.run_frame.grid(column=0, row=5)
+
+        for i in range(3):
+            self.run_frame.grid_columnconfigure(i, weight=1)
+        for i in range(2):
+            self.run_frame.grid_rowconfigure(i, weight=1)
+
+        self.sf_var = tk.IntVar(self.run_frame, 1)
+        self.run_cb_sf = ttk.Checkbutton(self.run_frame, text="Speaker Filter", variable=self.sf_var, onvalue="1", offvalue="0")
+        self.run_cb_sf.grid(row=0, column=0, pady=5, padx=5)
+        self.cc_var = tk.IntVar(self.run_frame, 1)
+        self.run_cb_cc = ttk.Checkbutton(self.run_frame, text="Calibration Curve", variable=self.cc_var)
+        self.run_cb_cc.grid(row=0, column=1, pady=5, padx=5)
+        self.tc_var = tk.IntVar(self.run_frame, 1)
+        self.run_cb_tc = ttk.Checkbutton(self.run_frame, text="Test Calibration", variable=self.tc_var)
+        self.run_cb_tc.grid(row=0, column=2, pady=5, padx=5)
+
+        # button
+        self.run_button = ttk.Button(self.run_frame, text="Run", command=self.run_calibration)
+        self.run_button.grid(row=1, column=1, pady=5)
 
     def connect_soundcard(self, event):
         if hasattr(self, "soundcard"):
@@ -98,82 +83,18 @@ class OptionsFrame(ttk.Frame):
         self.config_window.load_input_parameters()
         self.calibration_factor, self.fit_parameters = noise_calibration(float(self.hardware_frame.fs_var.get()), self.config_window.input_parameters)
 
-
-class TestFrame(ttk.LabelFrame):
-    def __init__(self, container, text="Test Calibration"):
-        super().__init__(container, text=text)
-
-        self.grid_columnconfigure(0, weight=1)
-        for i in range(5):
-            self.grid_rowconfigure(i, weight=1)
-
-        self.lim_frame = tk.Frame(self)
-        self.lim_frame.grid(column=0, row=0, pady=5)
-
-        self.min_frame = tk.Frame(self.lim_frame)
-        self.min_frame.grid(column=0, row=0, padx=10)
-
-        self.min_label = ttk.Label(self.min_frame, text="Min dB")
-        self.min_label.grid(column=0, row=0, sticky="e")
-
-        self.min_var = tk.StringVar(self, "40.0")
-        self.min_sb = ttk.Spinbox(self.min_frame, from_=0, to=100, increment=0.1, textvariable=self.min_var, width=10, justify="center")
-        self.min_sb.grid(column=1, row=0, sticky="w")
-
-        self.max_frame = tk.Frame(self.lim_frame)
-        self.max_frame.grid(column=1, row=0, padx=10)
-
-        self.max_label = ttk.Label(self.max_frame, text="Max dB")
-        self.max_label.grid(column=0, row=0, sticky="e")
-
-        self.max_var = tk.StringVar(self, "60.0")
-        self.max_sb = ttk.Spinbox(self.max_frame, from_=0, to=100, increment=0.1, textvariable=self.max_var, width=10, justify="center")
-        self.max_sb.grid(column=1, row=0, sticky="w")
-
-        self.steps_frame = tk.Frame(self)
-        self.steps_frame.grid(column=0, row=1, pady=5)
-
-        self.steps_label = ttk.Label(self.steps_frame, text="Steps")
-        self.steps_label.grid(column=0, row=0, sticky="e")
-
-        self.steps_var = tk.IntVar(self, 15)
-        self.steps_sb = ttk.Spinbox(self.steps_frame, from_=0, to=50, increment=1, textvariable=self.steps_var, width=10, justify="center")
-        self.steps_sb.grid(column=1, row=0, sticky="w")
-
-        self.par_frame = tk.Frame(self)
-        self.par_frame.grid(column=0, row=2, pady=5)
-
-        self.slope_frame = tk.Frame(self.par_frame)
-        self.slope_frame.grid(column=0, row=0, padx=10)
-
-        self.slope_label = ttk.Label(self.slope_frame, text="Slope")
-        self.slope_label.grid(column=0, row=0, sticky="e")
-
-        self.slope_var = tk.StringVar(self, "70.00")
-        self.slope_sb = ttk.Spinbox(self.slope_frame, from_=-500, to=500, increment=0.01, textvariable=self.slope_var, width=10, justify="center")
-        self.slope_sb.grid(column=1, row=0, sticky="w")
-
-        self.intercept_frame = tk.Frame(self.par_frame)
-        self.intercept_frame.grid(column=1, row=0, padx=10)
-
-        self.intercept_label = ttk.Label(self.intercept_frame, text="Intercept")
-        self.intercept_label.grid(column=0, row=0, sticky="e")
-
-        self.intercept_var = tk.StringVar(self, "20.00")
-        self.intercept_sb = ttk.Spinbox(self.intercept_frame, from_=-500, to=500, increment=0.01, textvariable=self.intercept_var, width=10, justify="center")
-        self.intercept_sb.grid(column=1, row=0, sticky="w")
-
-        self.test_button = ttk.Button(self, text="Load Fit Parameters")
-        self.test_button.grid(column=0, row=3, pady=5)
-
-        self.inverse_filter_frame = tk.Frame(self)
-        self.inverse_filter_frame.grid(column=0, row=4, pady=5)
-
-        self.inverse_filter_button = ttk.Button(self.inverse_filter_frame, text="Load Filter")
-        self.inverse_filter_button.grid(column=0, row=0)
-
-        self.inverse_filter_label = ttk.Label(self.inverse_filter_frame, text="No Filter")
-        self.inverse_filter_label.grid(column=1, row=0)
+        np.savetxt(
+            "output/calibration_factor_speaker" + str(self.hardware_frame.speaker_var.get()) + "_setup" + str(self.hardware_frame.setup_var.get()) + ".csv",
+            self.calibration_factor,
+            delimiter=",",
+            fmt="%f",
+        )
+        np.savetxt(
+            "output/fit_parameters_speaker" + str(self.hardware_frame.speaker_var.get()) + "_setup" + str(self.hardware_frame.setup_var.get()) + ".csv",
+            self.fit_parameters,
+            delimiter=",",
+            fmt="%f",
+        )
 
 
 class App(tk.Tk):

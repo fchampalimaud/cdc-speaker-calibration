@@ -5,7 +5,6 @@ from get_db import get_db
 from psd_calibration import psd_calibration
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
-import time
 
 
 def noise_calibration(fs, input_parameters: InputParameters):
@@ -37,9 +36,6 @@ def noise_calibration(fs, input_parameters: InputParameters):
 
     # # Tests the fit with the new attenuation factors
     # db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, hardware, input_parameters, calibration_factor)
-
-    # np.savetxt("output/calibration_factor_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", calibration_factor, delimiter=",", fmt="%f")
-    # np.savetxt("output/fit_parameters_speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv", fit_parameters, delimiter=",", fmt="%f")
 
     return calibration_factor, fit_parameters
 
@@ -79,23 +75,6 @@ def pure_tone_calibration(device: Device, hardware: Hardware, input_parameters: 
     signal.record_sound(input_parameters)
     signal.db_spl_calculation(input_parameters)
     print("dB SPL original signal: " + str(signal.db_spl))
-
-    # 1000 Hz Pure Tone - Soundcard Attenuated
-    device.send(HarpMessage.WriteU16(34, 12).frame, False)
-    device.send(HarpMessage.WriteU16(35, 12).frame, False)
-    time.sleep(1)
-    signal.record_sound(input_parameters)
-    signal.db_spl_calculation(input_parameters)
-    print("dB SPL soundcard attenuated: " + str(signal.db_spl))
-
-    # 1000 Hz Pure Tone - Software Attenuated
-    device.send(HarpMessage.WriteU16(34, 0).frame, False)
-    device.send(HarpMessage.WriteU16(35, 0).frame, False)
-    signal = Signal(1, hardware, input_parameters, attenuation=0.5012, freq=1000)
-    signal.load_sound()
-    signal.record_sound(input_parameters)
-    signal.db_spl_calculation(input_parameters)
-    print("dB SPL software attenuated: " + str(signal.db_spl))
 
     plt.show()
 
