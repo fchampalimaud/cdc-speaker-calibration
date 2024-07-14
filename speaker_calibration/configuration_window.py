@@ -63,7 +63,4 @@ class ConfigurationWindow(tk.Toplevel):
                 values.append(int(self.spinbox_variables[i].get()))
         values.append(self.sound_var.get())
 
-        print(self.settings_keys)
-        print(values)
-
         self.input_parameters = InputParameters(dict(zip(self.settings_keys, values)))

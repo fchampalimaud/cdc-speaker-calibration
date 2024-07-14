@@ -1,18 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
-import ctypes
 from configuration_window import ConfigurationWindow
 from hardware_frame import HardwareFrame
-from main import noise_calibration
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
 from serial.serialutil import SerialException
-import numpy as np
 from test_frame import TestFrame
-from plot_frame import PlotFrame
-
-myappid = "fchampalimaud.cdc.speaker_calibration.alpha"
-ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+import numpy as np
+from main import noise_calibration
 
 
 class OptionsFrame(ttk.Frame):
@@ -29,8 +24,10 @@ class OptionsFrame(ttk.Frame):
         self.logo_label = tk.Label(self, image=self.logo)
         self.logo_label.grid(column=0, row=0)
 
-        self.combobox = ttk.Combobox(self, justify="center")
+        self.combobox_var = tk.StringVar()
+        self.combobox = ttk.Combobox(self, justify="center", textvariable=self.combobox_var)
         self.combobox.grid(column=0, row=1)
+        self.combobox["values"] = ("PSD Signal", "Inverse Filter", "Calibration Signals", "Calibration Curve", "Test Signals", "Test Plot")
 
         # button
         self.config_button = ttk.Button(self, text="Open Configuration Window", command=self.config_window.deiconify)
@@ -81,7 +78,18 @@ class OptionsFrame(ttk.Frame):
 
     def run_calibration(self):
         self.config_window.load_input_parameters()
-        self.calibration_factor, self.fit_parameters = noise_calibration(float(self.hardware_frame.fs_var.get()), self.config_window.input_parameters)
+        self.calibration_factor, self.fit_parameters = noise_calibration(
+            float(self.hardware_frame.fs_var.get()),
+            self.config_window.input_parameters,
+            self.calibration_factor if hasattr(self, "calibration_factor") else None,
+            np.array([float(self.test_frame.slope_var.get()), float(self.test_frame.intercept_var.get())]),
+            float(self.test_frame.min_var.get()),
+            float(self.test_frame.max_var.get()),
+            self.test_frame.steps_var.get(),
+            self.sf_var.get(),
+            self.cc_var.get(),
+            self.tc_var.get(),
+        )
 
         np.savetxt(
             "output/calibration_factor_speaker" + str(self.hardware_frame.speaker_var.get()) + "_setup" + str(self.hardware_frame.setup_var.get()) + ".csv",
@@ -95,42 +103,3 @@ class OptionsFrame(ttk.Frame):
             delimiter=",",
             fmt="%f",
         )
-
-
-class App(tk.Tk):
-    def __init__(self):
-        super().__init__()
-
-        # configure the root window
-        self.title("Speaker Calibration")
-        self.iconbitmap("docs/img/favicon.ico")
-
-        # Get the screen width and height
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-
-        # Set the window width and height
-        window_width = 1280
-        window_height = 720
-
-        # Calculate the x and y coordinates to center the window
-        x = (screen_width / 2) - (window_width / 2)
-        y = (screen_height / 2) - (window_height / 2)
-
-        # Set the window position
-        self.geometry(f"{window_width}x{window_height}+{int(x)}+{int(y)}")
-
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=2)
-        self.grid_columnconfigure(1, weight=1)
-
-        self.plot_frame = PlotFrame(self)
-        self.plot_frame.grid(column=0, row=0, sticky="nsew")
-
-        self.options_frame = OptionsFrame(self)
-        self.options_frame.grid(column=1, row=0, sticky="nsew")
-
-
-if __name__ == "__main__":
-    app = App()
-    app.mainloop()

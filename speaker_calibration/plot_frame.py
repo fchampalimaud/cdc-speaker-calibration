@@ -12,26 +12,21 @@ class PlotFrame(ttk.Frame):
     def __init__(self, container):
         super().__init__(container)
 
-        # prepare data
-        data = {"Python": 11.27, "C": 11.16, "Java": 10.46, "C++": 7.5, "C#": 5.26}
-        languages = data.keys()
-        popularity = data.values()
-
         # create a figure
         figure = Figure(figsize=(6, 4), dpi=100)
 
         # create FigureCanvasTkAgg object
-        figure_canvas = FigureCanvasTkAgg(figure, self)
+        self.figure_canvas = FigureCanvasTkAgg(figure, self)
 
         # create the toolbar
-        NavigationToolbar2Tk(figure_canvas, self)
+        NavigationToolbar2Tk(self.figure_canvas, self)
 
         # create axes
-        axes = figure.add_subplot()
+        self.ax = figure.add_subplot()
 
         # create the barchart
-        axes.bar(languages, popularity)
-        axes.set_title("Top 5 Programming Languages")
-        axes.set_ylabel("Popularity")
+        self.plot = self.ax.plot([1, 2, 3])
+        self.ax.set_title("Top 5 Programming Languages")
+        self.ax.set_ylabel("Popularity")
 
-        figure_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+        self.figure_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
