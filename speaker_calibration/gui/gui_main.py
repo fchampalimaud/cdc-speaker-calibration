@@ -7,11 +7,11 @@ myappid = "fchampalimaud.cdc.speaker_calibration.alpha"
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 
-class App(tk.Tk):
+class SpeakerCalibrationGUI(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        # configure the root window
+        # Configure the main window
         self.title("Speaker Calibration")
         self.iconbitmap("docs/img/favicon.ico")
 
@@ -30,18 +30,24 @@ class App(tk.Tk):
         # Set the window position
         self.geometry(f"{window_width}x{window_height}+{int(x)}+{int(y)}")
 
+        # Configure the rows and columns of the main window
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=2)
         self.grid_columnconfigure(1, weight=1)
 
+        # Position the Matplotlib figure frame
         self.plot_frame = PlotFrame(self)
         self.plot_frame.grid(column=0, row=0, sticky="nsew")
 
+        # Position the settings widgets frame
         self.options_frame = OptionsFrame(self)
         self.options_frame.grid(column=1, row=0, sticky="nsew")
-        self.options_frame.combobox.bind("<<ComboboxSelected>>", self.plot_chosen)
 
-    def plot_chosen(self, event):
+        # Configure the event triggered when a type of plot is selected
+        self.options_frame.combobox.bind("<<ComboboxSelected>>", self.change_plot)
+
+    def change_plot(self, event):
+        # TODO
         if self.options_frame.combobox_var.get() == "Plot1":
             self.plot_frame.plot[0].set_data([0, 1, 2], [1, 2, 3])
             self.plot_frame.figure_canvas.draw_idle()
@@ -51,5 +57,5 @@ class App(tk.Tk):
 
 
 if __name__ == "__main__":
-    app = App()
-    app.mainloop()
+    gui = SpeakerCalibrationGUI()
+    gui.mainloop()

@@ -4,7 +4,6 @@ from get_db import get_db
 from psd_calibration import psd_calibration
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
-# from gui_main import App
 
 
 def noise_calibration(
@@ -18,7 +17,6 @@ def noise_calibration(
     speaker_filter: bool = True,
     calibration_curve: bool = True,
     test_calibration: bool = True,
-    # gui: App = None,
 ):
     """
     Performs the speaker calibration with white noise.

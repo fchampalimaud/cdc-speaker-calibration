@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import matplotlib
+import numpy as np
 
 matplotlib.use("TkAgg")
 
@@ -11,6 +12,13 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 class PlotFrame(ttk.Frame):
     def __init__(self, container):
         super().__init__(container)
+
+        self.psd_signal = []
+        self.inverse_filter = []
+        self.calibration_signals = []
+        self.calibration_curve = np.zeros(3, dtype=np.ndarray)
+        self.test_signals = []
+        self.test_plot = np.zeros(3, dtype=np.ndarray)
 
         # create a figure
         figure = Figure(figsize=(6, 4), dpi=100)
@@ -25,8 +33,6 @@ class PlotFrame(ttk.Frame):
         self.ax = figure.add_subplot()
 
         # create the barchart
-        self.plot = self.ax.plot([1, 2, 3])
-        self.ax.set_title("Top 5 Programming Languages")
-        self.ax.set_ylabel("Popularity")
+        self.plot = self.ax.plot(0)
 
         self.figure_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
