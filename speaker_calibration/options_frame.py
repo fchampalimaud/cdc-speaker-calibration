@@ -6,8 +6,6 @@ from pyharp.device import Device
 from pyharp.messages import HarpMessage
 from serial.serialutil import SerialException
 from test_frame import TestFrame
-import numpy as np
-from main import noise_calibration
 
 
 class OptionsFrame(ttk.Frame):
@@ -50,18 +48,18 @@ class OptionsFrame(ttk.Frame):
         for i in range(2):
             self.run_frame.grid_rowconfigure(i, weight=1)
 
-        self.sf_var = tk.IntVar(self.run_frame, 1)
-        self.run_cb_sf = ttk.Checkbutton(self.run_frame, text="Speaker Filter", variable=self.sf_var, onvalue="1", offvalue="0")
+        self.speaker_filter = tk.IntVar(self.run_frame, 1)
+        self.run_cb_sf = ttk.Checkbutton(self.run_frame, text="Speaker Filter", variable=self.speaker_filter, onvalue="1", offvalue="0")
         self.run_cb_sf.grid(row=0, column=0, pady=5, padx=5)
-        self.cc_var = tk.IntVar(self.run_frame, 1)
-        self.run_cb_cc = ttk.Checkbutton(self.run_frame, text="Calibration Curve", variable=self.cc_var)
+        self.calibration_curve = tk.IntVar(self.run_frame, 1)
+        self.run_cb_cc = ttk.Checkbutton(self.run_frame, text="Calibration Curve", variable=self.calibration_curve)
         self.run_cb_cc.grid(row=0, column=1, pady=5, padx=5)
-        self.tc_var = tk.IntVar(self.run_frame, 1)
-        self.run_cb_tc = ttk.Checkbutton(self.run_frame, text="Test Calibration", variable=self.tc_var)
+        self.test_calibration = tk.IntVar(self.run_frame, 1)
+        self.run_cb_tc = ttk.Checkbutton(self.run_frame, text="Test Calibration", variable=self.test_calibration)
         self.run_cb_tc.grid(row=0, column=2, pady=5, padx=5)
 
         # button
-        self.run_button = ttk.Button(self.run_frame, text="Run", command=self.run_calibration)
+        self.run_button = ttk.Button(self.run_frame, text="Run")
         self.run_button.grid(row=1, column=1, pady=5)
 
     def connect_soundcard(self, event):
@@ -75,31 +73,3 @@ class OptionsFrame(ttk.Frame):
                 self.soundcard.send(HarpMessage.WriteU8(44, 2).frame, False)
         except SerialException:
             print("This is not a Harp device.")
-
-    def run_calibration(self):
-        self.config_window.load_input_parameters()
-        self.calibration_factor, self.fit_parameters = noise_calibration(
-            float(self.hardware_frame.fs_var.get()),
-            self.config_window.input_parameters,
-            self.calibration_factor if hasattr(self, "calibration_factor") else None,
-            np.array([float(self.test_frame.slope_var.get()), float(self.test_frame.intercept_var.get())]),
-            float(self.test_frame.min_var.get()),
-            float(self.test_frame.max_var.get()),
-            self.test_frame.steps_var.get(),
-            self.sf_var.get(),
-            self.cc_var.get(),
-            self.tc_var.get(),
-        )
-
-        np.savetxt(
-            "output/calibration_factor_speaker" + str(self.hardware_frame.speaker_var.get()) + "_setup" + str(self.hardware_frame.setup_var.get()) + ".csv",
-            self.calibration_factor,
-            delimiter=",",
-            fmt="%f",
-        )
-        np.savetxt(
-            "output/fit_parameters_speaker" + str(self.hardware_frame.speaker_var.get()) + "_setup" + str(self.hardware_frame.setup_var.get()) + ".csv",
-            self.fit_parameters,
-            delimiter=",",
-            fmt="%f",
-        )

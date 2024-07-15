@@ -3,7 +3,6 @@ from tkinter import ttk
 import numpy as np
 from gui_utils import spinbox_row
 import yaml
-from classes import InputParameters
 
 
 class ConfigurationWindow(tk.Toplevel):
@@ -53,14 +52,3 @@ class ConfigurationWindow(tk.Toplevel):
         self.sound_type_cb.grid(row=self.spinboxes.size, column=1, sticky="w")
         self.sound_type_cb["state"] = "readonly"
         self.sound_type_cb["values"] = ("Noise", "Pure Tones")
-
-    def load_input_parameters(self):
-        values = []
-        for i in range(self.spinbox_variables.size):
-            if isinstance(self.spinbox_variables[i], tk.StringVar):
-                values.append(float(self.spinbox_variables[i].get()))
-            else:
-                values.append(int(self.spinbox_variables[i].get()))
-        values.append(self.sound_var.get())
-
-        self.input_parameters = InputParameters(dict(zip(self.settings_keys, values)))

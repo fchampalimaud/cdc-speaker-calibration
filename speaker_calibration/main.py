@@ -53,7 +53,7 @@ def noise_calibration(
     return calibration_factor, fit_parameters
 
 
-def pure_tone_calibration(device: Device, hardware: Hardware, input_parameters: InputParameters):
+def pure_tone_calibration(hardware: Hardware, input_parameters: InputParameters):
     """
     Performs the speaker calibration with pure tones.
 

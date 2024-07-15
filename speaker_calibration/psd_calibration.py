@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.signal import welch
-from classes import Hardware, InputParameters, Signal
+from classes import InputParameters, Signal
 
 
 def psd_calibration(fs: float, input_parameters: InputParameters):

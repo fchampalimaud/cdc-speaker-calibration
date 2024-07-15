@@ -13,7 +13,7 @@ class PlotFrame(ttk.Frame):
     def __init__(self, container):
         super().__init__(container)
 
-        self.psd_signal = []
+        self.psd_signal = np.zeros(2, dtype=np.ndarray)
         self.inverse_filter = []
         self.calibration_signals = []
         self.calibration_curve = np.zeros(3, dtype=np.ndarray)

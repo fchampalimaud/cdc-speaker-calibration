@@ -1,8 +1,8 @@
 import numpy as np
-from classes import Hardware, InputParameters, Signal
+from classes import InputParameters, Signal
 
 
-def get_db(att_array: np.ndarray, sound_duration: float, fs: float, input_parameters: InputParameters, calibration_factor: np.ndarray):
+def get_db(att_array: np.ndarray, sound_duration: float, fs: float, input_parameters: InputParameters, calibration_factor: np.ndarray, callback=None):
     """
     Returns the parameters needed to calculate the dB calibration.
 
@@ -58,5 +58,8 @@ def get_db(att_array: np.ndarray, sound_duration: float, fs: float, input_parame
         print("Attenuation factor: " + str(att_array[i]))
         print("dB SPL after calibration: " + str(db_spl[i]))
         # print("dB SPL after calibration: " + str(db_fft[i]))
+
+        # if callback is not None:
+        #     callback()
 
     return db_spl, db_fft, signals
