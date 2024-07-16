@@ -199,7 +199,8 @@ class Signal:
         Loads the sound to the (Harp) Sound Card.
         """
         create_sound_file(self.signal, "sound.bin")
-        os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(self.fs))
+        print("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(int(self.fs)))
+        os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(int(self.fs)))
 
     def record_sound(self, input_parameters: InputParameters, filter: bool = False):
         """

@@ -6,7 +6,7 @@ from scipy.signal import butter, sosfilt
 def generate_noise(
     fs: int,
     duration: float,
-    head_phone_amp: float = 0.85,
+    attenuation: float = 1,
     ramp_time: float = 0.005,
     filter: bool = False,
     freq_min: float = 20,
@@ -24,7 +24,7 @@ def generate_noise(
         sampling frequency of the signal being generated (Hz).
     duration : float
         duration of the signal generated (s).
-    head_phone_amp : float, optional
+    attenuation : float, optional
         amplification factor of the speakers.
     ramp_time : float, optional
         ramp time of the signal (s).
@@ -46,6 +46,9 @@ def generate_noise(
     signal : numpy.ndarray
         the generated gaussian random noise.
     """
+    if attenuation > 1 and attenuation < 0:
+        raise ValueError("attenuation must be between 0 and 1")
+
     # Generates the base signal
     n_samples = int(fs * duration)
     signal = 0.2 * np.random.randn(n_samples)  # We don't want more than 1 hence rescale by 0.2
@@ -73,7 +76,7 @@ def generate_noise(
     ramp_samples = int(np.floor(fs * ramp_time))
     ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
     ramped_signal = np.concatenate((ramp, np.ones(n_samples - ramp_samples * 2), np.flip(ramp)), axis=None)
-    signal = head_phone_amp * np.multiply(signal, ramped_signal)
+    signal = attenuation * np.multiply(signal, ramped_signal)
 
     return signal
 

@@ -5,6 +5,7 @@ from options_frame import OptionsFrame
 import numpy as np
 from classes import InputParameters
 from main import noise_calibration
+from pyharp.messages import HarpMessage
 
 myappid = "fchampalimaud.cdc.speaker_calibration.alpha"
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
@@ -54,18 +55,28 @@ class SpeakerCalibrationGUI(tk.Tk):
     def calibrate(self):
         self.load_input_parameters()
 
+        self.options_frame.soundcard.send(HarpMessage.WriteU8(41, 0).frame, False)
+        self.options_frame.soundcard.send(HarpMessage.WriteU8(44, 2).frame, False)
+
+        self.psd_signal = np.zeros(2, dtype=np.ndarray)
+        self.calibration_signals = np.zeros((self.input_parameters.att_steps, 2), dtype=np.ndarray)
+        self.calibration_curve = np.zeros((self.input_parameters.att_steps, 3), dtype=np.ndarray)
+        self.test_signals = np.zeros((self.options_frame.test_frame.steps_var.get(), 2), dtype=np.ndarray)
+        self.test_plot = np.zeros((self.options_frame.test_frame.steps_var.get(), 3), dtype=np.ndarray)
+
         if self.input_parameters.sound_type == "Noise":
             self.calibration_factor, self.fit_parameters = noise_calibration(
                 float(self.options_frame.hardware_frame.fs_var.get()),
-                self.config_window.input_parameters,
+                self.input_parameters,
                 self.calibration_factor if hasattr(self, "calibration_factor") else None,
-                np.array([float(self.test_frame.slope_var.get()), float(self.test_frame.intercept_var.get())]),
-                float(self.test_frame.min_var.get()),
-                float(self.test_frame.max_var.get()),
-                self.test_frame.steps_var.get(),
-                self.sf_var.get(),
-                self.cc_var.get(),
-                self.tc_var.get(),
+                np.array([float(self.options_frame.test_frame.slope_var.get()), float(self.options_frame.test_frame.intercept_var.get())]),
+                float(self.options_frame.test_frame.min_var.get()),
+                float(self.options_frame.test_frame.max_var.get()),
+                self.options_frame.test_frame.steps_var.get(),
+                self.options_frame.speaker_filter.get(),
+                self.options_frame.calibration_curve.get(),
+                self.options_frame.test_calibration.get(),
+                self.package_receiver,
             )
 
         np.savetxt(
@@ -96,34 +107,52 @@ class SpeakerCalibrationGUI(tk.Tk):
 
         self.input_parameters = InputParameters(dict(zip(self.options_frame.config_window.settings_keys, values)))
 
-    def package_receiver(package: list, message: str):
-        if message == "PSD Signal":
-            print("TODO")
-        elif message == "Inverse Filter":
-            print("TODO")
-        elif message == "Calibration Signals":
-            print("TODO")
-        elif message == "Calibration Curve":
-            print("TODO")
-        elif message == "Test Signals":
-            print("TODO")
-        elif message == "Test Plot":
-            print("TODO")
+    def package_receiver(self, package: list, message: str):
+        if message == "Inverse Filter":
+            self.inverse_filter = package[0]
+            self.psd_signal[0] = package[1].signal
+            self.psd_signal[1] = package[1].recorded_sound
+        elif message == "Calibration":
+            self.calibration_signals[package[1], 0] = package[0].signal
+            self.calibration_signals[package[1], 1] = package[0].recorded_sound
+            self.calibration_curve[package[1], 0] = package[0].db_spl
+            self.calibration_curve[package[1], 1] = package[0].db_fft
+        elif message == "Test":
+            self.test_signals[package[1], 0] = package[0].signal
+            self.test_signals[package[1], 1] = package[0].recorded_sound
+            self.test_plot[package[1], 0] = package[0].db_spl
+            self.test_plot[package[1], 1] = package[0].db_fft
+
+        self.change_plot(None)
 
     def change_plot(self, event):
         if self.options_frame.combobox_var.get() == "PSD Signal":
-            print("TODO")
+            self.plot_frame.plots[0].set_data(np.linspace(0, self.psd_signal[0].size - 1, self.psd_signal[0].size), self.psd_signal[0])
+            self.plot_frame.plots[1].set_data(np.linspace(0, self.psd_signal[1].size - 1, self.psd_signal[1].size), self.psd_signal[1])
+            self.plot_frame.plots[2].set_data([], [])
         elif self.options_frame.combobox_var.get() == "Inverse Filter":
-            print("TODO")
+            self.plot_frame.plot[0].set_data(self.inverse_filter)
+            self.plot_frame.plots[1].set_data([], [])
+            self.plot_frame.plots[2].set_data([], [])
         elif self.options_frame.combobox_var.get() == "Calibration Signals":
-            print("TODO")
+            self.plot_frame.plot[0].set_data(self.calibration_signals[:, 0])
+            self.plot_frame.plot[1].set_data(self.calibration_signals[:, 1])
+            self.plot_frame.plots[2].set_data([], [])
         elif self.options_frame.combobox_var.get() == "Calibration Curve":
-            print("TODO")
+            self.plot_frame.plot[0].set_data(self.calibration_curve[:, 0])
+            self.plot_frame.plot[1].set_data(self.calibration_curve[:, 1])
+            self.plot_frame.plots[2].set_data([], [])
         elif self.options_frame.combobox_var.get() == "Test Signals":
-            print("TODO")
+            self.plot_frame.plot[0].set_data(self.test_signals[:, 0])
+            self.plot_frame.plot[1].set_data(self.test_signals[:, 1])
+            self.plot_frame.plots[2].set_data([], [])
         elif self.options_frame.combobox_var.get() == "Test Plot":
-            print("TODO")
+            self.plot_frame.plot[0].set_data(self.test_plot[:, 0])
+            self.plot_frame.plot[1].set_data(self.test_plot[:, 1])
+            self.plot_frame.plots[2].set_data([], [])
 
+        self.plot_frame.ax.relim()
+        self.plot_frame.ax.autoscale_view()
         self.plot_frame.figure_canvas.draw_idle()
 
 

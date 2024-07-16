@@ -17,6 +17,7 @@ def noise_calibration(
     speaker_filter: bool = True,
     calibration_curve: bool = True,
     test_calibration: bool = True,
+    callback=None,
 ):
     """
     Performs the speaker calibration with white noise.
@@ -31,10 +32,12 @@ def noise_calibration(
     # Calibrates the hardware in power spectral density (PSD)
     if speaker_filter:
         calibration_factor, psd_signal, psd = psd_calibration(fs, input_parameters)
+        if callback is not None:
+            callback([calibration_factor, psd_signal], "Inverse Filter")
 
     if calibration_curve:
         # Calculates the dB SPL values for different attenuation factors
-        db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, fs, input_parameters, calibration_factor)
+        db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, fs, input_parameters, calibration_factor, callback, "Calibration")
 
         # Fits the dB SPL vs logarithmic attenuation to a straight line
         fit_parameters = np.polyfit(input_parameters.log_att, db_spl, 1)
@@ -48,7 +51,7 @@ def noise_calibration(
         att_test = 10**att_test
 
         # Tests the fit with the new attenuation factors
-        db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, hardware, input_parameters, calibration_factor)
+        db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, hardware, input_parameters, calibration_factor, callback, "Test")
 
     return calibration_factor, fit_parameters
 
