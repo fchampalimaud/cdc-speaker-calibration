@@ -78,10 +78,6 @@ class InputParameters:
         # Updates the attributes of the object based on the dictionary generated from the YAML file
         self.__dict__.update(settings_dict)
 
-        # Initializes new attributes based on the loaded ones
-        self.log_att = np.linspace(self.att_min, self.att_max, self.att_steps)
-        self.att_factor = 10**self.log_att
-
     def update(self, settings_dict: dict):
         self.__dict__.update(settings_dict)
 

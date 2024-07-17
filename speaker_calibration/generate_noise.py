@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.signal import butter, sosfilt
+from multipledispatch import dispatch
 
 
 # TODO: understand noise.m
@@ -116,7 +117,8 @@ def generate_pure_tone(freq: float, amplitude: float, fs: int, duration: float, 
     return signal
 
 
-def create_sound_file(signal: np.ndarray, filename: str):
+@dispatch(np.ndarray, str, str)
+def create_sound_file(signal: np.ndarray, filename: str, speaker_side: str = "both"):
     """
     Creates the .bin sound file to be loaded to the Harp Sound Card.
 
@@ -126,11 +128,61 @@ def create_sound_file(signal: np.ndarray, filename: str):
         the signal to be written to the .bin file.
     filename : str
         the name of the .bin file.
+    speaker_side : str
+        whether the sound plays in both speakers or in a single one. Possible values: "both", "left" or "right.
     """
     # Transforms the signal from values between -1 to 1 into 24-bit integers
     amplitude24bits = np.power(2, 31) - 1
-    wave_left = amplitude24bits * signal
-    wave_right = amplitude24bits * signal
+
+    if speaker_side == "both":
+        wave_left = amplitude24bits * signal
+        wave_right = amplitude24bits * signal
+    elif speaker_side == "left":
+        wave_left = amplitude24bits * signal
+        wave_right = 0 * signal
+    elif speaker_side == "right":
+        wave_left = 0 * signal
+        wave_right = amplitude24bits * signal
+    else:
+        raise ValueError('speaker_side value should be "both", "left" or "right" instead of "%s"' % speaker_side)
+
+    # Groups the signals to be played in the left and right channels/speakers in a single array
+    stereo = np.stack((wave_left, wave_right), axis=1)
+    wave_int = stereo.astype(np.int32)
+
+    # Writes the sound to the .bin file
+    with open(filename, "wb") as f:
+        wave_int.tofile(f)
+
+
+@dispatch(np.ndarray, np.ndarray, str, str)
+def create_sound_file(signal_left: np.ndarray, signal_right: np.ndarray, filename: str, speaker_side: str = "both"):
+    """
+    Creates the .bin sound file to be loaded to the Harp Sound Card.
+
+    Parameters
+    ----------
+    signal : numpy.ndarray
+        the signal to be written to the .bin file.
+    filename : str
+        the name of the .bin file.
+    speaker_side : str
+        whether the sound plays in both speakers or in a single one. Possible values: "both", "left" or "right.
+    """
+    # Transforms the signal from values between -1 to 1 into 24-bit integers
+    amplitude24bits = np.power(2, 31) - 1
+
+    if speaker_side == "both":
+        wave_left = amplitude24bits * signal_left
+        wave_right = amplitude24bits * signal_right
+    elif speaker_side == "left":
+        wave_left = amplitude24bits * signal_left
+        wave_right = 0 * signal_right
+    elif speaker_side == "right":
+        wave_left = 0 * signal_left
+        wave_right = amplitude24bits * signal_right
+    else:
+        raise ValueError('speaker_side value should be "both", "left" or "right" instead of "%s"' % speaker_side)
 
     # Groups the signals to be played in the left and right channels/speakers in a single array
     stereo = np.stack((wave_left, wave_right), axis=1)

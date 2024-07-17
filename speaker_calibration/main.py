@@ -39,7 +39,9 @@ def noise_calibration(
 
     if calibration_curve:
         # Calculates the dB SPL values for different attenuation factors
-        db_spl, db_fft, signals = get_db(input_parameters.att_factor, input_parameters.sound_duration_db, fs, input_parameters, calibration_factor, callback, "Calibration")
+        att_factor = np.linspace(input_parameters.att_min, input_parameters.att_max, input_parameters.att_steps)
+        att_factor = 10**att_factor
+        db_spl, db_fft, signals = get_db(att_factor, input_parameters.sound_duration_db, fs, input_parameters, calibration_factor, callback, "Calibration")
 
         # Fits the dB SPL vs logarithmic attenuation to a straight line
         fit_parameters = np.polyfit(input_parameters.log_att, db_spl, 1)
