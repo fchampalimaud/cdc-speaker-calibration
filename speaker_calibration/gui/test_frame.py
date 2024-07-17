@@ -53,8 +53,8 @@ class TestFrame(ttk.LabelFrame):
         self.slope_label = ttk.Label(self.slope_frame, text="Slope")
         self.slope_label.grid(column=0, row=0, sticky="e")
 
-        self.slope_var = tk.StringVar(self, "70.00")
-        self.slope_sb = ttk.Spinbox(self.slope_frame, from_=-500, to=500, increment=0.01, textvariable=self.slope_var, width=10, justify="center")
+        self.slope = tk.StringVar(self, "70.00")
+        self.slope_sb = ttk.Spinbox(self.slope_frame, from_=-500, to=500, increment=0.01, textvariable=self.slope, width=10, justify="center")
         self.slope_sb.grid(column=1, row=0, sticky="w")
 
         self.intercept_frame = tk.Frame(self.par_frame)
@@ -63,8 +63,8 @@ class TestFrame(ttk.LabelFrame):
         self.intercept_label = ttk.Label(self.intercept_frame, text="Intercept")
         self.intercept_label.grid(column=0, row=0, sticky="e")
 
-        self.intercept_var = tk.StringVar(self, "20.00")
-        self.intercept_sb = ttk.Spinbox(self.intercept_frame, from_=-500, to=500, increment=0.01, textvariable=self.intercept_var, width=10, justify="center")
+        self.intercept = tk.StringVar(self, "20.00")
+        self.intercept_sb = ttk.Spinbox(self.intercept_frame, from_=-500, to=500, increment=0.01, textvariable=self.intercept, width=10, justify="center")
         self.intercept_sb.grid(column=1, row=0, sticky="w")
 
         self.test_button = ttk.Button(self, text="Load Fit Parameters", command=self.open_fit_parameters)
@@ -85,8 +85,8 @@ class TestFrame(ttk.LabelFrame):
         fit_parameters = np.loadtxt(filename, delimiter=",")
 
         if fit_parameters.size == 2:
-            self.slope_var.set(fit_parameters[0])
-            self.intercept_var.set(fit_parameters[1])
+            self.slope.set(fit_parameters[0])
+            self.intercept.set(fit_parameters[1])
 
     def open_calibration_factor(self):
         filename = tk.filedialog.askopenfilename()

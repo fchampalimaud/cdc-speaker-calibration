@@ -9,6 +9,7 @@ from pyharp.messages import HarpMessage
 def noise_calibration(
     fs,
     input_parameters: InputParameters,
+    hardware: Hardware,
     calibration_factor: np.ndarray = None,
     fit_parameters: np.ndarray = None,
     min_db: float = 40,
@@ -29,6 +30,7 @@ def noise_calibration(
     input_parameters : InputParameters
         the object containing the input parameters used for the calibration.
     """
+
     # Calibrates the hardware in power spectral density (PSD)
     if speaker_filter:
         calibration_factor, psd_signal, psd = psd_calibration(fs, input_parameters)
@@ -51,7 +53,7 @@ def noise_calibration(
         att_test = 10**att_test
 
         # Tests the fit with the new attenuation factors
-        db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, hardware, input_parameters, calibration_factor, callback, "Test")
+        db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, fs, input_parameters, calibration_factor, callback, "Test")
 
     return calibration_factor, fit_parameters
 

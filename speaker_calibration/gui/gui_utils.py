@@ -10,6 +10,8 @@ def get_ports():
     for port in ports:
         port_strings.append(port.device)
 
+    port_strings.append("Refresh")
+
     return port_strings
 
 

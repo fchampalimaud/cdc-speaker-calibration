@@ -1,18 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
-from configuration_window import ConfigurationWindow
-from hardware_frame import HardwareFrame
-from pyharp.device import Device
-from pyharp.messages import HarpMessage
-from serial.serialutil import SerialException
-from test_frame import TestFrame
+from speaker_calibration.gui.hardware_frame import HardwareFrame
+from speaker_calibration.gui.test_frame import TestFrame
 
 
-class OptionsFrame(ttk.Frame):
+class ConfigFrame(ttk.Frame):
     def __init__(self, container):
         super().__init__(container)
-
-        self.config_window = ConfigurationWindow()
 
         self.grid_columnconfigure(0, weight=1)
         for i in range(6):
@@ -23,19 +17,17 @@ class OptionsFrame(ttk.Frame):
         self.logo_label.grid(column=0, row=0)
 
         self.combobox_var = tk.StringVar()
-        self.combobox = ttk.Combobox(self, justify="center", textvariable=self.combobox_var)
+        self.combobox = ttk.Combobox(self, justify="center", textvariable=self.combobox_var, state="readonly")
         self.combobox.grid(column=0, row=1)
-        self.combobox["values"] = ("PSD Signal", "Inverse Filter", "Calibration Signals", "Calibration Curve", "Test Signals", "Test Plot")
+        self.combobox["values"] = ["PSD Signal", "Inverse Filter", "Calibration Signals", "Calibration Data", "Test Signals", "Test Data"]
 
         # button
-        self.config_button = ttk.Button(self, text="Open Configuration Window", command=self.config_window.deiconify)
-        self.config_button.grid(column=0, row=2)
+        self.settings_button = ttk.Button(self, text="Open Settings Window")
+        self.settings_button.grid(column=0, row=2)
 
         # label
         self.hardware_frame = HardwareFrame(self)
         self.hardware_frame.grid(column=0, row=3)
-
-        self.hardware_frame.port_cb.bind("<<ComboboxSelected>>", self.connect_soundcard)
 
         self.test_frame = TestFrame(self)
         self.test_frame.grid(column=0, row=4)
@@ -61,15 +53,3 @@ class OptionsFrame(ttk.Frame):
         # button
         self.run_button = ttk.Button(self.run_frame, text="Run")
         self.run_button.grid(row=1, column=1, pady=5)
-
-    def connect_soundcard(self, event):
-        if hasattr(self, "soundcard"):
-            self.soundcard.disconnect()
-
-        try:
-            self.soundcard = Device(self.hardware_frame.port_var.get())
-            if self.soundcard.WHO_AM_I == 1280:
-                self.soundcard.send(HarpMessage.WriteU8(41, 0).frame, False)
-                self.soundcard.send(HarpMessage.WriteU8(44, 2).frame, False)
-        except SerialException:
-            print("This is not a Harp device.")

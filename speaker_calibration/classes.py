@@ -70,10 +70,10 @@ class InputParameters:
     amplification: float
     sound_type: str
 
-    def __init__(self, settings_dict):
-        # # Loads the content of the YAML file into a dictionary
-        # with open("config/settings.yml", "r") as file:
-        #     settings_dict = yaml.safe_load(file)
+    def __init__(self):
+        # Loads the content of the YAML file into a dictionary
+        with open("config/settings.yml", "r") as file:
+            settings_dict = yaml.safe_load(file)
 
         # Updates the attributes of the object based on the dictionary generated from the YAML file
         self.__dict__.update(settings_dict)
@@ -82,6 +82,9 @@ class InputParameters:
         self.log_att = np.linspace(self.att_min, self.att_max, self.att_steps)
         self.att_factor = 10**self.log_att
 
+    def update(self, settings_dict: dict):
+        self.__dict__.update(settings_dict)
+
 
 class Hardware:
     """
@@ -89,14 +92,14 @@ class Hardware:
 
     Attributes
     ----------
+    fs_sc : int
+        the sampling frequency of the soundcard (Hz).
     harp_soundcard : bool
         indicates whether the soundcard being calibrated is a Harp device or not.
     soundcard_com : str
         indicates the COM number the soundcard corresponds to in the computer used for the calibration. The string should be of the format "COM?", in which "?" is the COM number.
     soundcard_id : str
         the ID of the soundcard. If the soundcard is a Harp device, the ID should be of the format "V?.? X????", in which "?" are numbers.
-    fs_sc : int
-        the sampling frequency of the soundcard (Hz).
     harp_audio_amp : bool
         indicates whether the audio amplifier used in the calibration is a Harp device or not.
     audio_amp_id : str
@@ -107,21 +110,24 @@ class Hardware:
         the ID number of the setup.
     """
 
+    fs_sc: int
     harp_soundcard: bool
     soundcard_com: str
     soundcard_id: str
-    fs_sc: int
     harp_audio_amp: bool
     audio_amp_id: str
     speaker_id: int
+    setup_id: int
 
     def __init__(self):
-        # Loads the content of the YAML file into a dictionary
-        with open("config/hardware.yml", "r") as file:
-            hardware_dict = yaml.safe_load(file)
-
-        # Updates the attributes of the object based on the dictionary generated from the YAML file
-        self.__dict__.update(hardware_dict)
+        self.fs_sc = 192000
+        self.harp_soundcard = True
+        self.soundcard_com = ""
+        self.soundcard_id = ""
+        self.harp_audio_amp = True
+        self.audio_amp_id = ""
+        self.speaker_id = 0
+        self.setup_id = 0
 
 
 class Signal:
@@ -233,7 +239,13 @@ class Signal:
         self.rms = np.sqrt(np.mean(signal_pascal**2))
         self.db_spl = 20 * np.log10(self.rms / input_parameters.reference_pressure)
 
-        # TODO: Organize this code
+    def db_fft_calculation(self, input_parameters: InputParameters):
         self.fft = np.abs(np.fft.fft(self.recorded_sound)) ** 2
         self.rms_fft = np.sqrt(np.sum(self.fft) / (self.fft.size**2 * input_parameters.mic_factor**2))
         self.db_fft = 20 * np.log10(self.rms_fft / input_parameters.reference_pressure)
+
+    def execute_protocol(self, input_parameters: InputParameters, filter: bool = True):
+        self.load_sound()
+        self.record_sound(input_parameters, filter)
+        self.db_spl_calculation(input_parameters)
+        self.db_fft_calculation(input_parameters)
