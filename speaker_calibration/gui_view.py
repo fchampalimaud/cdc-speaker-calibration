@@ -1,4 +1,3 @@
-import tkinter as tk
 from tkinter import ttk
 
 from speaker_calibration.gui.plot_frame import PlotFrame
@@ -7,6 +6,14 @@ from speaker_calibration.gui.settings_window import SettingsWindow
 
 
 class SpeakerCalibrationView(ttk.Frame):
+    """
+    The frontend of the application.
+    """
+
+    plot_frame: PlotFrame
+    config_frame: ConfigFrame
+    settings_window: SettingsWindow
+
     def __init__(self, container):
         super().__init__(container)
 
@@ -30,4 +37,12 @@ class SpeakerCalibrationView(ttk.Frame):
         self.config_frame.settings_button["command"] = self.settings_window.deiconify
 
     def set_controller(self, controller):
+        """
+        Sets the controller.
+
+        Parameters
+        ----------
+        controller
+            the controller object which allows for the frontend and backend to communicate.
+        """
         self.controller = controller

@@ -10,7 +10,7 @@ def noise_calibration(
     fs,
     input_parameters: InputParameters,
     hardware: Hardware,
-    calibration_factor: np.ndarray = None,
+    inverse_filter: np.ndarray = None,
     fit_parameters: np.ndarray = None,
     min_db: float = 40,
     max_db: float = 60,
@@ -31,17 +31,17 @@ def noise_calibration(
         the object containing the input parameters used for the calibration.
     """
 
-    # Calibrates the hardware in power spectral density (PSD)
     if speaker_filter:
-        calibration_factor, psd_signal, psd = psd_calibration(fs, input_parameters)
+        # Calibrates the hardware in power spectral density (PSD)
+        inverse_filter, psd_signal, psd = psd_calibration(fs, input_parameters)
         if callback is not None:
-            callback([calibration_factor, psd_signal], "Inverse Filter")
+            callback([inverse_filter, psd_signal], "Inverse Filter")
 
     if calibration_curve:
         # Calculates the dB SPL values for different attenuation factors
         att_factor = np.linspace(input_parameters.att_min, input_parameters.att_max, input_parameters.att_steps)
         att_factor = 10**att_factor
-        db_spl, db_fft, signals = get_db(att_factor, input_parameters.sound_duration_db, fs, input_parameters, calibration_factor, callback, "Calibration")
+        db_spl, db_fft, signals = get_db(att_factor, input_parameters.sound_duration_db, fs, input_parameters, inverse_filter, callback, "Calibration")
 
         # Fits the dB SPL vs logarithmic attenuation to a straight line
         fit_parameters = np.polyfit(input_parameters.log_att, db_spl, 1)
@@ -55,9 +55,9 @@ def noise_calibration(
         att_test = 10**att_test
 
         # Tests the fit with the new attenuation factors
-        db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, fs, input_parameters, calibration_factor, callback, "Test")
+        db_spl_test, db_fft_test, signals_test = get_db(att_test, input_parameters.sound_duration_test, fs, input_parameters, inverse_filter, callback, "Test")
 
-    return calibration_factor, fit_parameters
+    return inverse_filter, fit_parameters
 
 
 def pure_tone_calibration(hardware: Hardware, input_parameters: InputParameters):
@@ -99,9 +99,9 @@ if __name__ == "__main__":
     device.send(HarpMessage.WriteU8(44, 2).frame, False)
 
     # Choice of calibration type
-    if input_parameters.sound_type == "noise":
+    if input_parameters.sound_type == "Noise":
         noise_calibration(hardware, input_parameters)
-    elif input_parameters.sound_type == "pure tone":
+    elif input_parameters.sound_type == "Pure Tone":
         pure_tone_calibration(device, hardware, input_parameters)
 
     device.disconnect()
