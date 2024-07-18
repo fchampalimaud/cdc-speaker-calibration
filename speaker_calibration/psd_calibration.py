@@ -28,9 +28,6 @@ def psd_calibration(fs: float, input_parameters: InputParameters):
     signal.load_sound()
     signal.record_sound(input_parameters)
 
-    # Calculates the fft of the recorded sound
-    signal.db_spl_calculation(input_parameters)
-
     freq, psd = welch(
         signal.recorded_sound[int(0.1 * signal.recorded_sound.size) : int(0.9 * signal.recorded_sound.size)],
         fs=input_parameters.fs_adc,
