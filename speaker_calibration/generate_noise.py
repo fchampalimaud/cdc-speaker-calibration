@@ -5,13 +5,13 @@ from multipledispatch import dispatch
 
 # TODO: understand noise.m
 def generate_noise(
-    fs: int,
     duration: float,
-    attenuation: float = 1,
+    fs: int,
+    amplification: float = 1,
     ramp_time: float = 0.005,
     filter: bool = False,
-    freq_min: float = 20,
-    freq_max: float = 20000,
+    freq_min: float = 0,
+    freq_max: float = 80000,
     calibrate: bool = False,
     calibration_factor: np.ndarray = np.zeros((1, 2)),
     truncate: bool = True,
@@ -21,11 +21,11 @@ def generate_noise(
 
     Parameters
     ----------
-    fs : int
-        sampling frequency of the signal being generated (Hz).
     duration : float
         duration of the signal generated (s).
-    attenuation : float, optional
+    fs : int
+        sampling frequency of the signal being generated (Hz).
+    amplification : float, optional
         amplification factor of the speakers.
     ramp_time : float, optional
         ramp time of the signal (s).
@@ -47,8 +47,8 @@ def generate_noise(
     signal : numpy.ndarray
         the generated gaussian random noise.
     """
-    if attenuation > 1 and attenuation < 0:
-        raise ValueError("attenuation must be between 0 and 1")
+    if amplification > 1 and amplification < 0:
+        raise ValueError("amplification must be between 0 and 1")
 
     # Generates the base signal
     n_samples = int(fs * duration)
@@ -77,12 +77,12 @@ def generate_noise(
     ramp_samples = int(np.floor(fs * ramp_time))
     ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
     ramped_signal = np.concatenate((ramp, np.ones(n_samples - ramp_samples * 2), np.flip(ramp)), axis=None)
-    signal = attenuation * np.multiply(signal, ramped_signal)
+    signal = amplification * np.multiply(signal, ramped_signal)
 
     return signal
 
 
-def generate_pure_tone(freq: float, amplitude: float, fs: int, duration: float, ramp_time: float = 0.005):
+def generate_pure_tone(freq: float, duration: float, fs: int, amplitude: float = 1, ramp_time: float = 0.005):
     """
     Generates a gaussian random noise.
 
@@ -90,12 +90,12 @@ def generate_pure_tone(freq: float, amplitude: float, fs: int, duration: float, 
     ----------
     freq : float
         frequency of the sinusoidal signal (Hz).
-    amplitude : float
-        amplitude of the sinusoidal signal.
-    fs : int
-        sampling frequency of the signal being generated (Hz).
     duration : float
         duration of the signal generated (s).
+    fs : int
+        sampling frequency of the signal being generated (Hz).
+    amplitude : float
+        amplitude of the sinusoidal signal.
     ramp_time : float, optional
         ramp time of the signal (s).
 

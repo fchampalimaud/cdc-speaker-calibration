@@ -1,16 +1,27 @@
+sound_type: Noise
 fs_adc: 250000
-sound_duration_psd: 30
-sound_duration_db: 15
-sound_duration_test: 5
 ramp_time: 0.005
-reference_pressure: 0.00002
-mic_factor: 10
-att_min: 0
-att_max: -1
-att_steps: 15
-smooth_window: 1
-time_constant: 0.025
+amplification: 1
 freq_min: 5000
 freq_max: 20000
-amplification: 1
-sound_type: Noise
+mic_factor: 10
+reference_pressure: 0.00002
+noise:
+  psd:
+    duration: 30
+    time_constant: 0.005
+    smooth_window: 1
+  calibration:
+    duration: 15
+    att_min: 0
+    att_max: -1
+    att_steps: 15
+  test:
+    duration: 5
+    db_min: 30
+    db_max: 70
+    db_steps: 5
+pure_tones:
+  duration: 5
+  num_freqs: 100
+

@@ -2,7 +2,20 @@ import numpy as np
 from classes import InputParameters, Signal
 
 
-def get_db(att_array: np.ndarray, sound_duration: float, fs: float, input_parameters: InputParameters, calibration_factor: np.ndarray, callback=None, message: str = "Calibration"):
+def get_db(
+    sound_duration: float,
+    fs: float,
+    att_array: np.ndarray,
+    ramp_time: float = 0.005,
+    freq_min: float = 0,
+    freq_max: float = 80000,
+    inverse_filter: np.ndarray = None,
+    fs_adc: float = 192000,
+    mic_factor: float = None,
+    reference_pressure: float = 0.00002,
+    callback=None,
+    message: str = "Calibration",
+):
     """
     Returns the parameters needed to calculate the dB calibration.
 
@@ -16,7 +29,7 @@ def get_db(att_array: np.ndarray, sound_duration: float, fs: float, input_parame
         the object containing the input parameters used for the calibration.
     hardware : Hardware
         the object containing information regarding the equipment being calibrated.
-    calibration_factor : numpy.ndarray
+    inverse_filter : numpy.ndarray
         the power spectral density calibration factor.
 
     Returns
@@ -38,19 +51,24 @@ def get_db(att_array: np.ndarray, sound_duration: float, fs: float, input_parame
         signals[i] = Signal(
             sound_duration,
             fs,
-            input_parameters,
+            amplification=att_array[i],
+            ramp_time=ramp_time,
             filter=True,
+            freq_min=freq_min,
+            freq_max=freq_max,
             calibrate=True,
-            calibration_factor=calibration_factor,
-            attenuation=att_array[i],
+            calibration_factor=inverse_filter,
+            mic_factor=mic_factor,
+            reference_pressure=reference_pressure,
         )
 
         # Plays the sound throught the soundcard and recorded it with the microphone + DAQ system
         signals[i].load_sound()
-        signals[i].record_sound(input_parameters, filter=True)
+        signals[i].record_sound(fs_adc, filter=True)
 
         # Calculates the fft of the recorded sound
-        signals[i].db_spl_calculation(input_parameters)
+        signals[i].db_spl_calculation()
+        signals[i].db_fft_calculation()
 
         db_spl[i] = signals[i].db_spl
         db_fft[i] = signals[i].db_fft
