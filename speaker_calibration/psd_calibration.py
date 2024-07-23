@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.signal import welch
-from classes import Signal
+from speaker_calibration.classes import Signal
 
 
 def psd_calibration(

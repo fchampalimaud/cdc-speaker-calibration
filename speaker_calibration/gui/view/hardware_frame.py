@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from speaker_calibration.gui.gui_utils import get_ports
+from speaker_calibration.gui.view.gui_utils import get_ports
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
 from serial.serialutil import SerialException

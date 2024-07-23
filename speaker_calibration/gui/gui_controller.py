@@ -1,6 +1,6 @@
 import tkinter as tk
 import numpy as np
-from speaker_calibration.gui.calibration_thread import AsyncCalibration
+from speaker_calibration.gui.controller.calibration_thread import AsyncCalibration
 
 
 class SpeakerCalibrationController:
@@ -31,25 +31,27 @@ class SpeakerCalibrationController:
 
         setting_list = list(self.model.input_parameters.__dict__.values())
 
-        for i in range(self.view.settings_window.settings_values.size):
-            if isinstance(self.view.settings_window.settings_values[i], tk.IntVar):
-                self.view.settings_window.settings_values[i].set(setting_list[i])
-            else:
-                self.view.settings_window.settings_values[i].set(str(setting_list[i]))
+        # FIXME
+
+        # for i in range(self.view.settings_window.settings_values.size):
+        #     if isinstance(self.view.settings_window.settings_values[i], tk.IntVar):
+        #         self.view.settings_window.settings_values[i].set(setting_list[i])
+        #     else:
+        #         self.view.settings_window.settings_values[i].set(str(setting_list[i]))
 
     def update_hardware(self):
         """
         Updates the hardware information in the model based on the inputs from the view.
         """
 
-        self.model.hardware_config.fs_sc = self.view.config_frame.hardware_frame.fs_sc.get()
-        self.model.hardware_config.harp_soundcard = bool(self.view.config_frame.hardware_frame.harp_soundcard.get())
-        self.model.hardware_config.soundcard_com = self.view.config_frame.hardware_frame.soundcard_com.get()
-        self.model.hardware_config.soundcard_id = ""
-        self.model.hardware_config.harp_audio_amp = bool(self.view.config_frame.hardware_frame.harp_audio_amp.get())
-        self.model.hardware_config.audio_amp_id = ""
-        self.model.hardware_config.speaker_id = self.view.config_frame.hardware_frame.speaker_id.get()
-        self.model.hardware_config.setup_id = self.view.config_frame.hardware_frame.setup_id.get()
+        self.model.hardware.fs_sc = self.view.config_frame.hardware_frame.fs_sc.get()
+        self.model.hardware.harp_soundcard = bool(self.view.config_frame.hardware_frame.harp_soundcard.get())
+        self.model.hardware.soundcard_com = self.view.config_frame.hardware_frame.soundcard_com.get()
+        self.model.hardware.soundcard_id = ""
+        self.model.hardware.harp_audio_amp = bool(self.view.config_frame.hardware_frame.harp_audio_amp.get())
+        self.model.hardware.audio_amp_id = ""
+        self.model.hardware.speaker_id = self.view.config_frame.hardware_frame.speaker_id.get()
+        self.model.hardware.setup_id = self.view.config_frame.hardware_frame.setup_id.get()
 
     def update_settings(self):
         """
@@ -94,9 +96,9 @@ class SpeakerCalibrationController:
         if self.model.input_parameters.sound_type == "Noise":
             self.view.config_frame.run_button["state"] = tk.DISABLED
             calibration_thread = AsyncCalibration(
-                self.model.hardware_config.fs_sc,
+                self.model.hardware.fs_sc,
                 self.model.input_parameters,
-                self.model.hardware_config,
+                self.model.hardware,
                 self.model.inverse_filter,
                 self.model.calibration_parameters,
                 float(self.view.config_frame.test_frame.min_var.get()),
@@ -138,7 +140,7 @@ class SpeakerCalibrationController:
             self.view.config_frame.test_frame.intercept.set(str(self.model.calibration_parameters[1]))
 
             # Saves the results
-            save_string = str(self.model.hardware_config.speaker_id) + "_setup" + str(self.model.hardware_config.setup_id) + ".csv"
+            save_string = str(self.model.hardware.speaker_id) + "_setup" + str(self.model.hardware.setup_id) + ".csv"
             np.savetxt(
                 "output/inverse_filter_speaker" + save_string,
                 self.model.inverse_filter,

@@ -1,8 +1,8 @@
 from tkinter import ttk
 
-from speaker_calibration.gui.plot_frame import PlotFrame
-from speaker_calibration.gui.config_frame import ConfigFrame
-from speaker_calibration.gui.settings_window import SettingsWindow
+from speaker_calibration.gui.view.plot_frame import PlotFrame
+from speaker_calibration.gui.view.config_frame import ConfigFrame
+from speaker_calibration.gui.view.settings_window import SettingsWindow
 
 
 class SpeakerCalibrationView(ttk.Frame):

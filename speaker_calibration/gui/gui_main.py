@@ -1,9 +1,9 @@
 import tkinter as tk
 import ctypes
 
-from gui_model import SpeakerCalibrationModel
-from gui_view import SpeakerCalibrationView
-from gui_controller import SpeakerCalibrationController
+from speaker_calibration.gui.gui_model import SpeakerCalibrationModel
+from speaker_calibration.gui.gui_view import SpeakerCalibrationView
+from speaker_calibration.gui.gui_controller import SpeakerCalibrationController
 
 myappid = "fchampalimaud.cdc.speaker_calibration.alpha"
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)

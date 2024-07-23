@@ -1,5 +1,5 @@
 from threading import Thread
-from main import noise_calibration
+from speaker_calibration.main import noise_calibration
 
 
 class AsyncCalibration(Thread):

@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import numpy as np
-from speaker_calibration.gui.gui_utils import spinbox_row
+from speaker_calibration.gui.view.gui_utils import spinbox_row
 
 
 class SettingsWindow(tk.Toplevel):

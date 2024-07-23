@@ -1,5 +1,5 @@
 import numpy as np
-from classes import InputParameters, Signal
+from speaker_calibration.classes import Signal
 
 
 def get_db(

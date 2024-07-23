@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
-from speaker_calibration.gui.hardware_frame import HardwareFrame
-from speaker_calibration.gui.test_frame import TestFrame
+from speaker_calibration.gui.view.hardware_frame import HardwareFrame
+from speaker_calibration.gui.view.test_frame import TestFrame
 
 
 class ConfigFrame(ttk.Frame):
