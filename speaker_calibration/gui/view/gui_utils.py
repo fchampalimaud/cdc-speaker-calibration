@@ -25,6 +25,6 @@ def spinbox_row(container, label_text, default_value, from_, to, increment, row,
         spinbox_variable = tk.IntVar(container, int(default_value))
 
     spinbox = ttk.Spinbox(container, from_=from_, to=to, increment=increment, textvariable=spinbox_variable, width=spinbox_width, justify="center")
-    spinbox.grid(row=row, column=1, sticky="w")
+    spinbox.grid(row=row, column=1, sticky="w", pady=5, padx=5)
 
     return label, spinbox_variable, spinbox

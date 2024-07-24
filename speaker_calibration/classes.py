@@ -228,13 +228,15 @@ class Signal:
         self.recorded_sound = record_sound_nidaq(fs_adc, self.duration)
         # self.recorded_sound = self.signal
 
+        self.fs_adc = fs_adc
+
         if filter:
             if freq_min is not None:
                 self.freq_min = freq_min
             if freq_max is not None:
                 self.freq_max = freq_max
 
-            sos = butter(3, [self.freq_min, self.freq_max], btype="bandpass", output="sos", fs=fs_adc)
+            sos = butter(3, [self.freq_min, self.freq_max], btype="bandpass", output="sos", fs=self.fs_adc)
             self.recorded_sound = sosfilt(sos, self.recorded_sound)
 
     def db_spl_calculation(self, mic_factor: float = None, reference_pressure: float = None):

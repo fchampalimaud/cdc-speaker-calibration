@@ -27,4 +27,3 @@ noise:
 pure_tones:
   duration: 3
   num_freqs: 100
-

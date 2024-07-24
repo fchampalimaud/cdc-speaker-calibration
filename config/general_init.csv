@@ -1,0 +1,8 @@
+label,from_,to,increment,spinbox_width,int_value
+ADC Sampling Frequency (Hz),0,250000,1,10,1
+Ramp Time (s),0.005,1,0.005,10,0
+Amplification,0,1,0.01,10,0
+Minimum Frequency (Hz),0,80000,0.1,10,0
+Maximum Frequency (Hz),0,80000,0.1,10,0
+Microphone Factor (V/Pa),0,100,0.1,10,0
+Reference Pressure (Pa),0.000001,1,0.000005,10,0

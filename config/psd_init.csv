@@ -1,0 +1,4 @@
+label,from_,to,increment,spinbox_width,int_value
+Sound Duration (s),1,60,1,10,1
+Time Constant (s),0.001,10,0.001,10,0
+Smoothing Window,1,100,1,10,1
