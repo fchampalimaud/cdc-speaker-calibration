@@ -3,7 +3,6 @@ from scipy.signal import butter, sosfilt
 from multipledispatch import dispatch
 
 
-# TODO: understand noise.m
 def generate_noise(
     duration: float,
     fs: int,

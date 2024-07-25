@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import yaml
-from speaker_calibration.generate_noise import create_sound_file, generate_noise, generate_pure_tone
+from speaker_calibration.generate_sound import create_sound_file, generate_noise, generate_pure_tone
 from scipy.signal import butter, sosfilt
 from speaker_calibration.record_sound import record_sound_nidaq
 
@@ -41,10 +41,6 @@ class InputParameters:
         minimum frequency to consider to pass band.
     freq_max : float
         maximum frequency to consider to pass band.
-    freq_high : float
-        cutoff frequency of the high pass filter applied to the recorded signal (Hz).
-    freq_low : float
-        cutoff frequency of the low pass filter applied to the recorded signal (Hz).
     amplification : float
         amplification to be used in the PSD (power spectral density) calibration step.
     sound_type : str
@@ -65,8 +61,6 @@ class InputParameters:
     time_constant: float
     freq_min: float
     freq_max: float
-    freq_high: float
-    freq_low: float
     amplification: float
     sound_type: str
 
@@ -150,20 +144,15 @@ class Signal:
         the root mean square (RMS) of the signal (s) calculated from the fft.
     db_fft : float
         the dB SPL of the signal calculated from the fft.
-    freq_array : numpy.ndarray
-        the frequency array which corresponds to the fft of the signal (Hz).
     """
 
-    signal: np.ndarray
     fs: float
     duration: float
+    signal: np.ndarray
+    fs_adc: float
     recorded_sound: np.ndarray
-    rms: float
     db_spl: float
-    fft: np.ndarray
-    rms_fft: float
     db_fft: float
-    freq_array: np.ndarray
 
     def __init__(
         self,
@@ -225,10 +214,8 @@ class Signal:
         filter : bool, optional
             whether to filter the signal.
         """
-        self.recorded_sound = record_sound_nidaq(fs_adc, self.duration)
-        # self.recorded_sound = self.signal
-
         self.fs_adc = fs_adc
+        self.recorded_sound = record_sound_nidaq(self.fs_adc, self.duration)
 
         if filter:
             if freq_min is not None:
@@ -254,8 +241,8 @@ class Signal:
         self.reference_pressure = reference_pressure
 
         signal_pascal = self.recorded_sound[int(0.1 * self.recorded_sound.size) : int(0.9 * self.recorded_sound.size)] / self.mic_factor
-        self.rms = np.sqrt(np.mean(signal_pascal**2))
-        self.db_spl = 20 * np.log10(self.rms / self.reference_pressure)
+        rms = np.sqrt(np.mean(signal_pascal**2))
+        self.db_spl = 20 * np.log10(rms / self.reference_pressure)
 
     def db_fft_calculation(self, mic_factor: float = None, reference_pressure: float = None):
         if mic_factor is not None:
@@ -263,9 +250,9 @@ class Signal:
         if reference_pressure is not None:
             self.reference_pressure = reference_pressure
 
-        self.fft = np.abs(np.fft.fft(self.recorded_sound)) ** 2
-        self.rms_fft = np.sqrt(np.sum(self.fft) / (self.fft.size**2 * self.mic_factor**2))
-        self.db_fft = 20 * np.log10(self.rms_fft / self.reference_pressure)
+        fft = np.abs(np.fft.fft(self.recorded_sound)) ** 2
+        rms_fft = np.sqrt(np.sum(fft) / (fft.size**2 * self.mic_factor**2))
+        self.db_fft = 20 * np.log10(rms_fft / self.reference_pressure)
 
     def execute_protocol(self, fs_adc: float = 192000, filter: bool = True, mic_factor=None):
         if mic_factor is not None:
