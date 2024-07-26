@@ -116,7 +116,7 @@ def generate_pure_tone(freq: float, duration: float, fs: int, amplitude: float =
     return signal
 
 
-@dispatch(np.ndarray, str, str)
+@dispatch(np.ndarray, str, speaker_side=str)
 def create_sound_file(signal: np.ndarray, filename: str, speaker_side: str = "both"):
     """
     Creates the .bin sound file to be loaded to the Harp Sound Card.
@@ -154,7 +154,7 @@ def create_sound_file(signal: np.ndarray, filename: str, speaker_side: str = "bo
         wave_int.tofile(f)
 
 
-@dispatch(np.ndarray, np.ndarray, str, str)
+@dispatch(np.ndarray, np.ndarray, str, speaker_side=str)
 def create_sound_file(signal_left: np.ndarray, signal_right: np.ndarray, filename: str, speaker_side: str = "both"):
     """
     Creates the .bin sound file to be loaded to the Harp Sound Card.

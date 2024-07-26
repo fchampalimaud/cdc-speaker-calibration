@@ -42,7 +42,7 @@ def noise_calibration(
             input.amplification,
             input.ramp_time,
             input.fs_adc,
-            input.time_constant,
+            input.noise["psd"]["time_constant"],
             input.mic_factor,
             input.reference_pressure,
         )

@@ -71,7 +71,7 @@ def get_db(
     fs_adc: float = 192000,
     mic_factor: float = None,
     reference_pressure: float = 0.00002,
-    callback=None,
+    callback: callable = None,
     message: str = "Calibration",
 ):
     """
@@ -79,16 +79,30 @@ def get_db(
 
     Parameters
     ----------
-    att_array : numpy.ndarray
-        the array containing the the attenuation to apply to the sound.
     sound_duration : float
         the duration of the sound (s).
-    input_parameters : InputParameters
-        the object containing the input parameters used for the calibration.
-    hardware : Hardware
-        the object containing information regarding the equipment being calibrated.
-    inverse_filter : numpy.ndarray
-        the power spectral density calibration factor.
+    fs : float
+        the sampling frequency of the generated signal (Hz).
+    att_array : numpy.ndarray
+        the array containing the the attenuation to apply to the sound.
+    ramp_time : float, optional
+        ramp time of the sound (s).
+    freq_min : float, optional
+        minimum frequency to consider to pass band (Hz).
+    freq_max : float, optional
+        maximum frequency to consider to pass band (Hz).
+    inverse_filter : numpy.ndarray, optional
+        the inverse filter that flattens the frequency spectrum of the recorded sound for the equipment being calibrated.
+    fs_adc : int, optional
+        sampling frequency of the ADC (Hz).
+    mic_factor : float, optional
+        factor of the microphone (V/Pa).
+    reference_pressure : float, optional
+        reference pressure (Pa).
+    callback : callable, optional
+        a function which is used to send messages to other parts of the code (for example: to interact with a GUI architecture).
+    message: str, optional
+        the second argument of the callback function which indicates what operations should be executed over the data received.
 
     Returns
     -------
@@ -126,9 +140,8 @@ def get_db(
 
         # Calculates the fft of the recorded sound
         signals[i].db_spl_calculation()
-        signals[i].db_fft_calculation()
-
         db_spl[i] = signals[i].db_spl
+        signals[i].db_fft_calculation()
         db_fft[i] = signals[i].db_fft
 
         print("Attenuation factor: " + str(att_array[i]))
@@ -136,6 +149,9 @@ def get_db(
         # print("dB SPL after calibration: " + str(db_fft[i]))
 
         if callback is not None:
-            callback([signals[i], i], message)
+            if message == "Calibration":
+                callback([signals[i], att_array[i], i], message)
+            if message == "Test":
+                callback([signals[i], np.log10(att_array[i]), i], message)
 
     return db_spl, db_fft, signals

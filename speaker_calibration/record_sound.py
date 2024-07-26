@@ -8,7 +8,7 @@ import nidaqmx
 from nidaqmx.constants import READ_ALL_AVAILABLE, AcquisitionType, TerminalConfiguration
 
 
-def record_sound_nidaq(fs: float, duration: float):
+def record_sound_nidaq(fs: float, duration: float, extra_samples: int = 1000):
     """
     Records the sound played by the Harp Soundcard with the Ni-DAQ
 
@@ -18,6 +18,8 @@ def record_sound_nidaq(fs: float, duration: float):
         sampling frequency of the Ni-DAQ (Hz).
     duration : float
         duration of the sound (s).
+    extra_samples : int, optional
+        extra samples to acquire to compensate for the delay between the start of the acquisition and the start of the sound
 
     Returns
     -------
@@ -29,7 +31,7 @@ def record_sound_nidaq(fs: float, duration: float):
         ai_task.ai_channels.add_ai_voltage_chan("Dev1/ai1", terminal_config=TerminalConfiguration.RSE)
         do_task.do_channels.add_do_chan("Dev1/port1/line0")
         ai_task.timing.cfg_samp_clk_timing(
-            fs, sample_mode=AcquisitionType.FINITE, samps_per_chan=(fs * duration) + 1000
+            fs, sample_mode=AcquisitionType.FINITE, samps_per_chan=(fs * duration) + extra_samples
         )  # the 1000 extra samples compensate the delay between the start of the acquisition and the start of the sound (StC)
 
         ai_task.start()

@@ -122,7 +122,7 @@ class SpeakerCalibrationController:
 
         # General Frame
         general = []
-        general.append(self.view.settings_window.sound_type.get())
+        general.append(self.view.settings_window.general.sound_type.get())
         for i in range(self.view.settings_window.general.variables.size):
             if isinstance(self.view.settings_window.general.variables[i], tk.IntVar):
                 general.append(self.view.settings_window.general.variables[i].get())
@@ -207,8 +207,8 @@ class SpeakerCalibrationController:
 
         self.view.config_frame.plot_config.calibration_signal_var.set(0)
         self.view.config_frame.plot_config.test_signal_var.set(0)
-        self.view.config_frame.plot_config.calibration_signal["to"] = self.model.calibration_signals.size
-        self.view.config_frame.plot_config.test_signal["to"] = self.model.test_signals.size
+        self.view.config_frame.plot_config.calibration_signal["to"] = self.model.calibration_signals.size - 1
+        self.view.config_frame.plot_config.test_signal["to"] = self.model.test_signals.size - 1
 
         # Creates and runs the thread that executes the noise calibration
         if self.model.input_parameters.sound_type == "Noise":
@@ -247,8 +247,8 @@ class SpeakerCalibrationController:
             self.model.calibration_parameters = thread.calibration_parameters
 
             # Updates the calibration curve parameters spinboxes in the view
-            self.view.config_frame.test_frame.slope.set(str(self.model.calibration_parameters[0]))
-            self.view.config_frame.test_frame.intercept.set(str(self.model.calibration_parameters[1]))
+            self.view.config_frame.slope.set(str(self.model.calibration_parameters[0]))
+            self.view.config_frame.intercept.set(str(self.model.calibration_parameters[1]))
 
             # Saves the results
             save_string = str(self.model.hardware.speaker_id) + "_setup" + str(self.model.hardware.setup_id) + ".csv"
@@ -284,16 +284,16 @@ class SpeakerCalibrationController:
             self.model.psd_signal[1] = package[1].recorded_sound
         elif message == "Calibration":
             # Executed after calculating the dB SPL of each calibration signal
-            self.model.calibration_signals[package[1]] = package[0].signal
-            self.model.calibration_signals[package[1]] = package[0].recorded_sound
-            self.model.calibration_data[package[1], 0] = package[0].db_spl
-            self.model.calibration_data[package[1], 1] = package[0].db_fft
+            self.model.calibration_signals[package[2]] = package[0]
+            self.model.calibration_data[package[2], 0] = package[1]
+            self.model.calibration_data[package[2], 1] = package[0].db_spl
+            self.model.calibration_data[package[2], 2] = package[0].db_fft
         elif message == "Test":
             # Executed after calculating the dB SPL of each test signal
-            self.model.test_signals[package[1]] = package[0].signal
-            self.model.test_signals[package[1]] = package[0].recorded_sound
-            self.model.test_data[package[1], 0] = package[0].db_spl
-            self.model.test_data[package[1], 1] = package[0].db_fft
+            self.model.test_signals[package[2]] = package[0]
+            self.model.test_data[package[2], 0] = package[1]
+            self.model.test_data[package[2], 1] = package[0].db_spl
+            self.model.test_data[package[2], 2] = package[0].db_fft
 
         # Updates the GUI's plot
         self.update_plot()
@@ -312,7 +312,7 @@ class SpeakerCalibrationController:
             self.view.plot_frame.plots[1].set_data(np.linspace(0, self.model.psd_signal[1].size - 1, self.model.psd_signal[1].size), self.model.psd_signal[1])
             self.view.plot_frame.plots[2].set_data([], [])
         elif self.view.config_frame.plot_config.plot_var.get() == "Inverse Filter":
-            self.view.plot_frame.plots[0].set_data(self.model.inverse_filter)
+            self.view.plot_frame.plots[0].set_data(self.model.inverse_filter[:, 0], self.model.inverse_filter[:, 1])
             self.view.plot_frame.plots[1].set_data([], [])
             self.view.plot_frame.plots[2].set_data([], [])
         elif self.view.config_frame.plot_config.plot_var.get() == "Calibration Signals":
@@ -332,8 +332,8 @@ class SpeakerCalibrationController:
                 self.view.plot_frame.plots[1].set_data([], [])
             self.view.plot_frame.plots[2].set_data([], [])
         elif self.view.config_frame.plot_config.plot_var.get() == "Calibration Data":
-            self.view.plot_frame.plots[0].set_data(self.model.calibration_data[:, 0])
-            self.view.plot_frame.plots[1].set_data(self.model.calibration_data[:, 1])
+            self.view.plot_frame.plots[0].set_data(self.model.calibration_data[:, 0], self.model.calibration_data[:, 1])
+            self.view.plot_frame.plots[1].set_data(self.model.calibration_data[:, 0], self.model.calibration_data[:, 2])
             self.view.plot_frame.plots[2].set_data([], [])
         elif self.view.config_frame.plot_config.plot_var.get() == "Test Signals":
             i = self.view.config_frame.plot_config.test_signal_var.get()
@@ -351,8 +351,8 @@ class SpeakerCalibrationController:
                 self.view.plot_frame.plots[1].set_data([], [])
             self.view.plot_frame.plots[2].set_data([], [])
         elif self.view.config_frame.plot_config.plot_var.get() == "Test Data":
-            self.view.plot_frame.plots[0].set_data(self.model.test_data[:, 0])
-            self.view.plot_frame.plots[1].set_data(self.model.test_data[:, 1])
+            self.view.plot_frame.plots[0].set_data(self.model.test_data[:, 0], self.model.test_data[:, 1])
+            self.view.plot_frame.plots[1].set_data(self.model.test_data[:, 0], self.model.test_data[:, 2])
             self.view.plot_frame.plots[2].set_data([], [])
 
         # Assures that the x and y axis are autoscaled when the figure is redrawn

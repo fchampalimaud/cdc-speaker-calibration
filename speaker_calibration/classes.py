@@ -109,7 +109,7 @@ class Hardware:
     speaker_id: int
     setup_id: int
 
-    def __init__(self):
+    def __init__(self, filename: str = ""):
         self.fs_sc = 192000
         self.harp_soundcard = True
         self.soundcard_com = ""
@@ -118,6 +118,16 @@ class Hardware:
         self.audio_amp_id = ""
         self.speaker_id = 0
         self.setup_id = 0
+
+        if filename != "":
+            with open("config/hardware.yml", "r") as file:
+                hardware_dict = yaml.safe_load(file)
+
+            # Updates the attributes of the object based on the dictionary generated from the YAML file
+            self.__dict__.update(hardware_dict)
+
+    def update(self, hardware_dict: dict):
+        self.__dict__.update(hardware_dict)
 
 
 class Signal:
@@ -238,7 +248,8 @@ class Signal:
 
         if mic_factor is not None:
             self.mic_factor = mic_factor
-        self.reference_pressure = reference_pressure
+        if reference_pressure is not None:
+            self.reference_pressure = reference_pressure
 
         signal_pascal = self.recorded_sound[int(0.1 * self.recorded_sound.size) : int(0.9 * self.recorded_sound.size)] / self.mic_factor
         rms = np.sqrt(np.mean(signal_pascal**2))

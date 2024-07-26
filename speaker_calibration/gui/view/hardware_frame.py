@@ -116,6 +116,7 @@ class HardwareFrame(ttk.LabelFrame):
                 self.soundcard.send(HarpMessage.WriteU8(44, 2).frame, False)
             else:
                 showwarning("Warning", "This is not a Harp Soundcard.")
+                self.soundcard_com.set("COMx")
                 self.soundcard.disconnect()
         except SerialException:
             showwarning("Warning", "This is not a Harp device.")
