@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.signal import welch
 from speaker_calibration.classes import Signal
+from datetime import datetime
+import os
 
 
 def psd_calibration(
@@ -155,3 +157,10 @@ def get_db(
                 callback([signals[i], np.log10(att_array[i]), i], message)
 
     return db_spl, db_fft, signals
+
+
+def save_data(input_parameters, hardware, inverse_filter, calibration_parameters):
+    # TODO
+    date = datetime.now()
+    date_string = "{}_{}".format(date.strftime("%Y%m%d"), date.strftime("%H%M%S"))
+    os.makedirs(date_string, exist_ok=True)

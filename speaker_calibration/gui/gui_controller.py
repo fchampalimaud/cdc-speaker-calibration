@@ -280,8 +280,7 @@ class SpeakerCalibrationController:
         if message == "Inverse Filter":
             # Executed after the inverse filter is calculated
             self.model.inverse_filter = package[0]
-            self.model.psd_signal[0] = package[1].signal
-            self.model.psd_signal[1] = package[1].recorded_sound
+            self.model.psd_signal = package[1]
         elif message == "Calibration":
             # Executed after calculating the dB SPL of each calibration signal
             self.model.calibration_signals[package[2]] = package[0]
@@ -308,14 +307,20 @@ class SpeakerCalibrationController:
             this parameter is sent by the combobox when an event is triggered.
         """
         if self.view.config_frame.plot_config.plot_var.get() == "PSD Signal":
-            self.view.plot_frame.plots[0].set_data(np.linspace(0, self.model.psd_signal[0].size - 1, self.model.psd_signal[0].size), self.model.psd_signal[0])
-            self.view.plot_frame.plots[1].set_data(np.linspace(0, self.model.psd_signal[1].size - 1, self.model.psd_signal[1].size), self.model.psd_signal[1])
+            for i in range(self.view.plot_frame.plots.size):
+                self.view.plot_frame.plots[i].set_marker("")
+            self.view.plot_frame.plots[0].set_data(np.linspace(0, self.model.psd_signal.duration, self.model.psd_signal.signal.size), self.model.psd_signal.signal)
+            self.view.plot_frame.plots[1].set_data(np.linspace(0, self.model.psd_signal.duration, self.model.psd_signal.recorded_sound.size), self.model.psd_signal.recorded_sound)
             self.view.plot_frame.plots[2].set_data([], [])
         elif self.view.config_frame.plot_config.plot_var.get() == "Inverse Filter":
+            for i in range(self.view.plot_frame.plots.size):
+                self.view.plot_frame.plots[i].set_marker("")
             self.view.plot_frame.plots[0].set_data(self.model.inverse_filter[:, 0], self.model.inverse_filter[:, 1])
             self.view.plot_frame.plots[1].set_data([], [])
             self.view.plot_frame.plots[2].set_data([], [])
         elif self.view.config_frame.plot_config.plot_var.get() == "Calibration Signals":
+            for i in range(self.view.plot_frame.plots.size):
+                self.view.plot_frame.plots[i].set_marker("")
             i = self.view.config_frame.plot_config.calibration_signal_var.get()
             if self.view.config_frame.plot_config.signal.get() == 1:
                 self.view.plot_frame.plots[0].set_data(
@@ -332,10 +337,14 @@ class SpeakerCalibrationController:
                 self.view.plot_frame.plots[1].set_data([], [])
             self.view.plot_frame.plots[2].set_data([], [])
         elif self.view.config_frame.plot_config.plot_var.get() == "Calibration Data":
+            for i in range(self.view.plot_frame.plots.size):
+                self.view.plot_frame.plots[i].set_marker("o")
             self.view.plot_frame.plots[0].set_data(self.model.calibration_data[:, 0], self.model.calibration_data[:, 1])
             self.view.plot_frame.plots[1].set_data(self.model.calibration_data[:, 0], self.model.calibration_data[:, 2])
             self.view.plot_frame.plots[2].set_data([], [])
         elif self.view.config_frame.plot_config.plot_var.get() == "Test Signals":
+            for i in range(self.view.plot_frame.plots.size):
+                self.view.plot_frame.plots[i].set_marker("")
             i = self.view.config_frame.plot_config.test_signal_var.get()
             if self.view.config_frame.plot_config.signal.get() == 1:
                 self.view.plot_frame.plots[0].set_data(
@@ -351,6 +360,8 @@ class SpeakerCalibrationController:
                 self.view.plot_frame.plots[1].set_data([], [])
             self.view.plot_frame.plots[2].set_data([], [])
         elif self.view.config_frame.plot_config.plot_var.get() == "Test Data":
+            for i in range(self.view.plot_frame.plots.size):
+                self.view.plot_frame.plots[i].set_marker("o")
             self.view.plot_frame.plots[0].set_data(self.model.test_data[:, 0], self.model.test_data[:, 1])
             self.view.plot_frame.plots[1].set_data(self.model.test_data[:, 0], self.model.test_data[:, 2])
             self.view.plot_frame.plots[2].set_data([], [])

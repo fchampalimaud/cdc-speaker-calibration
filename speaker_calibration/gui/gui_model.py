@@ -1,6 +1,6 @@
 import numpy as np
 
-from speaker_calibration.classes import InputParameters, Hardware
+from speaker_calibration.classes import InputParameters, Hardware, Signal
 
 
 class SpeakerCalibrationModel:
@@ -33,7 +33,7 @@ class SpeakerCalibrationModel:
     hardware: Hardware
     inverse_filter: np.ndarray
     calibration_parameters: np.ndarray
-    psd_signal: np.ndarray
+    psd_signal: Signal
     calibration_signals: np.ndarray
     calibration_data: np.ndarray
     test_signals: np.ndarray
@@ -44,7 +44,7 @@ class SpeakerCalibrationModel:
         self.hardware = Hardware()
         self.inverse_filter = None
         self.calibration_parameters = np.zeros(2)
-        self.psd_signal = np.zeros(2, dtype=np.ndarray)
+        self.psd_signal = None
         self.calibration_signals = None
         self.calibration_data = None
         self.test_signals = None
