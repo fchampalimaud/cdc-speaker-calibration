@@ -1,6 +1,7 @@
 import tkinter as tk
 import numpy as np
 from speaker_calibration.gui.controller.calibration_thread import AsyncCalibration
+from speaker_calibration.calibration_steps import save_data
 
 
 class SpeakerCalibrationController:
@@ -251,19 +252,7 @@ class SpeakerCalibrationController:
             self.view.config_frame.intercept.set(str(self.model.calibration_parameters[1]))
 
             # Saves the results
-            save_string = str(self.model.hardware.speaker_id) + "_setup" + str(self.model.hardware.setup_id) + ".csv"
-            np.savetxt(
-                "output/inverse_filter_speaker" + save_string,
-                self.model.inverse_filter,
-                delimiter=",",
-                fmt="%f",
-            )
-            np.savetxt(
-                "output/fit_parameters_speaker" + save_string,
-                self.model.calibration_parameters,
-                delimiter=",",
-                fmt="%f",
-            )
+            save_data(self.model.input_parameters, self.model.hardware, self.model.inverse_filter, self.model.calibration_parameters)
 
     def package_receiver(self, package: list, message: str):
         """
@@ -281,18 +270,20 @@ class SpeakerCalibrationController:
             # Executed after the inverse filter is calculated
             self.model.inverse_filter = package[0]
             self.model.psd_signal = package[1]
+        elif message == "Pre-calibration":
+            self.model.calibration_data[:, 0] = package[0]
         elif message == "Calibration":
             # Executed after calculating the dB SPL of each calibration signal
-            self.model.calibration_signals[package[2]] = package[0]
-            self.model.calibration_data[package[2], 0] = package[1]
-            self.model.calibration_data[package[2], 1] = package[0].db_spl
-            self.model.calibration_data[package[2], 2] = package[0].db_fft
+            self.model.calibration_signals[package[1]] = package[0]
+            self.model.calibration_data[package[1], 1] = package[0].db_spl
+            self.model.calibration_data[package[1], 2] = package[0].db_fft
+        elif message == "Pre-test":
+            self.model.test_data[:, 0] = package[0]
         elif message == "Test":
             # Executed after calculating the dB SPL of each test signal
-            self.model.test_signals[package[2]] = package[0]
-            self.model.test_data[package[2], 0] = package[1]
-            self.model.test_data[package[2], 1] = package[0].db_spl
-            self.model.test_data[package[2], 2] = package[0].db_fft
+            self.model.test_signals[package[1]] = package[0]
+            self.model.test_data[package[1], 1] = package[0].db_spl
+            self.model.test_data[package[1], 2] = package[0].db_fft
 
         # Updates the GUI's plot
         self.update_plot()
@@ -364,7 +355,7 @@ class SpeakerCalibrationController:
                 self.view.plot_frame.plots[i].set_marker("o")
             self.view.plot_frame.plots[0].set_data(self.model.test_data[:, 0], self.model.test_data[:, 1])
             self.view.plot_frame.plots[1].set_data(self.model.test_data[:, 0], self.model.test_data[:, 2])
-            self.view.plot_frame.plots[2].set_data([], [])
+            self.view.plot_frame.plots[2].set_data(self.model.test_data[:, 0], self.model.test_data[:, 0])
 
         # Assures that the x and y axis are autoscaled when the figure is redrawn
         self.view.plot_frame.ax.relim()

@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.signal import welch
-from speaker_calibration.classes import Signal
+from speaker_calibration.classes import Signal, InputParameters, Hardware
 from datetime import datetime
 import os
+import yaml
 
 
 def psd_calibration(
@@ -152,15 +153,40 @@ def get_db(
 
         if callback is not None:
             if message == "Calibration":
-                callback([signals[i], att_array[i], i], message)
+                callback([signals[i], i], message)
             if message == "Test":
-                callback([signals[i], np.log10(att_array[i]), i], message)
+                callback([signals[i], i], message)
 
     return db_spl, db_fft, signals
 
 
-def save_data(input_parameters, hardware, inverse_filter, calibration_parameters):
-    # TODO
-    date = datetime.now()
-    date_string = "{}_{}".format(date.strftime("%Y%m%d"), date.strftime("%H%M%S"))
-    os.makedirs(date_string, exist_ok=True)
+def save_data(input: InputParameters, hardware: Hardware, inverse_filter: np.ndarray, calibration_parameters: np.ndarray):
+    # TODO: implement case for pure tone calibration
+    if input.noise["calculate_filter"] and input.noise["calibrate"]:
+        date = datetime.now()
+        date_string = "{}_{}".format(date.strftime("%Y%m%d"), date.strftime("%H%M%S"))
+        os.makedirs("output/" + date_string, exist_ok=True)
+
+        with open("output/" + date_string + "_settings.yml", "w") as f:
+            yaml.dump(input, f)
+
+        with open("output/" + date_string + "_hardware.yml", "w") as f:
+            yaml.dump(hardware, f)
+
+        save_string = "speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv"
+
+        if input.noise["calculate_filter"]:
+            np.savetxt(
+                "output/" + date_string + "_inverse_filter_" + save_string,
+                inverse_filter,
+                delimiter=",",
+                fmt="%f",
+            )
+
+        if input.noise["calibrate"]:
+            np.savetxt(
+                "output/" + date_string + "_calibration_parameters_" + save_string,
+                calibration_parameters,
+                delimiter=",",
+                fmt="%f",
+            )

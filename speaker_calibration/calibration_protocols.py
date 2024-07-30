@@ -58,6 +58,9 @@ def noise_calibration(
         )
         att_factor = 10**log_att
 
+        if callback is not None:
+            callback([log_att], "Pre-calibration")
+
         # Calculates the dB SPL values for different attenuation factors
         db_spl, db_fft, signals = get_db(
             input.noise["calibration"]["duration"],
@@ -86,6 +89,10 @@ def noise_calibration(
             input.noise["test"]["db_max"],
             input.noise["test"]["db_steps"],
         )
+
+        if callback is not None:
+            callback([att_test], "Pre-test")
+
         att_test = (att_test - calibration_parameters[1]) / calibration_parameters[0]
         att_test = 10**att_test
 

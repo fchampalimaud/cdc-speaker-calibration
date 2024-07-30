@@ -7,8 +7,7 @@
     - Transducer Supply > Voltage Polarization: 200 V
     - Transducer Set-up > Sensitivity: 4 mV/Pa
     - Amplifier: 10 V/Pa
-4. Change the `hardware.yml` and `settings.yml` files that are located in the `config` directory if needed.
-5. Run `speaker_calibration/main.py`.
+4. Run `speaker_calibration/gui/gui_main.py`.
 
 ## Known problems
 At the moment, the results obtained with the speaker calibration setup are reliable and the code works (it can be improved, though). However, there are two issues that happen from time to time which remain unsolved:

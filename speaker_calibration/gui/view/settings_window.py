@@ -11,7 +11,7 @@ class SettingsWindow(tk.Toplevel):
         super().__init__()
 
         # Configuration of the window
-        self.geometry("350x850")
+        # self.geometry("350x850")
         # self.resizable(0, 0)
         self.iconbitmap("docs/img/favicon.ico")
         # The window is only closed when the application closes

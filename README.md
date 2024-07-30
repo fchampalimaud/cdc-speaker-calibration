@@ -14,15 +14,23 @@ The code written for this project was inspired by a MATLAB version of a similar 
 
 ### Installation
 1. Clone the repository (or download it for non-git users).
-2. Change the execution policy to allow local PowerShell scripts to run without signing and click in "Apply". This option can be found in the "Developer Settings" of Windows 10/11.
-3. Run `setup.ps1`.
+2. Run `setup.cmd`.
 
 ## Future Work
 - Documentation (in spite of the code being almost all commented)
 - Moku:Go support
 - Support for computer soundcard
-- Change save data scheme
-- Create GUI for sound uploading
+<!-- - Create GUI for sound uploading -->
+
+## Contributing
+The repository is open for contributions. If you want to contribute to the project, please follow the guidelines below.
+
+### Guidelines
+1. Fork the repository.
+2. Create a new branch.
+3. Make your changes.
+4. Push the changes to your fork.
+5. Create a pull request.
 
 ## Development
 When using Visual Studio Code, it is recommended that you install the extensions from `.vscode/extensions.json`.
@@ -32,7 +40,7 @@ To add dependencies, run `poetry add` instead of `pip install`.
 ### Documentation
 To develop the documentation of the project, run `poetry install --only docs` in the command line if the main project is already installed and `poetry install --with docs` if it is not.
 
-After installing the documentation dependencies, run `mkdocs serve` to see the documentation locally at adress `http://127.0.0.1:8000/`.
+After installing the documentation dependencies, run `mkdocs serve` to see the documentation locally at adress [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
 ### Note
 Throughout the code, it is possible to find comments/documentation strings containing the "StC" acronym, which stands for "Subject to Change".

@@ -8,6 +8,14 @@ if (!(Test-Path ".\assets")) {
     New-Item -ItemType Directory -Path "assets" 
 }
 
+if (!(Test-Path ".\assets\toSoundCard.exe")) {
+    Invoke-WebRequest "https://github.com/fchampalimaud/cdc-speaker-calibration/releases/download/0.2.0-alpha/toSoundCard.exe" -OutFile ".\assets\toSoundCard.exe"
+}
+
+if (!(Test-Path ".\assets\LibUsbDotNet.dll")) {
+    Invoke-WebRequest "https://github.com/fchampalimaud/cdc-speaker-calibration/releases/download/0.2.0-alpha/LibUsbDotNet.dll" -OutFile ".\assets\LibUsbDotNet.dll"
+}
+
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
 # Check if Python is already installed

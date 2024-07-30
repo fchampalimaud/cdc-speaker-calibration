@@ -1,6 +1,7 @@
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
 from speaker_calibration.calibration_protocols import noise_calibration, pure_tone_calibration
+from speaker_calibration.calibration_steps import save_data
 from speaker_calibration.classes import Hardware, InputParameters
 
 
@@ -15,10 +16,11 @@ if __name__ == "__main__":
 
     # Choice of calibration type
     if input_parameters.sound_type == "Noise":
-        noise_calibration(hardware, input_parameters)
+        inverse_filter, calibration_parameters = noise_calibration(hardware, input_parameters)
     elif input_parameters.sound_type == "Pure Tone":
         pure_tone_calibration(hardware, input_parameters)
 
-    # TODO: save content
+    # Saves the results
+    save_data(input_parameters, hardware, inverse_filter, calibration_parameters)
 
     device.disconnect()
