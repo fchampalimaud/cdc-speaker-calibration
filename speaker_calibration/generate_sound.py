@@ -161,8 +161,10 @@ def create_sound_file(signal_left: np.ndarray, signal_right: np.ndarray, filenam
 
     Parameters
     ----------
-    signal : numpy.ndarray
-        the signal to be written to the .bin file.
+    signal_left : numpy.ndarray
+        the signal to be written to the .bin file that is going to be played by the left speaker.
+    signal_right : numpy.ndarray
+        the signal to be written to the .bin file that is going to be played by the right speaker.
     filename : str
         the name of the .bin file.
     speaker_side : str

@@ -9,60 +9,42 @@ from speaker_calibration.record_sound import record_sound_nidaq
 
 class InputParameters:
     """
-    A class containing the input parameters used for the calibration.
+    A class containing the input parameters used for the calibration. This class mirrors the contents of the `config/settings.yml` file.
 
     Attributes
     ----------
-    fs_adc : int
+    sound_type : str
+        whether the calibration should be made with pure tones or white noise.
+    fs_adc : float
         sampling frequency of the ADC (Hz).
-    sound_duration_psd : float
-        duration of the sound used to flatten the power spectral density - PSD - of the equipment (s) ??.
-    sound_duration_db : float
-        duration of the sounds used to calibrate the amplitude response of the equipment (s) ??.
-    sound_duration_test : float
-        duration of the sounds used to test the calibration (s).
     ramp_time : float
         ramp time of the sound (s).
-    reference_pressure : float
-        reference pressure (Pa).
-    mic_factor : float
-        factor of the microphone (V/Pa).
-    att_min : float
-        minimum speaker attenuation value (log).
-    att_max : float
-        maximum speaker attenuation value (log).
-    att_steps : int
-        number of attenuation steps.
-    smooth_window : int
-        number of bins of the moving average smoothing window.
-    time_constant : float
-        duration of each division of the original signal that is used to compute the PSD (s). Used in the function `fft_intervals`.
+    amplification : float
+        amplification to be used in the PSD (power spectral density) calibration step.
     freq_min : float
         minimum frequency to consider to pass band.
     freq_max : float
         maximum frequency to consider to pass band.
-    amplification : float
-        amplification to be used in the PSD (power spectral density) calibration step.
-    sound_type : str
-        whether the calibration should be made with pure tones or white noise.
+    mic_factor : float
+        factor of the microphone (V/Pa).
+    reference_pressure : float
+        reference pressure (Pa).
+    noise : dict
+        dictionary containing noise-calibration-related settings.
+    pure_tones : dict
+        dictionary containing pure-tones-calibration-related settings.
     """
 
+    sound_type: str
     fs_adc: int
-    sound_duration_psd: float
-    sound_duration_db: float
-    sound_duration_test: float
     ramp_time: float
-    reference_pressure: float
+    amplification: float
     mic_factor: float
-    att_min: float
-    att_max: float
-    att_steps: int
-    smooth_window: int
-    time_constant: float
+    reference_pressure: float
     freq_min: float
     freq_max: float
-    amplification: float
-    sound_type: str
+    noise: dict
+    pure_tones: dict
 
     def __init__(self):
         # Loads the content of the YAML file into a dictionary
@@ -73,12 +55,20 @@ class InputParameters:
         self.__dict__.update(settings_dict)
 
     def update(self, settings_dict: dict):
+        """
+        Updates the attributes of the object based on the input dictionary.
+
+        Parameters
+        ----------
+        settings_dict : dict
+            the dictionary from which the attributes of the object can be updated.
+        """
         self.__dict__.update(settings_dict)
 
 
 class Hardware:
     """
-    A class used to represent the equipment being calibrated.
+    A class used to represent the equipment being calibrated. This class mirrors the contents of the `config/hardware.yml` file.
 
     Attributes
     ----------
@@ -127,6 +117,14 @@ class Hardware:
             self.__dict__.update(hardware_dict)
 
     def update(self, hardware_dict: dict):
+        """
+        Updates the attributes of the object based on the input dictionary.
+
+        Parameters
+        ----------
+        settings_dict : dict
+            the dictionary from which the attributes of the object can be updated.
+        """
         self.__dict__.update(hardware_dict)
 
 
@@ -142,25 +140,33 @@ class Signal:
         the sampling frequency of the signal (Hz).
     duration : float
         the duration of the signal (s).
+    freq_min : float
+        minimum frequency to consider to pass band.
+    freq_max : float
+        maximum frequency to consider to pass band.
+    fs_adc : float
+        sampling frequency of the ADC (Hz).
     recorded_sound : numpy.ndarray
         the recorded signal.
-    rms : float
-        the root mean square (RMS) of the signal (s).
+    reference_pressure : float
+        reference pressure (Pa).
+    mic_factor : float
+        factor of the microphone (V/Pa).
     db_spl : float
         the dB SPL of the signal.
-    fft : numpy.ndarray
-        the fft of the signal.
-    rms_fft : float
-        the root mean square (RMS) of the signal (s) calculated from the fft.
     db_fft : float
         the dB SPL of the signal calculated from the fft.
     """
 
+    signal: np.ndarray
     fs: float
     duration: float
-    signal: np.ndarray
+    freq_min: float
+    freq_max: float
     fs_adc: float
     recorded_sound: np.ndarray
+    reference_pressure: float
+    mic_factor: float
     db_spl: float
     db_fft: float
 
@@ -210,7 +216,6 @@ class Signal:
         Loads the sound to the (Harp) Sound Card.
         """
         create_sound_file(self.signal, "sound.bin")
-        print("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(int(self.fs)))
         os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(int(self.fs)))
 
     def record_sound(self, fs_adc: float = 192000, filter: bool = False, freq_min: float = None, freq_max: float = None):
@@ -219,10 +224,14 @@ class Signal:
 
         Parameters
         ----------
-        input_parameters : InputParameters
-            the object containing the input parameters used for the calibration.
+        fs_adc : float, optional
+            sampling frequency of the ADC (Hz).
         filter : bool, optional
             whether to filter the signal.
+        freq_min : float, optional
+            minimum frequency to consider to pass band.
+        freq_max : float, optional
+            maximum frequency to consider to pass band.
         """
         self.fs_adc = fs_adc
         self.recorded_sound = record_sound_nidaq(self.fs_adc, self.duration)
@@ -242,8 +251,10 @@ class Signal:
 
         Parameters
         ----------
-        input_parameters : InputParameters
-            the object containing the input parameters used for the calibration.
+        mic_factor : float, optional
+            factor of the microphone (V/Pa).
+        reference_pressure : float, optional
+            reference pressure (Pa).
         """
 
         if mic_factor is not None:
@@ -256,6 +267,16 @@ class Signal:
         self.db_spl = 20 * np.log10(rms / self.reference_pressure)
 
     def db_fft_calculation(self, mic_factor: float = None, reference_pressure: float = None):
+        """
+        Calculates the dB SPL of the recorded signal from the fft.
+
+        Parameters
+        ----------
+        mic_factor : float, optional
+            factor of the microphone (V/Pa).
+        reference_pressure : float, optional
+            reference pressure (Pa).
+        """
         if mic_factor is not None:
             self.mic_factor = mic_factor
         if reference_pressure is not None:
@@ -266,6 +287,18 @@ class Signal:
         self.db_fft = 20 * np.log10(rms_fft / self.reference_pressure)
 
     def execute_protocol(self, fs_adc: float = 192000, filter: bool = True, mic_factor=None):
+        """
+        Calls the remaining methods (load_sound, record_sound, db_spl_calculation, db_fft_calculation).
+
+        Parameters
+        ----------
+        fs_adc : float, optional
+            sampling frequency of the ADC (Hz).
+        filter : bool, optional
+            whether to filter the signal.
+        mic_factor : float, optional
+            factor of the microphone (V/Pa).
+        """
         if mic_factor is not None:
             self.mic_factor = mic_factor
 

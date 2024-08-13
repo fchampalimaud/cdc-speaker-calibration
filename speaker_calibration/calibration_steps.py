@@ -161,23 +161,37 @@ def get_db(
 
 
 def save_data(input: InputParameters, hardware: Hardware, inverse_filter: np.ndarray, calibration_parameters: np.ndarray):
+    """
+    Saves the calibration results and metadata to a directory named after the date and time of the calibration inside the `output` directory. The directory might contain, depending on the calibration steps executed, 2 CSV files (one for the inverse filter and the other for the calibration parameters) and 2 YAML files (one with the calibration settings used and the other with information regarding the hardware being calibrated). TODO: implement for the pure tones calibration.
+
+    Parameters
+    ----------
+    input: InputParameters
+        the object containing the input parameters used for the calibration.
+    hardware: Hardware
+        the object containing information regarding the equipment being calibrated.
+    inverse_filter: numpy.ndarray
+        the inverse filter that flattens the frequency spectrum of a sound played by the calibrated speaker.
+    calibration_parameters: numpy.ndarray
+        an array of size 2 in which index-0 is the slope and index-1 is the intercept of the calibration curve.
+    """
     # TODO: implement case for pure tone calibration
     if input.noise["calculate_filter"] and input.noise["calibrate"]:
         date = datetime.now()
         date_string = "{}_{}".format(date.strftime("%Y%m%d"), date.strftime("%H%M%S"))
         os.makedirs("output/" + date_string, exist_ok=True)
 
-        with open("output/" + date_string + "_settings.yml", "w") as f:
+        with open("output/" + date_string + "/" + "settings.yml", "w") as f:
             yaml.dump(input, f)
 
-        with open("output/" + date_string + "_hardware.yml", "w") as f:
+        with open("output/" + date_string + "/" + "hardware.yml", "w") as f:
             yaml.dump(hardware, f)
 
         save_string = "speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv"
 
         if input.noise["calculate_filter"]:
             np.savetxt(
-                "output/" + date_string + "_inverse_filter_" + save_string,
+                "output/" + date_string + "/" + "inverse_filter_" + save_string,
                 inverse_filter,
                 delimiter=",",
                 fmt="%f",
@@ -185,7 +199,7 @@ def save_data(input: InputParameters, hardware: Hardware, inverse_filter: np.nda
 
         if input.noise["calibrate"]:
             np.savetxt(
-                "output/" + date_string + "_calibration_parameters_" + save_string,
+                "output/" + date_string + "/" + "calibration_parameters_" + save_string,
                 calibration_parameters,
                 delimiter=",",
                 fmt="%f",
