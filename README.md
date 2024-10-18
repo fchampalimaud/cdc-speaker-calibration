@@ -4,7 +4,7 @@ This repository contains the Python code used during the speaker calibration pro
 
 For now, the setup was only tested in Windows and it still has some rough edges. The limitations for the remaining operating systems are unknown.
 
-The code written for this project was inspired by a MATLAB version of a similar setup written by Juan Castiñeiras. The MATLAB code can be found in the `matlab` folder, in which the main file is `Calibrate.m`.
+The code written for this project was inspired by the MATLAB version of the protocol. The MATLAB code can be found in the `matlab` folder, in which the main file is `Calibrate.m`.
 
 ## Usage
 ### Prerequisites

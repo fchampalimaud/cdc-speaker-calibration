@@ -10,7 +10,7 @@
 4. Run `speaker_calibration/gui/gui_main.py`.
 
 ## Known problems
-At the moment, the results obtained with the speaker calibration setup are reliable and the code works (it can be improved, though). However, there are two issues that happen from time to time which remain unsolved:
+At the moment, the results obtained with the speaker calibration setup are reliable and the code works (it can be improved, though). However, there is still an unresolved issue that happens from time to time:
 
 - The soundcard disconnects in the middle of the calibration. It might be related to the call of the `toSoundCard.exe` or the Ni-DAQ or a mix of the two (not confirmed yet).
-- When the soundcard is first connected to the computer, the first sound which should be triggered by the Ni-DAQ doesn't play. It is not certain if the soundcard doesn't receive the first harp messages before the Ni-DAQ trigger or if it doesn't receive the trigger itself.
+<!-- - When the soundcard is first connected to the computer, the first sound which should be triggered by the Ni-DAQ doesn't play. It is not certain if the soundcard doesn't receive the first harp messages before the Ni-DAQ trigger or if it doesn't receive the trigger itself. -->
