@@ -25,5 +25,5 @@ noise:
     db_max: 70
     db_steps: 5
 pure_tones:
-  duration: 3
-  num_freqs: 100
+  duration: 0.15
+  num_freqs: 10

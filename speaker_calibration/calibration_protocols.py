@@ -134,25 +134,33 @@ def pure_tone_calibration(hardware: Hardware, input: InputParameters):
         the array containing the dB SPL values calculated for each pure tone.
     """
     # Initializes the array containing the frequencies to be used in the calibration and a zero-initialized array for the respective dB SPL values
-    freq_array = np.logspace(np.log10(input.freq_min), np.log10(input.freq_max), input.pure_tones["num_freqs"])
-    db_array = np.zeros(input.pure_tones["num_freqs"])
+    freq_array = np.logspace(
+        np.log10(input.freq_min),
+        np.log10(input.freq_max),
+        input.pure_tones["num_freqs"],
+    )
+    attenuations = np.linspace(0.1, 1, 10)
+    db_array = np.zeros((input.pure_tones["num_freqs"], 10))
 
     # Calculates the frequency response of the system
     for i in range(input.pure_tones["num_freqs"]):
         print("Frequency (Hz): " + str(freq_array[i]))
-        signal = Signal(
-            input.pure_tones["duration"],
-            hardware.fs_sc,
-            sound_type=input.sound_type,
-            amplification=input.amplification,
-            ramp_time=input.ramp_time,
-            freq=freq_array[i],
-            mic_factor=input.mic_factor,
-            reference_pressure=input.reference_pressure,
-        )
-        signal.load_sound()
-        signal.record_sound(input.fs_adc)
-        signal.db_spl_calculation()
-        db_array[i] = signal.db_spl
+        for j in range(10):
+            signal = Signal(
+                input.pure_tones["duration"],
+                hardware.fs_sc,
+                sound_type=input.sound_type,
+                amplification=input.amplification * attenuations[j],
+                ramp_time=input.ramp_time,
+                freq=freq_array[i],
+                mic_factor=input.mic_factor,
+                reference_pressure=input.reference_pressure,
+            )
+            signal.load_sound()
+            signal.record_sound(input.fs_adc)
+            signal.db_spl_calculation()
+            db_array[i, j] = signal.db_spl
+
+    np.savetxt("output/pure_tones.csv", db_array, delimiter=",")
 
     return freq_array, db_array
