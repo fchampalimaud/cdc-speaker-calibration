@@ -1,6 +1,7 @@
 import numpy as np
 from speaker_calibration.classes import Hardware, InputParameters, Signal
 from speaker_calibration.calibration_steps import psd_calibration, get_db
+import time
 
 
 def noise_calibration(
@@ -137,17 +138,18 @@ def pure_tone_calibration(hardware: Hardware, input: InputParameters):
     freq_array = np.logspace(
         np.log10(input.freq_min),
         np.log10(input.freq_max),
-        input.pure_tones["num_freqs"],
+        input.pure_tones["calibration"]["num_freqs"],
     )
-    attenuations = np.linspace(0.1, 1, 10)
-    db_array = np.zeros((input.pure_tones["num_freqs"], 10))
+    attenuations = np.linspace(0.1, 1, 5)
+    db_array = np.zeros((input.pure_tones["calibration"]["num_freqs"], 5))
 
     # Calculates the frequency response of the system
-    for i in range(input.pure_tones["num_freqs"]):
+    for i in range(input.pure_tones["calibration"]["num_freqs"]):
         print("Frequency (Hz): " + str(freq_array[i]))
-        for j in range(10):
+        for j in range(5):
+            print("Attenuation: " + str(input.amplification * attenuations[j]))
             signal = Signal(
-                input.pure_tones["duration"],
+                input.pure_tones["calibration"]["duration"],
                 hardware.fs_sc,
                 sound_type=input.sound_type,
                 amplification=input.amplification * attenuations[j],
@@ -156,9 +158,11 @@ def pure_tone_calibration(hardware: Hardware, input: InputParameters):
                 mic_factor=input.mic_factor,
                 reference_pressure=input.reference_pressure,
             )
+            time.sleep(1)
             signal.load_sound()
             signal.record_sound(input.fs_adc)
             signal.db_spl_calculation()
+            print("dB SPL: " + str(signal.db_spl))
             db_array[i, j] = signal.db_spl
 
     np.savetxt("output/pure_tones.csv", db_array, delimiter=",")

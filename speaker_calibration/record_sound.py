@@ -36,7 +36,7 @@ def record_sound_nidaq(fs: float, duration: float, extra_samples: int = 1000):
         ai_task.timing.cfg_samp_clk_timing(
             fs,
             sample_mode=AcquisitionType.FINITE,
-            samps_per_chan=(fs * duration) + extra_samples,
+            samps_per_chan=int((fs * duration) + extra_samples),
         )  # the 1000 extra samples compensate the delay between the start of the acquisition and the start of the sound (StC)
 
         ai_task.start()

@@ -2,7 +2,11 @@ import os
 
 import numpy as np
 import yaml
-from speaker_calibration.generate_sound import create_sound_file, generate_noise, generate_pure_tone
+from speaker_calibration.generate_sound import (
+    create_sound_file,
+    generate_noise,
+    generate_pure_tone,
+)
 from scipy.signal import butter, sosfilt
 from speaker_calibration.record_sound import record_sound_nidaq
 
@@ -200,7 +204,9 @@ class Signal:
                 calibration_factor,
             )
         elif sound_type == "Pure Tone":
-            self.signal = generate_pure_tone(freq, amplification, fs, duration, ramp_time)
+            self.signal = generate_pure_tone(
+                freq, duration, fs, amplification, ramp_time
+            )
 
         # Inputs the sampling frequency and duration of the signal
         self.fs = fs
@@ -216,9 +222,17 @@ class Signal:
         Loads the sound to the (Harp) Sound Card.
         """
         create_sound_file(self.signal, "sound.bin")
-        os.system("cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(int(self.fs)))
+        os.system(
+            "cmd /c .\\assets\\toSoundCard.exe sound.bin 2 0 " + str(int(self.fs))
+        )
 
-    def record_sound(self, fs_adc: float = 192000, filter: bool = False, freq_min: float = None, freq_max: float = None):
+    def record_sound(
+        self,
+        fs_adc: float = 192000,
+        filter: bool = False,
+        freq_min: float = None,
+        freq_max: float = None,
+    ):
         """
         Plays the signal in the soundcard and records it with a microphone + DAQ system.
 
@@ -242,10 +256,18 @@ class Signal:
             if freq_max is not None:
                 self.freq_max = freq_max
 
-            sos = butter(3, [self.freq_min, self.freq_max], btype="bandpass", output="sos", fs=self.fs_adc)
+            sos = butter(
+                3,
+                [self.freq_min, self.freq_max],
+                btype="bandpass",
+                output="sos",
+                fs=self.fs_adc,
+            )
             self.recorded_sound = sosfilt(sos, self.recorded_sound)
 
-    def db_spl_calculation(self, mic_factor: float = None, reference_pressure: float = None):
+    def db_spl_calculation(
+        self, mic_factor: float = None, reference_pressure: float = None
+    ):
         """
         Calculates the dB SPL of the recorded signal.
 
@@ -262,11 +284,20 @@ class Signal:
         if reference_pressure is not None:
             self.reference_pressure = reference_pressure
 
-        signal_pascal = self.recorded_sound[int(0.1 * self.recorded_sound.size) : int(0.9 * self.recorded_sound.size)] / self.mic_factor
+        signal_pascal = (
+            self.recorded_sound[
+                int(0.1 * self.recorded_sound.size) : int(
+                    0.9 * self.recorded_sound.size
+                )
+            ]
+            / self.mic_factor
+        )
         rms = np.sqrt(np.mean(signal_pascal**2))
         self.db_spl = 20 * np.log10(rms / self.reference_pressure)
 
-    def db_fft_calculation(self, mic_factor: float = None, reference_pressure: float = None):
+    def db_fft_calculation(
+        self, mic_factor: float = None, reference_pressure: float = None
+    ):
         """
         Calculates the dB SPL of the recorded signal from the fft.
 
@@ -286,7 +317,9 @@ class Signal:
         rms_fft = np.sqrt(np.sum(fft) / (fft.size**2 * self.mic_factor**2))
         self.db_fft = 20 * np.log10(rms_fft / self.reference_pressure)
 
-    def execute_protocol(self, fs_adc: float = 192000, filter: bool = True, mic_factor=None):
+    def execute_protocol(
+        self, fs_adc: float = 192000, filter: bool = True, mic_factor=None
+    ):
         """
         Calls the remaining methods (load_sound, record_sound, db_spl_calculation, db_fft_calculation).
 

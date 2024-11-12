@@ -1,5 +1,5 @@
 harp_soundcard: true
-soundcard_com: COM4
+soundcard_com: COM17
 soundcard_id: V2.2 X1047
 fs_sc: 192000
 harp_audio_amp: true

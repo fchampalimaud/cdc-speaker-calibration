@@ -1,7 +1,7 @@
-sound_type: Noise
+sound_type: Pure Tone
 fs_adc: 250000
 ramp_time: 0.005
-amplification: 1
+amplification: 0.2
 freq_min: 5000
 freq_max: 20000
 mic_factor: 10
@@ -25,5 +25,15 @@ noise:
     db_max: 70
     db_steps: 5
 pure_tones:
-  duration: 0.15
-  num_freqs: 10
+  calibration:
+    duration: 0.15
+    num_freqs: 5
+    att_min: 0
+    att_max: -1
+    att_steps: 15
+  test:
+    duration: 0.15
+    num_freqs: 5
+    db_min: 30
+    db_max: 70
+    db_steps: 5
