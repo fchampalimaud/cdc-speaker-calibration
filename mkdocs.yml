@@ -3,7 +3,8 @@ nav:
   - Home: index.md
   - Speaker Calibration:
     - Installation: installation.md
-    - Protocol: speaker_calibration.md
+    - Usage: usage.md
+    - Protocols: protocols.md
   - Latency Measurements:
     - Protocol: latency.md
 theme:

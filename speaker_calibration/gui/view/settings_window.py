@@ -3,7 +3,7 @@ import tkinter as tk
 # from speaker_calibration.gui.view.gui_utils import spinbox_row
 from speaker_calibration.gui.view.settings_frames.general_frame import GeneralFrame
 from speaker_calibration.gui.view.settings_frames.noise_frame import NoiseFrame
-from speaker_calibration.gui.view.settings_frames.pure_tone_frame import PureToneFrame
+from speaker_calibration.gui.view.gui_utils import SpinboxesFrame
 
 
 class SettingsWindow(tk.Toplevel):
@@ -35,5 +35,7 @@ class SettingsWindow(tk.Toplevel):
         # separator = ttk.Separator(self, orient="horizontal")
         # separator.grid(column=0, row=3)
 
-        self.pure_tone = PureToneFrame(self)
+        self.pure_tone = SpinboxesFrame(
+            self, "config/frames/pure_tone_init.csv", "Pure Tone Calibration"
+        )
         self.pure_tone.grid(column=0, row=2)

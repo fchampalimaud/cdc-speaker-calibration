@@ -9,7 +9,9 @@ class GeneralFrame(ttk.Frame):
         super().__init__(container)
 
         # Loads some configuration parameters regarding the layout of the widgets in the window
-        init = np.loadtxt("config/general_init.csv", dtype=str, delimiter=",", skiprows=1)
+        init = np.loadtxt(
+            "config/frames/general_init.csv", dtype=str, delimiter=",", skiprows=1
+        )
 
         # Configures columns of the window
         self.grid_columnconfigure(0, weight=1)
@@ -20,7 +22,14 @@ class GeneralFrame(ttk.Frame):
         self.sound_type = tk.StringVar(self, "Noise")
         self.sound_type_label = ttk.Label(self, text="Sound Type")
         self.sound_type_label.grid(row=0, column=0, sticky="e")
-        self.sound_type_cb = ttk.Combobox(self, width=10, justify="center", textvariable=self.sound_type, state="disabled", values=["Noise", "Pure Tones"])
+        self.sound_type_cb = ttk.Combobox(
+            self,
+            width=10,
+            justify="center",
+            textvariable=self.sound_type,
+            state="disabled",
+            values=["Noise", "Pure Tones"],
+        )
         self.sound_type_cb.grid(row=0, column=1, sticky="w", pady=5, padx=5)
 
         # Initializes the spinboxes arrays
