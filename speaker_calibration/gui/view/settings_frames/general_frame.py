@@ -27,7 +27,7 @@ class GeneralFrame(ttk.Frame):
             width=10,
             justify="center",
             textvariable=self.sound_type,
-            state="disabled",
+            # state="disabled",
             values=["Noise", "Pure Tones"],
         )
         self.sound_type_cb.grid(row=0, column=1, sticky="w", pady=5, padx=5)
