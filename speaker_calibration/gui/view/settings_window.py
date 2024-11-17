@@ -52,8 +52,10 @@ class SettingsWindow(tk.Toplevel):
 
     def change_frame(self, event=None):
         if self.general.sound_type.get() == "Noise":
-            frame = self.frames[0]
+            self.frames[0].grid(column=0, row=0)
+            self.frames[1].grid_forget()
         elif self.general.sound_type.get() == "Pure Tones":
-            frame = self.frames[1]
+            self.frames[1].grid(column=0, row=0)
+            self.frames[0].grid_forget()
 
-        frame.tkraise()
+        # frame.tkraise()
