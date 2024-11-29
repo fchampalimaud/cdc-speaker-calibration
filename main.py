@@ -7,6 +7,7 @@ from speaker_calibration.gui.gui_controller import SpeakerCalibrationController
 
 myappid = "fchampalimaud.cdc.speaker_calibration.alpha"
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+ctypes.windll.shcore.SetProcessDpiAwareness(1)
 
 
 class SpeakerCalibrationGUI(tk.Tk):

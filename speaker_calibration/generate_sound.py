@@ -51,7 +51,9 @@ def generate_noise(
 
     # Generates the base signal
     n_samples = int(fs * duration)
-    signal = 0.2 * np.random.randn(n_samples)  # We don't want more than 1 hence rescale by 0.2
+    signal = 0.3 * np.random.randn(
+        n_samples
+    )  # We don't want more than 1 hence rescale by 0.2
 
     # Applies a 3th-order butterworth band-pass filter to the signal
     if filter:
@@ -62,7 +64,9 @@ def generate_noise(
     # Uses the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
     if calibrate:
         freq_vector = np.fft.rfftfreq(duration * fs, d=1 / fs)
-        calibration_interp = np.interp(freq_vector, calibration_factor[:, 0], calibration_factor[:, 1])
+        calibration_interp = np.interp(
+            freq_vector, calibration_factor[:, 0], calibration_factor[:, 1]
+        )
         fft = np.fft.rfft(signal)
         signal = np.fft.irfft(fft * calibration_interp, n=fs * duration)
         signal = sosfilt(sos, signal)
@@ -75,13 +79,21 @@ def generate_noise(
     # Applies a ramp at the beginning and at the end of the signal and the input amplification factor
     ramp_samples = int(np.floor(fs * ramp_time))
     ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
-    ramped_signal = np.concatenate((ramp, np.ones(n_samples - ramp_samples * 2), np.flip(ramp)), axis=None)
+    ramped_signal = np.concatenate(
+        (ramp, np.ones(n_samples - ramp_samples * 2), np.flip(ramp)), axis=None
+    )
     signal = amplification * np.multiply(signal, ramped_signal)
 
     return signal
 
 
-def generate_pure_tone(freq: float, duration: float, fs: int, amplitude: float = 1, ramp_time: float = 0.005):
+def generate_pure_tone(
+    freq: float,
+    duration: float,
+    fs: int,
+    amplitude: float = 1,
+    ramp_time: float = 0.005,
+):
     """
     Generates a gaussian random noise.
 
@@ -110,7 +122,9 @@ def generate_pure_tone(freq: float, duration: float, fs: int, amplitude: float =
     # Applies a ramp at the beginning and at the end of the signal
     ramp_samples = int(np.floor(fs * ramp_time))
     ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
-    ramped_signal = np.concatenate((ramp, np.ones(t.size - ramp_samples * 2), np.flip(ramp)), axis=None)
+    ramped_signal = np.concatenate(
+        (ramp, np.ones(t.size - ramp_samples * 2), np.flip(ramp)), axis=None
+    )
     signal = np.multiply(signal, ramped_signal)
 
     return signal
@@ -143,7 +157,10 @@ def create_sound_file(signal: np.ndarray, filename: str, speaker_side: str = "bo
         wave_left = 0 * signal
         wave_right = amplitude24bits * signal
     else:
-        raise ValueError('speaker_side value should be "both", "left" or "right" instead of "%s"' % speaker_side)
+        raise ValueError(
+            'speaker_side value should be "both", "left" or "right" instead of "%s"'
+            % speaker_side
+        )
 
     # Groups the signals to be played in the left and right channels/speakers in a single array
     stereo = np.stack((wave_left, wave_right), axis=1)
@@ -154,8 +171,13 @@ def create_sound_file(signal: np.ndarray, filename: str, speaker_side: str = "bo
         wave_int.tofile(f)
 
 
-@dispatch(np.ndarray, np.ndarray, str, speaker_side=str)
-def create_sound_file(signal_left: np.ndarray, signal_right: np.ndarray, filename: str, speaker_side: str = "both"):
+@dispatch(np.ndarray, np.ndarray, str, str)
+def create_sound_file(
+    signal_left: np.ndarray,
+    signal_right: np.ndarray,
+    filename: str,
+    speaker_side: str = "both",
+):
     """
     Creates the .bin sound file to be loaded to the Harp Sound Card.
 
@@ -183,7 +205,10 @@ def create_sound_file(signal_left: np.ndarray, signal_right: np.ndarray, filenam
         wave_left = 0 * signal_left
         wave_right = amplitude24bits * signal_right
     else:
-        raise ValueError('speaker_side value should be "both", "left" or "right" instead of "%s"' % speaker_side)
+        raise ValueError(
+            'speaker_side value should be "both", "left" or "right" instead of "%s"'
+            % speaker_side
+        )
 
     # Groups the signals to be played in the left and right channels/speakers in a single array
     stereo = np.stack((wave_left, wave_right), axis=1)
