@@ -58,7 +58,14 @@ class SpeakerCalibrationController:
         psd = list([x for x in noise_all if isinstance(x, dict)][0].values())
         calibration = list([x for x in noise_all if isinstance(x, dict)][1].values())
         test = list([x for x in noise_all if isinstance(x, dict)][2].values())
-        pure_tone = list([x for x in setting_list if isinstance(x, dict)][1].values())
+        pure_tone_all = list(
+            [x for x in setting_list if isinstance(x, dict)][1].values()
+        )
+        pure_tone = [x for x in pure_tone_all if not isinstance(x, dict)]
+        pt_calibration = list(
+            [x for x in pure_tone_all if isinstance(x, dict)][0].values()
+        )
+        pt_test = list([x for x in pure_tone_all if isinstance(x, dict)][1].values())
 
         # General Frame
         for i in range(self.view.settings_window.general.variables.size):
@@ -111,6 +118,30 @@ class SpeakerCalibrationController:
                 self.view.settings_window.frames[1].variables[i].set(pure_tone[i])
             else:
                 self.view.settings_window.frames[1].variables[i].set(str(pure_tone[i]))
+
+        # Pure Tone Calibration Frame
+        for i in range(self.view.settings_window.frames[1].calibration.variables.size):
+            if isinstance(
+                self.view.settings_window.frames[1].calibration.variables[i], tk.IntVar
+            ):
+                self.view.settings_window.frames[1].calibration.variables[i].set(
+                    pt_calibration[i]
+                )
+            else:
+                self.view.settings_window.frames[1].calibration.variables[i].set(
+                    str(pt_calibration[i])
+                )
+
+        # Pure Tone Test Frame
+        for i in range(self.view.settings_window.frames[1].test.variables.size):
+            if isinstance(
+                self.view.settings_window.frames[1].test.variables[i], tk.IntVar
+            ):
+                self.view.settings_window.frames[1].test.variables[i].set(pt_test[i])
+            else:
+                self.view.settings_window.frames[1].test.variables[i].set(
+                    str(pt_test[i])
+                )
 
     def update_hardware(self):
         """

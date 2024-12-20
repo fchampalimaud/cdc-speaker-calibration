@@ -1,0 +1,6 @@
+label,from_,to,increment,spinbox_width,int_value
+Sound Duration (s),0.01,60,0.01,10,0
+Number of Frequencies,1,100,1,10,1
+Minimum dB,0,200,0.1,10,0
+Maximum dB,0,200,0.1,10,0
+Steps,1,100,1,10,1

@@ -18,7 +18,7 @@ class PlotFrame(ttk.Frame):
         super().__init__(container)
 
         # Creates a figure
-        figure = Figure(figsize=(6, 4), dpi=100)
+        figure = Figure(dpi=100)
 
         # Creates the FigureCanvasTkAgg object
         self.figure_canvas = FigureCanvasTkAgg(figure, self)

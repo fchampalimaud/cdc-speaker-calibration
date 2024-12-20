@@ -25,6 +25,8 @@ noise:
     db_max: 70
     db_steps: 5
 pure_tones:
+  calibrate: true
+  test_calibration: true
   calibration:
     duration: 0.15
     num_freqs: 5

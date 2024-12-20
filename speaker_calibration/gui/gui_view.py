@@ -19,7 +19,7 @@ class SpeakerCalibrationView(ttk.Frame):
 
         # Configure the rows and columns of the view
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=2)
+        self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
         # Position the Matplotlib figure frame

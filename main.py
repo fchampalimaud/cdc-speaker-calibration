@@ -19,8 +19,8 @@ class SpeakerCalibrationGUI(tk.Tk):
         self.title("Speaker Calibration")
         self.iconbitmap("docs/img/favicon.ico")
         # Sets the window width and height
-        window_width = 1280
-        window_height = 720
+        window_width = 1920
+        window_height = 1080
         # Gets the screen width and height
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()

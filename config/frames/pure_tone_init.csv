@@ -1,3 +1,0 @@
-label,from_,to,increment,spinbox_width,int_value
-Sound Duration (s),1,60,1,10,1
-Steps,1,100,1,10,1
