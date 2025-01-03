@@ -1,135 +1,13 @@
 import os
 
 import numpy as np
-import yaml
-from speaker_calibration.generate_sound import (
+from speaker_calibration.protocol.generate_sound import (
     create_sound_file,
     generate_noise,
     generate_pure_tone,
 )
 from scipy.signal import butter, sosfilt
-from speaker_calibration.record_sound import record_sound_nidaq
-
-
-class InputParameters:
-    """
-    A class containing the input parameters used for the calibration. This class mirrors the contents of the `config/settings.yml` file.
-
-    Attributes
-    ----------
-    sound_type : str
-        whether the calibration should be made with pure tones or white noise.
-    fs_adc : float
-        sampling frequency of the ADC (Hz).
-    ramp_time : float
-        ramp time of the sound (s).
-    amplification : float
-        amplification to be used in the PSD (power spectral density) calibration step.
-    freq_min : float
-        minimum frequency to consider to pass band.
-    freq_max : float
-        maximum frequency to consider to pass band.
-    mic_factor : float
-        factor of the microphone (V/Pa).
-    reference_pressure : float
-        reference pressure (Pa).
-    noise : dict
-        dictionary containing noise-calibration-related settings.
-    pure_tones : dict
-        dictionary containing pure-tones-calibration-related settings.
-    """
-
-    sound_type: str
-    fs_adc: int
-    ramp_time: float
-    amplification: float
-    mic_factor: float
-    reference_pressure: float
-    freq_min: float
-    freq_max: float
-    noise: dict
-    pure_tones: dict
-
-    def __init__(self):
-        # Loads the content of the YAML file into a dictionary
-        with open("config/settings.yml", "r") as file:
-            settings_dict = yaml.safe_load(file)
-
-        # Updates the attributes of the object based on the dictionary generated from the YAML file
-        self.__dict__.update(settings_dict)
-
-    def update(self, settings_dict: dict):
-        """
-        Updates the attributes of the object based on the input dictionary.
-
-        Parameters
-        ----------
-        settings_dict : dict
-            the dictionary from which the attributes of the object can be updated.
-        """
-        self.__dict__.update(settings_dict)
-
-
-class Hardware:
-    """
-    A class used to represent the equipment being calibrated. This class mirrors the contents of the `config/hardware.yml` file.
-
-    Attributes
-    ----------
-    fs_sc : int
-        the sampling frequency of the soundcard (Hz).
-    harp_soundcard : bool
-        indicates whether the soundcard being calibrated is a Harp device or not.
-    soundcard_com : str
-        indicates the COM number the soundcard corresponds to in the computer used for the calibration. The string should be of the format "COM?", in which "?" is the COM number.
-    soundcard_id : str
-        the ID of the soundcard. If the soundcard is a Harp device, the ID should be of the format "V?.? X????", in which "?" are numbers.
-    harp_audio_amp : bool
-        indicates whether the audio amplifier used in the calibration is a Harp device or not.
-    audio_amp_id : str
-        the ID of the audio amplifier. If the audio amplifier is a Harp device, the ID should be of the format "V?.? X????", in which "?" are numbers.
-    speaker_id : int
-        the ID number of the speaker being calibrated (StC).
-    setup_id : int
-        the ID number of the setup.
-    """
-
-    fs_sc: int
-    harp_soundcard: bool
-    soundcard_com: str
-    soundcard_id: str
-    harp_audio_amp: bool
-    audio_amp_id: str
-    speaker_id: int
-    setup_id: int
-
-    def __init__(self, filename: str = ""):
-        self.fs_sc = 192000
-        self.harp_soundcard = True
-        self.soundcard_com = ""
-        self.soundcard_id = ""
-        self.harp_audio_amp = True
-        self.audio_amp_id = ""
-        self.speaker_id = 0
-        self.setup_id = 0
-
-        if filename != "":
-            with open("config/hardware.yml", "r") as file:
-                hardware_dict = yaml.safe_load(file)
-
-            # Updates the attributes of the object based on the dictionary generated from the YAML file
-            self.__dict__.update(hardware_dict)
-
-    def update(self, hardware_dict: dict):
-        """
-        Updates the attributes of the object based on the input dictionary.
-
-        Parameters
-        ----------
-        settings_dict : dict
-            the dictionary from which the attributes of the object can be updated.
-        """
-        self.__dict__.update(hardware_dict)
+from speaker_calibration.protocol.record_sound import record_sound_nidaq
 
 
 class Signal:

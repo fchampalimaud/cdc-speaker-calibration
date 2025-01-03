@@ -1,7 +1,7 @@
 import tkinter as tk
 import numpy as np
 from speaker_calibration.gui.controller.calibration_thread import AsyncCalibration
-from speaker_calibration.calibration_steps import save_data
+from speaker_calibration.protocol.calibration_steps import save_data
 
 
 class SpeakerCalibrationController:
@@ -24,20 +24,19 @@ class SpeakerCalibrationController:
         self.set_settings_defaults()
 
         self.view.config_frame.run_button["command"] = self.calibrate
-        self.view.config_frame.inverse_filter_button["command"] = (
-            self.open_calibration_factor
-        )
         self.view.config_frame.plot_config.calibration_signal["command"] = (
-            self.update_plot
+            self.view.update_plot
         )
-        self.view.config_frame.plot_config.test_signal["command"] = self.update_plot
-        self.view.config_frame.plot_config.signal_cb["command"] = self.update_plot
+        self.view.config_frame.plot_config.test_signal["command"] = (
+            self.view.update_plot
+        )
+        self.view.config_frame.plot_config.signal_cb["command"] = self.view.update_plot
         self.view.config_frame.plot_config.recorded_sound_cb["command"] = (
-            self.update_plot
+            self.view.update_plot
         )
 
         self.view.config_frame.plot_config.plot_cb.bind(
-            "<<ComboboxSelected>>", self.update_plot
+            "<<ComboboxSelected>>", self.view.update_plot
         )
 
     def open_calibration_factor(self):
@@ -386,121 +385,4 @@ class SpeakerCalibrationController:
             self.model.test_data[package[1], 2] = package[0].db_fft
 
         # Updates the GUI's plot
-        self.update_plot()
-
-    def update_plot(self, event=None):
-        """
-        Updates the plot based on the item selected in a combobox.
-
-        Parameters
-        ----------
-        event
-            this parameter is sent by the combobox when an event is triggered.
-        """
-        if self.view.config_frame.plot_config.plot_var.get() == "PSD Signal":
-            for i in range(self.view.plot_frame.plots.size):
-                self.view.plot_frame.plots[i].set_marker("")
-            self.view.plot_frame.plots[0].set_data(
-                np.linspace(
-                    0, self.model.psd_signal.duration, self.model.psd_signal.signal.size
-                ),
-                self.model.psd_signal.signal,
-            )
-            self.view.plot_frame.plots[1].set_data(
-                np.linspace(
-                    0,
-                    self.model.psd_signal.duration,
-                    self.model.psd_signal.recorded_sound.size,
-                ),
-                self.model.psd_signal.recorded_sound,
-            )
-            self.view.plot_frame.plots[2].set_data([], [])
-        elif self.view.config_frame.plot_config.plot_var.get() == "Inverse Filter":
-            for i in range(self.view.plot_frame.plots.size):
-                self.view.plot_frame.plots[i].set_marker("")
-            self.view.plot_frame.plots[0].set_data(
-                self.model.inverse_filter[:, 0], self.model.inverse_filter[:, 1]
-            )
-            self.view.plot_frame.plots[1].set_data([], [])
-            self.view.plot_frame.plots[2].set_data([], [])
-        elif self.view.config_frame.plot_config.plot_var.get() == "Calibration Signals":
-            for i in range(self.view.plot_frame.plots.size):
-                self.view.plot_frame.plots[i].set_marker("")
-            i = self.view.config_frame.plot_config.calibration_signal_var.get()
-            if self.view.config_frame.plot_config.signal.get() == 1:
-                self.view.plot_frame.plots[0].set_data(
-                    np.linspace(
-                        0,
-                        self.model.calibration_signals[i].duration,
-                        self.model.calibration_signals[i].signal.size,
-                    ),
-                    self.model.calibration_signals[i].signal,
-                )
-            else:
-                self.view.plot_frame.plots[0].set_data([], [])
-            if self.view.config_frame.plot_config.recorded_sound.get() == 1:
-                self.view.plot_frame.plots[1].set_data(
-                    np.linspace(
-                        0,
-                        self.model.calibration_signals[i].duration,
-                        self.model.calibration_signals[i].recorded_sound.size,
-                    ),
-                    self.model.calibration_signals[i].recorded_sound,
-                )
-            else:
-                self.view.plot_frame.plots[1].set_data([], [])
-            self.view.plot_frame.plots[2].set_data([], [])
-        elif self.view.config_frame.plot_config.plot_var.get() == "Calibration Data":
-            for i in range(self.view.plot_frame.plots.size):
-                self.view.plot_frame.plots[i].set_marker("o")
-            self.view.plot_frame.plots[0].set_data(
-                self.model.calibration_data[:, 0], self.model.calibration_data[:, 1]
-            )
-            self.view.plot_frame.plots[1].set_data(
-                self.model.calibration_data[:, 0], self.model.calibration_data[:, 2]
-            )
-            self.view.plot_frame.plots[2].set_data([], [])
-        elif self.view.config_frame.plot_config.plot_var.get() == "Test Signals":
-            for i in range(self.view.plot_frame.plots.size):
-                self.view.plot_frame.plots[i].set_marker("")
-            i = self.view.config_frame.plot_config.test_signal_var.get()
-            if self.view.config_frame.plot_config.signal.get() == 1:
-                self.view.plot_frame.plots[0].set_data(
-                    np.linspace(
-                        0,
-                        self.model.test_signals[i].duration,
-                        self.model.test_signals[i].signal.size,
-                    ),
-                    self.model.test_signals[i].signal,
-                )
-            else:
-                self.view.plot_frame.plots[0].set_data([], [])
-            if self.view.config_frame.plot_config.recorded_sound.get() == 1:
-                self.view.plot_frame.plots[1].set_data(
-                    np.linspace(
-                        0,
-                        self.model.test_signals[i].duration,
-                        self.model.test_signals[i].recorded_sound.size,
-                    ),
-                    self.model.test_signals[i].recorded_sound,
-                )
-            else:
-                self.view.plot_frame.plots[1].set_data([], [])
-            self.view.plot_frame.plots[2].set_data([], [])
-        elif self.view.config_frame.plot_config.plot_var.get() == "Test Data":
-            for i in range(self.view.plot_frame.plots.size):
-                self.view.plot_frame.plots[i].set_marker("o")
-            self.view.plot_frame.plots[0].set_data(
-                self.model.test_data[:, 0], self.model.test_data[:, 1]
-            )
-            self.view.plot_frame.plots[1].set_data(
-                self.model.test_data[:, 0], self.model.test_data[:, 2]
-            )
-            self.view.plot_frame.plots[2].set_data(
-                self.model.test_data[:, 0], self.model.test_data[:, 0]
-            )
-
-        # Assures that the x and y axis are autoscaled when the figure is redrawn
-        self.view.plot_frame.ax.relim()
-        self.view.plot_frame.ax.autoscale_view()
-        self.view.plot_frame.figure_canvas.draw_idle()
+        self.view.update_plot()

@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.signal import welch
-from speaker_calibration.classes import Signal, InputParameters, Hardware
+from speaker_calibration.protocol.classes import Signal, InputParameters, Hardware
 from datetime import datetime
 import os
 import yaml
@@ -46,14 +46,25 @@ def psd_calibration(
         the Signal object used for the PSD calibration.
     """
     # Generates the noise and upload it to the soundcard
-    signal = Signal(sound_duration, fs, amplification=amplification, ramp_time=ramp_time, mic_factor=mic_factor, reference_pressure=reference_pressure)
+    signal = Signal(
+        sound_duration,
+        fs,
+        amplification=amplification,
+        ramp_time=ramp_time,
+        mic_factor=mic_factor,
+        reference_pressure=reference_pressure,
+    )
 
     # Plays the sound throught the soundcard and recorded it with the microphone + DAQ system
     signal.load_sound()
     signal.record_sound(fs_adc)
 
     freq, psd = welch(
-        signal.recorded_sound[int(0.1 * signal.recorded_sound.size) : int(0.9 * signal.recorded_sound.size)],
+        signal.recorded_sound[
+            int(0.1 * signal.recorded_sound.size) : int(
+                0.9 * signal.recorded_sound.size
+            )
+        ],
         fs=fs_adc,
         nperseg=time_constant * fs_adc,
     )
@@ -160,7 +171,12 @@ def get_db(
     return db_spl, db_fft, signals
 
 
-def save_data(input: InputParameters, hardware: Hardware, inverse_filter: np.ndarray, calibration_parameters: np.ndarray):
+def save_data(
+    input: InputParameters,
+    hardware: Hardware,
+    inverse_filter: np.ndarray,
+    calibration_parameters: np.ndarray,
+):
     """
     Saves the calibration results and metadata to a directory named after the date and time of the calibration inside the `output` directory. The directory might contain, depending on the calibration steps executed, 2 CSV files (one for the inverse filter and the other for the calibration parameters) and 2 YAML files (one with the calibration settings used and the other with information regarding the hardware being calibrated). TODO: implement for the pure tones calibration.
 
@@ -187,7 +203,13 @@ def save_data(input: InputParameters, hardware: Hardware, inverse_filter: np.nda
         with open("output/" + date_string + "/" + "hardware.yml", "w") as f:
             yaml.dump(hardware, f)
 
-        save_string = "speaker" + str(hardware.speaker_id) + "_setup" + str(hardware.setup_id) + ".csv"
+        save_string = (
+            "speaker"
+            + str(hardware.speaker_id)
+            + "_setup"
+            + str(hardware.setup_id)
+            + ".csv"
+        )
 
         if input.noise["calculate_filter"]:
             np.savetxt(

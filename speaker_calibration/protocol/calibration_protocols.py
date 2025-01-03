@@ -1,6 +1,6 @@
 import numpy as np
-from speaker_calibration.classes import Hardware, InputParameters, Signal
-from speaker_calibration.calibration_steps import psd_calibration, get_db
+from speaker_calibration.protocol.classes import Hardware, InputParameters, Signal
+from speaker_calibration.protocol.calibration_steps import psd_calibration, get_db
 import time
 
 

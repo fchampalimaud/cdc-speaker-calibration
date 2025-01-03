@@ -51,8 +51,8 @@ def generate_noise(
 
     # Generates the base signal
     n_samples = int(fs * duration)
-    signal = 0.3 * np.random.randn(
-        n_samples
+    signal = (
+        1 / 3 * np.random.randn(n_samples)
     )  # We don't want more than 1 hence rescale by 0.2
 
     # Applies a 3th-order butterworth band-pass filter to the signal

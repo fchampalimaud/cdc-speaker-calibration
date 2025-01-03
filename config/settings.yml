@@ -1,7 +1,7 @@
 sound_type: Pure Tone
 fs_adc: 250000
 ramp_time: 0.005
-amplification: 0.2
+amplification: 1
 freq_min: 5000
 freq_max: 20000
 mic_factor: 10
