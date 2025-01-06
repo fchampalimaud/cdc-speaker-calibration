@@ -1,0 +1,354 @@
+{
+  "$defs": {
+    "Calibration": {
+      "properties": {
+        "calibrate": {
+          "description": "Indicates whether the calibration is performed.",
+          "title": "Calibrate",
+          "type": "boolean"
+        },
+        "sound_duration": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The duration of the calibration sounds.",
+          "title": "Sound Duration"
+        },
+        "att_min": {
+          "anyOf": [
+            {
+              "maximum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The minimum attenuation value.",
+          "title": "Att Min"
+        },
+        "att_max": {
+          "anyOf": [
+            {
+              "maximum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The maximum attenuation value.",
+          "title": "Att Max"
+        },
+        "att_steps": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The number of attenuation values to use in the calibration.",
+          "title": "Att Steps"
+        }
+      },
+      "required": [
+        "calibrate"
+      ],
+      "title": "Calibration",
+      "type": "object"
+    },
+    "Filter": {
+      "properties": {
+        "filter_input": {
+          "description": "Indicates whether the band-pass filter is applied to the input sound.",
+          "title": "Filter Input",
+          "type": "boolean"
+        },
+        "filter_acquisition": {
+          "description": "Indicates whether the band-pass filter is applied to the acquired sound.",
+          "title": "Filter Acquisition",
+          "type": "boolean"
+        },
+        "min_value": {
+          "anyOf": [
+            {
+              "maximum": 80000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The low cuttoff frequency of the filter (Hz).",
+          "title": "Min Value"
+        },
+        "max_value": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "maximum": 80000.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The high cuttoff frequency of the filter (Hz).",
+          "title": "Max Value"
+        }
+      },
+      "required": [
+        "filter_input",
+        "filter_acquisition"
+      ],
+      "title": "Filter",
+      "type": "object"
+    },
+    "Freq": {
+      "properties": {
+        "num_freqs": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The number of frequencies to use in the pure tone calibration.",
+          "title": "Num Freqs"
+        },
+        "min_freq": {
+          "description": "The minimum frequency value (Hz).",
+          "maximum": 80000.0,
+          "minimum": 0.0,
+          "title": "Min Freq",
+          "type": "number"
+        },
+        "max_freq": {
+          "description": "The maximum frequency value (Hz).",
+          "exclusiveMinimum": 0.0,
+          "maximum": 80000.0,
+          "title": "Max Freq",
+          "type": "number"
+        }
+      },
+      "required": [
+        "min_freq",
+        "max_freq"
+      ],
+      "title": "Freq",
+      "type": "object"
+    },
+    "InverseFilter": {
+      "properties": {
+        "determine_filter": {
+          "description": "Indicates whether the inverse filter is determined. Noise calibration only!",
+          "title": "Determine Filter",
+          "type": "boolean"
+        },
+        "sound_duration": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The duration of the sound used to determine the inverse filter.",
+          "title": "Sound Duration"
+        },
+        "time_constant": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The duration of each division of the original signal that is used to compute the inverse filter (s).",
+          "title": "Time Constant"
+        }
+      },
+      "required": [
+        "determine_filter"
+      ],
+      "title": "InverseFilter",
+      "type": "object"
+    },
+    "Sound": {
+      "properties": {
+        "ramp_time": {
+          "description": "The ramp time of the sounds used during the calibration process (s).",
+          "minimum": 0.0,
+          "title": "Ramp Time",
+          "type": "number"
+        },
+        "amplification": {
+          "description": "The amplification of the speakers.",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Amplification",
+          "type": "number"
+        },
+        "freq": {
+          "$ref": "#/$defs/Freq",
+          "description": "The frequency-related parameters to be used in the calibration."
+        },
+        "filter": {
+          "$ref": "#/$defs/Filter",
+          "description": "The configuration parameters of the band-pass filter used."
+        },
+        "inverse_filter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InverseFilter"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The settings related to the inverse filter calculation. Noise calibration only!"
+        },
+        "calibration": {
+          "$ref": "#/$defs/Calibration",
+          "description": "The settings used for the actual speaker calibration."
+        },
+        "test_calibration": {
+          "$ref": "#/$defs/TestCalibration",
+          "description": "The settings used for the calibration test."
+        }
+      },
+      "required": [
+        "ramp_time",
+        "amplification",
+        "freq",
+        "filter",
+        "calibration",
+        "test_calibration"
+      ],
+      "title": "Sound",
+      "type": "object"
+    },
+    "TestCalibration": {
+      "properties": {
+        "test": {
+          "description": "Indicates whether the calibration is tested.",
+          "title": "Test",
+          "type": "boolean"
+        },
+        "sound_duration": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The duration of the test sounds.",
+          "title": "Sound Duration"
+        },
+        "db_min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The minimum nominal dB SPL value to be tested.",
+          "title": "Db Min"
+        },
+        "db_max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The maximum nominal dB SPL value to be tested.",
+          "title": "Db Max"
+        },
+        "db_steps": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The number of dB SPL values to be tested.",
+          "title": "Db Steps"
+        }
+      },
+      "required": [
+        "test"
+      ],
+      "title": "TestCalibration",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "sound_type": {
+      "description": "Indicates whether the calibration will be made with noise or pure tones.",
+      "enum": [
+        "noise",
+        "pure_tone"
+      ],
+      "title": "Sound Type",
+      "type": "string"
+    },
+    "reference_pressure": {
+      "description": "The reference pressure (Pa).",
+      "exclusiveMinimum": 0.0,
+      "title": "Reference Pressure",
+      "type": "number"
+    },
+    "sound": {
+      "$ref": "#/$defs/Sound",
+      "description": "The sound-related configurations."
+    }
+  },
+  "required": [
+    "sound_type",
+    "reference_pressure",
+    "sound"
+  ],
+  "title": "Settings",
+  "type": "object"
+}
