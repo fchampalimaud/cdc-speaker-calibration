@@ -1,6 +1,8 @@
 import numpy as np
 
-from speaker_calibration.protocol.classes import InputParameters, Hardware, Signal
+from speaker_calibration.protocol.classes import Signal
+from speaker_calibration.settings.hardware import Hardware
+from speaker_calibration.settings.input_settings import Settings
 
 
 class SpeakerCalibrationModel:
@@ -9,7 +11,7 @@ class SpeakerCalibrationModel:
 
     Attributes
     ----------
-    input_parameters : InputParameters
+    input_parameters : Settings
         the object containing the input parameters used for the calibration.
     hardware_config : Hardware
         the object containing information regarding the equipment being calibrated.
@@ -29,7 +31,7 @@ class SpeakerCalibrationModel:
         a three-column array in which the first column is the x-axis (desired db SPL of the test signals) and the remaining columns are y-axis (real dB SPL values of the test signals - in one column the dB are calculated through the time-domain and in the other through the frequency-domain).
     """
 
-    input_parameters: InputParameters
+    input_parameters: Settings
     hardware: Hardware
     inverse_filter: np.ndarray
     calibration_parameters: np.ndarray
@@ -40,8 +42,10 @@ class SpeakerCalibrationModel:
     test_data: np.ndarray
 
     def __init__(self):
-        self.input_parameters = InputParameters()
-        self.hardware = Hardware()
+        # self.input_parameters = Settings()
+        # self.hardware = Hardware()
+        self.input_parameters = None
+        self.hardware = None
         self.inverse_filter = None
         self.calibration_parameters = np.zeros(2)
         self.psd_signal = None

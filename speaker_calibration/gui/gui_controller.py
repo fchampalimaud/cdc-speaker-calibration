@@ -21,7 +21,7 @@ class SpeakerCalibrationController:
         self.view = view
 
         # Changes the default values of the spinboxes of the settings window
-        self.set_settings_defaults()
+        # self.set_settings_defaults()
 
         self.view.config_frame.run_button["command"] = self.calibrate
         self.view.config_frame.plot_config.calibration_signal["command"] = (

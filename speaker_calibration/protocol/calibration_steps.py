@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.signal import welch
-from speaker_calibration.protocol.classes import Signal, InputParameters, Hardware
+from speaker_calibration.protocol.classes import Signal
+from speaker_calibration.settings.hardware import Hardware
+from speaker_calibration.settings.input_settings import Settings
 from datetime import datetime
 import os
 import yaml
@@ -172,7 +174,7 @@ def get_db(
 
 
 def save_data(
-    input: InputParameters,
+    input: Settings,
     hardware: Hardware,
     inverse_filter: np.ndarray,
     calibration_parameters: np.ndarray,
@@ -182,7 +184,7 @@ def save_data(
 
     Parameters
     ----------
-    input: InputParameters
+    input: Settings
         the object containing the input parameters used for the calibration.
     hardware: Hardware
         the object containing information regarding the equipment being calibrated.

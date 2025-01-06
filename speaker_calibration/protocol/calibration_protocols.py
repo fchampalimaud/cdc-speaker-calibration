@@ -1,12 +1,14 @@
 import numpy as np
-from speaker_calibration.protocol.classes import Hardware, InputParameters, Signal
+from speaker_calibration.protocol.classes import Signal
+from speaker_calibration.settings.hardware import Hardware
+from speaker_calibration.settings.input_settings import Settings
 from speaker_calibration.protocol.calibration_steps import psd_calibration, get_db
 import time
 
 
 def noise_calibration(
     hardware: Hardware,
-    input: InputParameters,
+    input: Settings,
     inverse_filter: np.ndarray = None,
     calibration_parameters: np.ndarray = None,
     callback: callable = None,
@@ -18,7 +20,7 @@ def noise_calibration(
     ----------
     hardware : Hardware
         the object containing information regarding the equipment being calibrated.
-    input : InputParameters
+    input : Settings
         the object containing the input parameters used for the calibration.
     inverse_filter : numpy.ndarray, optional
         the inverse filter to apply to the calibration and test signals that flattens the frequency spectrum of the recorded sound for the equipment being calibrated.
@@ -116,7 +118,7 @@ def noise_calibration(
     return inverse_filter, calibration_parameters
 
 
-def pure_tone_calibration(hardware: Hardware, input: InputParameters):
+def pure_tone_calibration(hardware: Hardware, input: Settings):
     """
     Performs the speaker calibration with pure tones.
 
@@ -124,7 +126,7 @@ def pure_tone_calibration(hardware: Hardware, input: InputParameters):
     ----------
     hardware : Hardware
         the object containing information regarding the equipment being calibrated.
-    input_parameters : InputParameters
+    input_parameters : Settings
         the object containing the input parameters used for the calibration.
 
     Returns

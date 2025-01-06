@@ -16,6 +16,7 @@ def get_ports():
     return port_strings
 
 
+# TODO: modify to be a class instead of a function
 def spinbox_row(
     container,
     label_text,
