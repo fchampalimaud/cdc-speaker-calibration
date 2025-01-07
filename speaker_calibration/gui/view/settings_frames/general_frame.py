@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from speaker_calibration.gui.view.gui_utils import spinbox_row
+from speaker_calibration.utils.gui_utils import spinbox_row
 import numpy as np
 
 

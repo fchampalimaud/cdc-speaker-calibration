@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import numpy as np
-from speaker_calibration.gui.view.gui_utils import SpinboxesFrame
+from speaker_calibration.utils.gui_utils import SpinboxesFrame
 
 
 class NoiseFrame(ttk.LabelFrame):

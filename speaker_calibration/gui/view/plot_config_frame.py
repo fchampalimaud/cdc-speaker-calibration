@@ -1,6 +1,9 @@
-import tkinter as tk
 from tkinter import ttk
-from speaker_calibration.gui.view.gui_utils import spinbox_row
+from speaker_calibration.utils.gui_utils import (
+    LabeledSpinbox,
+    LabeledCombobox,
+    Checkbox,
+)
 
 
 class PlotConfigFrame(ttk.LabelFrame):
@@ -8,19 +11,11 @@ class PlotConfigFrame(ttk.LabelFrame):
         super().__init__(container, text=text)
 
         for i in range(2):
-            self.grid_columnconfigure(i, weight=1)
-        for i in range(4):
             self.grid_rowconfigure(i, weight=1)
+        for i in range(1):
+            self.grid_columnconfigure(i, weight=1)
 
-        self.plot_label = ttk.Label(self, text="Plot")
-        self.plot_label.grid(row=0, column=0, padx=5, pady=5)
-
-        self.plot_var = tk.StringVar()
-        self.plot_cb = ttk.Combobox(
-            self, justify="center", textvariable=self.plot_var, state="readonly"
-        )
-        self.plot_cb.grid(column=0, row=1)
-        self.plot_cb["values"] = [
+        plot_list = [
             "PSD Signal",
             "Inverse Filter",
             "Calibration Signals",
@@ -28,35 +23,20 @@ class PlotConfigFrame(ttk.LabelFrame):
             "Test Signals",
             "Test Data",
         ]
-        self.plot_cb.grid(row=0, column=1, padx=5, pady=5)
 
-        _, self.calibration_signal_var, self.calibration_signal = spinbox_row(
-            self, "Calibration Signal", 0, 0, 0, 1, 1, spinbox_width=10, int_value=1
-        )
+        self.plot = LabeledCombobox(self, "Plot", 0, value_list=plot_list)
 
-        _, self.test_signal_var, self.test_signal = spinbox_row(
-            self, "Test Signal", 0, 0, 0, 1, 2, spinbox_width=10, int_value=1
-        )
+        self.plot.combobox.bind("<<ComboboxSelected>>", self.change_frame)
 
-        self.signal = tk.IntVar(self, 1)
-        self.signal_cb = ttk.Checkbutton(
-            self,
-            text="Original Signal",
-            variable=self.signal,
-            onvalue="1",
-            offvalue="0",
-        )
-        self.signal_cb.grid(row=3, column=0, padx=5, pady=5)
+        self.frames = [NoiseSignalFrame(self), PureToneSignalFrame(self)]
 
-        self.recorded_sound = tk.IntVar(self, 1)
-        self.recorded_sound_cb = ttk.Checkbutton(
-            self,
-            text="Recorded Sound",
-            variable=self.recorded_sound,
-            onvalue="1",
-            offvalue="0",
-        )
-        self.recorded_sound_cb.grid(row=3, column=1, padx=5, pady=5)
+    def change_frame(self, event=None):
+        if self.plot.get() == "PSD Signal":
+            self.frames[0].grid(column=0, row=1)
+            self.frames[1].grid_forget()
+        elif self.plot.get() == "Inverse Filter":
+            self.frames[1].grid(column=0, row=1)
+            self.frames[0].grid_forget()
 
 
 class NoiseSignalFrame(ttk.Frame):
@@ -68,29 +48,12 @@ class NoiseSignalFrame(ttk.Frame):
         for i in range(2):
             self.grid_rowconfigure(i, weight=1)
 
-        _, self.signal_var, self.signal = spinbox_row(
-            self, "Signal Index", 0, 0, 0, 1, 0, spinbox_width=10, int_value=1
+        self.signal_index = LabeledSpinbox(
+            self, "Signal Index", 0, 0, 0, 1, 0, columnspan=2
         )
 
-        self.show_signal = tk.BooleanVar(self, True)
-        self.signal_cb = ttk.Checkbutton(
-            self,
-            text="Original Signal",
-            variable=self.show_signal,
-            onvalue=True,
-            offvalue=False,
-        )
-        self.signal_cb.grid(row=1, column=0, padx=5, pady=5)
-
-        self.show_recorded_sound = tk.BooleanVar(self, True)
-        self.recorded_sound_cb = ttk.Checkbutton(
-            self,
-            text="Recorded Sound",
-            variable=self.show_recorded_sound,
-            onvalue=True,
-            offvalue=False,
-        )
-        self.recorded_sound_cb.grid(row=1, column=1, padx=5, pady=5)
+        self.show_signal = Checkbox(self, "Original Signal", 1, 0, default_value=True)
+        self.show_recording = Checkbox(self, "Recorded Sound", 1, 1, default_value=True)
 
 
 class PureToneSignalFrame(ttk.Frame):
@@ -99,33 +62,15 @@ class PureToneSignalFrame(ttk.Frame):
 
         for i in range(2):
             self.grid_columnconfigure(i, weight=1)
-        for i in range(2):
+        for i in range(3):
             self.grid_rowconfigure(i, weight=1)
 
-        _, self.frequency_index_var, self.frequency_index = spinbox_row(
-            self, "Frequency Index", 0, 0, 0, 1, 0, spinbox_width=10, int_value=1
+        self.frequency_index = LabeledSpinbox(
+            self, "Frequency Index", 0, 0, 0, 1, 0, columnspan=2
+        )
+        self.amplitude_index = LabeledSpinbox(
+            self, "Amplitude Index", 0, 0, 0, 1, 1, columnspan=2
         )
 
-        _, self.amplitude_index_var, self.amplitude_index = spinbox_row(
-            self, "Amplitude Index", 0, 0, 0, 1, 1, spinbox_width=10, int_value=1
-        )
-
-        self.show_signal = tk.BooleanVar(self, True)
-        self.signal_cb = ttk.Checkbutton(
-            self,
-            text="Original Signal",
-            variable=self.show_signal,
-            onvalue=True,
-            offvalue=False,
-        )
-        self.signal_cb.grid(row=2, column=0, padx=5, pady=5)
-
-        self.show_recorded_sound = tk.BooleanVar(self, True)
-        self.recorded_sound_cb = ttk.Checkbutton(
-            self,
-            text="Recorded Sound",
-            variable=self.show_recorded_sound,
-            onvalue=True,
-            offvalue=False,
-        )
-        self.recorded_sound_cb.grid(row=2, column=1, padx=5, pady=5)
+        self.show_signal = Checkbox(self, "Original Signal", 2, 0, default_value=True)
+        self.show_recording = Checkbox(self, "Recorded Sound", 2, 1, default_value=True)

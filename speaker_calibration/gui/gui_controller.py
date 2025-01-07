@@ -24,20 +24,20 @@ class SpeakerCalibrationController:
         # self.set_settings_defaults()
 
         self.view.config_frame.run_button["command"] = self.calibrate
-        self.view.config_frame.plot_config.calibration_signal["command"] = (
-            self.view.update_plot
-        )
-        self.view.config_frame.plot_config.test_signal["command"] = (
-            self.view.update_plot
-        )
-        self.view.config_frame.plot_config.signal_cb["command"] = self.view.update_plot
-        self.view.config_frame.plot_config.recorded_sound_cb["command"] = (
-            self.view.update_plot
-        )
+        # self.view.config_frame.plot_config.calibration_signal["command"] = (
+        #     self.view.update_plot
+        # )
+        # self.view.config_frame.plot_config.test_signal["command"] = (
+        #     self.view.update_plot
+        # )
+        # self.view.config_frame.plot_config.signal_cb["command"] = self.view.update_plot
+        # self.view.config_frame.plot_config.recorded_sound_cb["command"] = (
+        #     self.view.update_plot
+        # )
 
-        self.view.config_frame.plot_config.plot_cb.bind(
-            "<<ComboboxSelected>>", self.view.update_plot
-        )
+        # self.view.config_frame.plot_config.plot_cb.bind(
+        #     "<<ComboboxSelected>>", self.view.update_plot
+        # )
 
     def open_calibration_factor(self):
         filename = tk.filedialog.askopenfilename()
