@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=schemas/hardware-schema.json
-harp_soundcard: true
-soundcard_com: COM17
-soundcard_id: V2.2 X1047
-fs_sc: 192000
-harp_audio_amp: true
-audio_amp_id: V2.1 F1038
-speaker_id: 1
-setup_id: 1
+is_harp: true
+soundcard: 
+  com_port: COM4
+  fs: 192000
+speaker_id: 0
+setup_id: 0
+fs_adc: 250000
+mic_factor: 0.41887

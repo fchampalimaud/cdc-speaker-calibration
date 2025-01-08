@@ -78,6 +78,12 @@ class LabeledSpinbox:
     def set(self, value):
         return self.var.set(value)
 
+    def grid(self, row: int, column: int, padx: int = 5, pady: int = 5):
+        self.frame.grid(row=row, column=column, padx=padx, pady=pady)
+
+    def grid_forget(self):
+        self.frame.grid_forget()
+
 
 class LabeledCombobox:
     def __init__(
@@ -140,6 +146,15 @@ class LabeledCombobox:
     def set_values(self, value_list: list):
         self.combobox["values"] = value_list
 
+    def bind(self, command: callable):
+        self.combobox.bind("<<ComboboxSelected>>", command)
+
+    def grid(self, row: int, column: int, padx: int = 5, pady: int = 5):
+        self.frame.grid(row=row, column=column, padx=padx, pady=pady)
+
+    def grid_forget(self):
+        self.frame.grid_forget()
+
 
 class LabeledEntry:
     def __init__(
@@ -180,6 +195,12 @@ class LabeledEntry:
 
     def set(self, value):
         self.var.set(value)
+
+    def grid(self, row: int, column: int, padx: int = 5, pady: int = 5):
+        self.frame.grid(row=row, column=column, padx=padx, pady=pady)
+
+    def grid_forget(self):
+        self.frame.grid_forget()
 
 
 class Checkbox:

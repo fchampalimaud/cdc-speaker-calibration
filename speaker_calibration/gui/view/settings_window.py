@@ -34,7 +34,7 @@ class SettingsWindow(tk.Toplevel):
             combobox_width=10,
             sticky="e",
         )
-        self.sound_type.combobox.bind("<<ComboboxSelected>>", self.change_frame)
+        self.sound_type.bind(self.change_frame)
 
         self.reference_pressure = LabeledSpinbox(
             self,
@@ -149,21 +149,21 @@ class FilterFrame(ttk.LabelFrame):
 
     def change_frame(self, event=None):
         if self.filter_input.get() or self.filter_acquisition.get():
-            self.min_value.frame.grid(
+            self.min_value.grid(
                 row=2,
                 column=0,
                 padx=5,
                 pady=5,
             )
-            self.max_value.frame.grid(
+            self.max_value.grid(
                 row=3,
                 column=0,
                 padx=5,
                 pady=5,
             )
         else:
-            self.min_value.frame.grid_forget()
-            self.max_value.frame.grid_forget()
+            self.min_value.grid_forget()
+            self.max_value.grid_forget()
 
 
 class FreqFrame(ttk.LabelFrame):
@@ -256,21 +256,21 @@ class InverseFilterFrame(ttk.LabelFrame):
 
     def change_frame(self, event=None):
         if self.determine_filter.get():
-            self.sound_duration.frame.grid(
+            self.sound_duration.grid(
                 row=1,
                 column=0,
                 padx=5,
                 pady=5,
             )
-            self.time_constant.frame.grid(
+            self.time_constant.grid(
                 row=2,
                 column=0,
                 padx=5,
                 pady=5,
             )
         else:
-            self.sound_duration.frame.grid_forget()
-            self.time_constant.frame.grid_forget()
+            self.sound_duration.grid_forget()
+            self.time_constant.grid_forget()
 
 
 class CalibrationFrame(ttk.LabelFrame):
@@ -341,35 +341,35 @@ class CalibrationFrame(ttk.LabelFrame):
 
     def change_frame(self, event=None):
         if self.calibrate.get():
-            self.sound_duration.frame.grid(
+            self.sound_duration.grid(
                 row=1,
                 column=0,
                 padx=5,
                 pady=5,
             )
-            self.att_min.frame.grid(
+            self.att_min.grid(
                 row=2,
                 column=0,
                 padx=5,
                 pady=5,
             )
-            self.att_max.frame.grid(
+            self.att_max.grid(
                 row=3,
                 column=0,
                 padx=5,
                 pady=5,
             )
-            self.att_steps.frame.grid(
+            self.att_steps.grid(
                 row=4,
                 column=0,
                 padx=5,
                 pady=5,
             )
         else:
-            self.sound_duration.frame.grid_forget()
-            self.att_min.frame.grid_forget()
-            self.att_max.frame.grid_forget()
-            self.att_steps.frame.grid_forget()
+            self.sound_duration.grid_forget()
+            self.att_min.grid_forget()
+            self.att_max.grid_forget()
+            self.att_steps.grid_forget()
 
 
 class TestCalibrationFrame(ttk.LabelFrame):
@@ -440,32 +440,32 @@ class TestCalibrationFrame(ttk.LabelFrame):
 
     def change_frame(self, event=None):
         if self.test.get():
-            self.sound_duration.frame.grid(
+            self.sound_duration.grid(
                 row=1,
                 column=0,
                 padx=5,
                 pady=5,
             )
-            self.db_min.frame.grid(
+            self.db_min.grid(
                 row=2,
                 column=0,
                 padx=5,
                 pady=5,
             )
-            self.db_max.frame.grid(
+            self.db_max.grid(
                 row=3,
                 column=0,
                 padx=5,
                 pady=5,
             )
-            self.db_steps.frame.grid(
+            self.db_steps.grid(
                 row=4,
                 column=0,
                 padx=5,
                 pady=5,
             )
         else:
-            self.sound_duration.frame.grid_forget()
-            self.db_min.frame.grid_forget()
-            self.db_max.frame.grid_forget()
-            self.db_steps.frame.grid_forget()
+            self.sound_duration.grid_forget()
+            self.db_min.grid_forget()
+            self.db_max.grid_forget()
+            self.db_steps.grid_forget()

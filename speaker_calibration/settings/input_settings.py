@@ -165,7 +165,7 @@ class Sound(BaseModel):
 
 
 class Settings(BaseModel):
-    sound_type: Literal["noise", "pure_tone"] = Field(
+    sound_type: Literal["Noise", "Pure Tones"] = Field(
         description="Indicates whether the calibration will be made with noise or pure tones."
     )
     reference_pressure: float = Field(description="The reference pressure (Pa).", gt=0)

@@ -1,4 +1,5 @@
 import numpy as np
+import yaml
 
 from speaker_calibration.protocol.classes import Signal
 from speaker_calibration.settings.hardware import Hardware
@@ -42,14 +43,19 @@ class SpeakerCalibrationModel:
     test_data: np.ndarray
 
     def __init__(self):
+        with open("config/hardware.yml", "r") as file:
+            hardware = yaml.safe_load(file)
+        with open("config/settings.yml", "r") as file:
+            settings = yaml.safe_load(file)
+
         # self.input_parameters = Settings()
         # self.hardware = Hardware()
-        self.input_parameters = None
-        self.hardware = None
-        self.inverse_filter = None
-        self.calibration_parameters = np.zeros(2)
-        self.psd_signal = None
-        self.calibration_signals = None
-        self.calibration_data = None
-        self.test_signals = None
-        self.test_data = None
+        self.input_parameters = Settings(**settings)
+        self.hardware = Hardware(**hardware)
+        # self.inverse_filter = None
+        # self.calibration_parameters = np.zeros(2)
+        # self.psd_signal = None
+        # self.calibration_signals = None
+        # self.calibration_data = None
+        # self.test_signals = None
+        # self.test_data = None

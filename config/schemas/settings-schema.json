@@ -327,8 +327,8 @@
     "sound_type": {
       "description": "Indicates whether the calibration will be made with noise or pure tones.",
       "enum": [
-        "noise",
-        "pure_tone"
+        "Noise",
+        "Pure Tones"
       ],
       "title": "Sound Type",
       "type": "string"
