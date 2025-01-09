@@ -32,7 +32,7 @@ class SpeakerCalibrationModel:
         a three-column array in which the first column is the x-axis (desired db SPL of the test signals) and the remaining columns are y-axis (real dB SPL values of the test signals - in one column the dB are calculated through the time-domain and in the other through the frequency-domain).
     """
 
-    input_parameters: Settings
+    settings: Settings
     hardware: Hardware
     inverse_filter: np.ndarray
     calibration_parameters: np.ndarray
@@ -48,14 +48,101 @@ class SpeakerCalibrationModel:
         with open("config/settings.yml", "r") as file:
             settings = yaml.safe_load(file)
 
-        # self.input_parameters = Settings()
-        # self.hardware = Hardware()
-        self.input_parameters = Settings(**settings)
+        self.settings = Settings(**settings)
         self.hardware = Hardware(**hardware)
-        # self.inverse_filter = None
-        # self.calibration_parameters = np.zeros(2)
-        # self.psd_signal = None
-        # self.calibration_signals = None
-        # self.calibration_data = None
-        # self.test_signals = None
-        # self.test_data = None
+
+    def initialize_data(self):
+        self.data = Data(
+            sound_type=self.settings.sound_type,
+            num_amp=self.settings.sound.calibration.att_steps,
+            num_db=self.settings.sound.test.db_steps,
+            num_freq=self.settings.sound.freq.num_freqs,
+            fs_sc=self.hardware.soundcard.fs,
+            fs_adc=self.hardware.fs_adc,
+            calibration_duration=self.settings.sound.calibration.sound_duration,
+            test_duration=self.settings.sound.test.sound_duration,
+            inverse_filter_duration=self.settings.sound.inverse_filter.sound_duration,
+        )
+
+
+class Data:
+    def __init__(
+        self,
+        sound_type: str,
+        num_amp: int,
+        num_db: int,
+        fs_sc: int,
+        fs_adc: int,
+        calibration_duration: float,
+        test_duration: float,
+        inverse_filter_duration: float = None,
+        num_freq: int = None,
+    ):
+        if sound_type == "Noise":
+            self.inverse_filter = InverseFilterData(
+                inverse_filter_duration, fs_sc, fs_adc
+            )
+            self.calibration = CalibrationData(
+                sound_type=sound_type,
+                num_amp=num_amp,
+                duration=calibration_duration,
+                fs_sc=fs_sc,
+                fs_adc=fs_adc,
+            )
+            self.test = CalibrationData(
+                sound_type=sound_type,
+                num_amp=num_db,
+                duration=test_duration,
+                fs_sc=fs_sc,
+                fs_adc=fs_adc,
+            )
+        elif sound_type == "Pure Tones":
+            self.calibration = CalibrationData(
+                sound_type=sound_type,
+                num_amp=num_amp,
+                duration=calibration_duration,
+                fs_sc=fs_sc,
+                fs_adc=fs_adc,
+                num_freq=num_freq,
+            )
+            self.test = CalibrationData(
+                sound_type=sound_type,
+                num_amp=num_db,
+                duration=test_duration,
+                fs_sc=fs_sc,
+                fs_adc=fs_adc,
+                num_freq=num_freq,
+            )
+
+
+class CalibrationData:
+    def __init__(
+        self,
+        sound_type: str,
+        num_amp: int,
+        duration: float,
+        fs_sc: int,
+        fs_adc: int,
+        num_freq: int = None,
+    ):
+        if sound_type == "Noise":
+            self.signals = np.zeros((fs_sc * duration, num_amp + 1))
+            self.recorded_sounds = np.zeros((fs_adc * duration + 1000, num_amp + 1))
+            self.data = np.zeros((num_amp, 2))
+        elif sound_type == "Pure Tones":
+            self.signals = np.zeros((fs_sc * duration, num_amp + 1, num_freq))
+            self.recorded_sounds = np.zeros(
+                (fs_adc * duration + 1000, num_amp + 1, num_freq)
+            )
+            self.data = np.zeros((num_amp, num_freq, 3))
+
+
+class InverseFilterData:
+    def __init__(
+        self,
+        duration: float,
+        fs_sc: int,
+        fs_adc: int,
+    ):
+        self.signal = np.zeros((fs_sc * duration, 2))
+        self.inverse_filter = np.zeros((fs_adc * duration + 1000 / 2, 2))
