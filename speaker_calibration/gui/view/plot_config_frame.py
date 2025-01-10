@@ -15,28 +15,14 @@ class PlotConfigFrame(ttk.LabelFrame):
         for i in range(1):
             self.grid_columnconfigure(i, weight=1)
 
-        plot_list = [
-            "PSD Signal",
-            "Inverse Filter",
-            "Calibration Signals",
-            "Calibration Data",
-            "Test Signals",
-            "Test Data",
-        ]
-
-        self.plot = LabeledCombobox(self, "Plot", 0, value_list=plot_list)
-
-        self.plot.combobox.bind("<<ComboboxSelected>>", self.change_frame)
+        self.plot = LabeledCombobox(self, "Plot", 0)
+        # self.plot.combobox.bind("<<ComboboxSelected>>", self.change_frame)
 
         self.frames = [NoiseSignalFrame(self), PureToneSignalFrame(self)]
 
-    def change_frame(self, event=None):
-        if self.plot.get() == "PSD Signal":
-            self.frames[0].grid(column=0, row=1)
-            self.frames[1].grid_forget()
-        elif self.plot.get() == "Inverse Filter":
-            self.frames[1].grid(column=0, row=1)
-            self.frames[0].grid_forget()
+    def grid_forget(self):
+        self.frames[0].grid_forget()
+        self.frames[1].grid_forget()
 
 
 class NoiseSignalFrame(ttk.Frame):
@@ -65,11 +51,11 @@ class PureToneSignalFrame(ttk.Frame):
         for i in range(3):
             self.grid_rowconfigure(i, weight=1)
 
-        self.frequency_index = LabeledSpinbox(
-            self, "Frequency Index", 0, 0, 0, 1, 0, columnspan=2
-        )
         self.amplitude_index = LabeledSpinbox(
-            self, "Amplitude Index", 0, 0, 0, 1, 1, columnspan=2
+            self, "Amplitude Index", 0, 0, 0, 1, 0, columnspan=2
+        )
+        self.frequency_index = LabeledSpinbox(
+            self, "Frequency Index", 0, 0, 0, 1, 1, columnspan=2
         )
 
         self.show_signal = Checkbox(self, "Original Signal", 2, 0, default_value=True)

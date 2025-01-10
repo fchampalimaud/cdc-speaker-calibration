@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
 import matplotlib
-import numpy as np
 
 matplotlib.use("TkAgg")
 
@@ -21,18 +20,17 @@ class PlotFrame(ttk.Frame):
         self.current_figure = Figure(dpi=100)
 
         # Creates the FigureCanvasTkAgg object
-        self.figure_canvas = FigureCanvasTkAgg(self.current_figure, self)
+        self.canvas = FigureCanvasTkAgg(self.current_figure, self)
 
         # Creates the toolbar
-        NavigationToolbar2Tk(self.figure_canvas, self)
-
-        # # Create an axes
-        # self.ax = figure.add_subplot()
-
-        # # Generates 3 empty plots in the axes
-        # self.plots = np.zeros(3, dtype=matplotlib.lines.Line2D)
-        # for i in range(self.plots.size):
-        #     (self.plots[i],) = self.ax.plot(0)
+        NavigationToolbar2Tk(self.canvas, self)
 
         # Places the figure widget in the GUI
-        self.figure_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+
+    def set_figure(self, figure):
+        self.canvas.get_tk_widget().destroy()
+        self.current_figure = figure
+        self.canvas = FigureCanvasTkAgg(self.current_figure, self)
+        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+        self.canvas.draw()

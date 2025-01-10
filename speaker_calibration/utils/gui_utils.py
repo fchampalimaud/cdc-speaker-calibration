@@ -49,7 +49,7 @@ class LabeledSpinbox:
         ):
             self.var = tk.IntVar(self.frame, default_value)
         else:
-            self.var = tk.StringVar(self.frame, str(default_value))
+            self.var = tk.DoubleVar(self.frame, default_value)
 
         self.spinbox = ttk.Spinbox(
             self.frame,

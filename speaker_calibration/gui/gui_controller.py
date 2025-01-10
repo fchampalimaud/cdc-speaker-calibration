@@ -25,6 +25,10 @@ class SpeakerCalibrationController:
         # self.set_settings_defaults()
 
         self.view.config_frame.run_button["command"] = self.calibrate
+        self.view.config_frame.plot_config.plot.combobox.bind(
+            "<<ComboboxSelected>>", self.change_plot
+        )
+
         # self.view.config_frame.plot_config.calibration_signal["command"] = (
         #     self.view.update_plot
         # )
@@ -58,20 +62,20 @@ class SpeakerCalibrationController:
         self.model.hardware.setup_id = frame.setup_id.get()
 
         if self.model.hardware.is_harp:
-            self.model.hardware.sound = HarpSoundCard(
+            self.model.hardware.soundcard = HarpSoundCard(
                 com_port=frame.frames[0].port.get(), fs=frame.frames[0].fs.get()
             )
-            if frame.soundcard_id.get() != "":
-                self.model.hardware.sound.soundcard_id = frame.frames[
+            if frame.frames[0].soundcard_id.get() != "":
+                self.model.hardware.soundcard.soundcard_id = frame.frames[
                     0
                 ].soundcard_id.get()
 
-            if frame.setup_id.get() != "":
-                self.model.hardware.sound.audio_amp_id = frame.frames[
+            if frame.frames[0].audio_amp_id.get() != "":
+                self.model.hardware.soundcard.audio_amp_id = frame.frames[
                     0
                 ].audio_amp_id.get()
         else:
-            self.model.hardware.sound = ComputerSoundCard(
+            self.model.hardware.soundcard = ComputerSoundCard(
                 soundcard_name=frame.frames[1].soundcard_name.get(),
                 fs=frame.frames[1].fs.get(),
             )
@@ -138,31 +142,33 @@ class SpeakerCalibrationController:
         # Updates the model data based on the inputs from the view.
         self.update_settings()
         self.update_hardware()
+        self.model.initialize_data()
+        self.view.create_figures()
         # self.update_calibration_parameters()
 
-        self.view.config_frame.plot_config.calibration_signal_var.set(0)
-        self.view.config_frame.plot_config.test_signal_var.set(0)
-        self.view.config_frame.plot_config.calibration_signal["to"] = (
-            self.model.calibration_signals.size - 1
-        )
-        self.view.config_frame.plot_config.test_signal["to"] = (
-            self.model.test_signals.size - 1
-        )
+        # self.view.config_frame.plot_config.calibration_signal_var.set(0)
+        # self.view.config_frame.plot_config.test_signal_var.set(0)
+        # self.view.config_frame.plot_config.calibration_signal["to"] = (
+        #     self.model.calibration_signals.size - 1
+        # )
+        # self.view.config_frame.plot_config.test_signal["to"] = (
+        #     self.model.test_signals.size - 1
+        # )
 
-        # Creates and runs the thread that executes the noise calibration
-        if self.model.input_parameters.sound_type == "Noise":
-            self.view.config_frame.run_button["state"] = tk.DISABLED
-            calibration_thread = AsyncCalibration(
-                self.model.hardware,
-                self.model.input_parameters,
-                self.model.inverse_filter,
-                self.model.calibration_parameters,
-                self.package_receiver,
-            )
-            calibration_thread.start()
+        # # Creates and runs the thread that executes the noise calibration
+        # if self.model.input_parameters.sound_type == "Noise":
+        #     self.view.config_frame.run_button["state"] = tk.DISABLED
+        #     calibration_thread = AsyncCalibration(
+        #         self.model.hardware,
+        #         self.model.input_parameters,
+        #         self.model.inverse_filter,
+        #         self.model.calibration_parameters,
+        #         self.package_receiver,
+        #     )
+        #     calibration_thread.start()
 
-            # Starts the monitorization of the thread
-            self.monitor(calibration_thread)
+        #     # Starts the monitorization of the thread
+        #     self.monitor(calibration_thread)
 
     def monitor(self, thread):
         """
@@ -232,3 +238,67 @@ class SpeakerCalibrationController:
 
         # Updates the GUI's plot
         self.view.update_plot()
+
+    def change_plot(self, event=None):
+        plot_name = self.view.config_frame.plot_config.plot
+        data = self.model.data
+        if self.view.settings_window.sound_type.get() == "Noise":
+            self.view.config_frame.plot_config.grid_forget()
+            if plot_name.get() == "PSD Signal":
+                self.view.plots[0].set_data(
+                    data.inverse_filter.signal[:, 0], data.inverse_filter.signal[:, 1]
+                )
+                self.view.plots[1].set_data(
+                    data.inverse_filter.recording[:, 0],
+                    data.inverse_filter.recording[:, 1],
+                )
+            elif plot_name.get() == "Inverse Filter":
+                self.view.plots[0].set_data(
+                    data.inverse_filter.filter[:, 0], data.inverse_filter.filter[:, 1]
+                )
+                self.view.plots[1].set_data([], [])
+            elif plot_name.get() == "Calibration Signals":
+                self.view.config_frame.plot_config.frames[
+                    0
+                ].signal_index.spinbox.config(to=data.calibration.signals.shape[1] - 1)
+                self.view.config_frame.plot_config.frames[0].signal_index.set(0)
+                self.view.config_frame.plot_config.frames[0].grid(column=0, row=1)
+                index = (
+                    self.view.config_frame.plot_config.frames[0].signal_index.get() + 1
+                )
+                self.view.plots[0].set_data(
+                    data.calibration.signals[:, 0], data.calibration.signals[:, index]
+                )
+                self.view.plots[1].set_data(
+                    data.calibration.recorded_sounds[:, 0],
+                    data.calibration.recorded_sounds[:, index],
+                )
+            elif plot_name.get() == "Calibration Data":
+                self.view.plots[0].set_data(
+                    data.calibration.data[:, 0], data.calibration.data[:, 1]
+                )
+                self.view.plots[1].set_data([], [])
+            elif plot_name.get() == "Test Signals":
+                self.view.config_frame.plot_config.frames[
+                    0
+                ].signal_index.spinbox.config(to=data.test.signals.shape[1] - 1)
+                self.view.config_frame.plot_config.frames[0].signal_index.set(0)
+                self.view.config_frame.plot_config.frames[0].grid(column=0, row=1)
+                index = (
+                    self.view.config_frame.plot_config.frames[0].signal_index.get() + 1
+                )
+                self.view.plots[0].set_data(
+                    data.test.signals[:, 0], data.test.signals[:, index]
+                )
+                self.view.plots[1].set_data(
+                    data.test.recorded_sounds[:, 0], data.test.recorded_sounds[:, index]
+                )
+            elif plot_name.get() == "Test Data":
+                self.view.plots[0].set_data(data.test.data[:, 0], data.test.data[:, 1])
+                self.view.plots[1].set_data(data.test.data[:, 0], data.test.data[:, 0])
+
+            # TODO: pure tones
+
+        # self.view.ax.relim()
+        # self.view.ax.autoscale_view()
+        self.view.plot_frame.canvas.draw_idle()
