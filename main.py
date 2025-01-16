@@ -14,6 +14,8 @@ class SpeakerCalibrationGUI(tk.Tk):
     def __init__(self):
         super().__init__()
 
+        self.call("tk", "scaling", 1.0)
+
         # Configuration of the main window
         # Sets the window title and icon
         self.title("Speaker Calibration")

@@ -24,8 +24,8 @@ class SpeakerCalibrationController:
         # Changes the default values of the spinboxes of the settings window
         # self.set_settings_defaults()
 
-        self.view.config_frame.run_button["command"] = self.calibrate
-        self.view.config_frame.plot_config.plot.combobox.bind(
+        # self.view.run_button["command"] = self.view.plot_frame.recreate_figure
+        self.view.plot_config.plot.combobox.bind(
             "<<ComboboxSelected>>", self.change_plot
         )
 
@@ -55,7 +55,7 @@ class SpeakerCalibrationController:
         Updates the hardware information in the model based on the inputs from the view.
         """
 
-        frame = self.view.config_frame.hardware_frame
+        frame = self.view.hardware
 
         self.model.hardware.is_harp = frame.is_harp.get()
         self.model.hardware.speaker_id = frame.speaker_id.get()
@@ -185,17 +185,15 @@ class SpeakerCalibrationController:
             self.view.after(100, lambda: self.monitor(thread))
         else:
             # Activates the Run button again
-            self.view.config_frame.run_button["state"] = tk.NORMAL
+            self.view.run_button["state"] = tk.NORMAL
 
             # Updates the inverse filter and the calibration curve parameters
             self.model.inverse_filter = thread.inverse_filter
             self.model.calibration_parameters = thread.calibration_parameters
 
             # Updates the calibration curve parameters spinboxes in the view
-            self.view.config_frame.slope.set(str(self.model.calibration_parameters[0]))
-            self.view.config_frame.intercept.set(
-                str(self.model.calibration_parameters[1])
-            )
+            self.view.slope.set(str(self.model.calibration_parameters[0]))
+            self.view.intercept.set(str(self.model.calibration_parameters[1]))
 
             # Saves the results
             save_data(
@@ -240,10 +238,10 @@ class SpeakerCalibrationController:
         self.view.update_plot()
 
     def change_plot(self, event=None):
-        plot_name = self.view.config_frame.plot_config.plot
+        plot_name = self.view.plot_config.plot
         data = self.model.data
         if self.view.settings_window.sound_type.get() == "Noise":
-            self.view.config_frame.plot_config.grid_forget()
+            self.view.plot_config.grid_forget()
             if plot_name.get() == "PSD Signal":
                 self.view.plots[0].set_data(
                     data.inverse_filter.signal[:, 0], data.inverse_filter.signal[:, 1]
@@ -258,14 +256,12 @@ class SpeakerCalibrationController:
                 )
                 self.view.plots[1].set_data([], [])
             elif plot_name.get() == "Calibration Signals":
-                self.view.config_frame.plot_config.frames[
-                    0
-                ].signal_index.spinbox.config(to=data.calibration.signals.shape[1] - 1)
-                self.view.config_frame.plot_config.frames[0].signal_index.set(0)
-                self.view.config_frame.plot_config.frames[0].grid(column=0, row=1)
-                index = (
-                    self.view.config_frame.plot_config.frames[0].signal_index.get() + 1
+                self.view.plot_config.frames[0].signal_index.spinbox.config(
+                    to=data.calibration.signals.shape[1] - 1
                 )
+                self.view.plot_config.frames[0].signal_index.set(0)
+                self.view.plot_config.frames[0].grid(column=0, row=1)
+                index = self.view.plot_config.frames[0].signal_index.get() + 1
                 self.view.plots[0].set_data(
                     data.calibration.signals[:, 0], data.calibration.signals[:, index]
                 )
@@ -279,14 +275,12 @@ class SpeakerCalibrationController:
                 )
                 self.view.plots[1].set_data([], [])
             elif plot_name.get() == "Test Signals":
-                self.view.config_frame.plot_config.frames[
-                    0
-                ].signal_index.spinbox.config(to=data.test.signals.shape[1] - 1)
-                self.view.config_frame.plot_config.frames[0].signal_index.set(0)
-                self.view.config_frame.plot_config.frames[0].grid(column=0, row=1)
-                index = (
-                    self.view.config_frame.plot_config.frames[0].signal_index.get() + 1
+                self.view.plot_config.frames[0].signal_index.spinbox.config(
+                    to=data.test.signals.shape[1] - 1
                 )
+                self.view.plot_config.frames[0].signal_index.set(0)
+                self.view.plot_config.frames[0].grid(column=0, row=1)
+                index = self.view.plot_config.frames[0].signal_index.get() + 1
                 self.view.plots[0].set_data(
                     data.test.signals[:, 0], data.test.signals[:, index]
                 )

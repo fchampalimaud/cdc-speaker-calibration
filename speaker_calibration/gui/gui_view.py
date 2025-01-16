@@ -1,10 +1,14 @@
+import tkinter as tk
 from tkinter import ttk
 import numpy as np
 
-from speaker_calibration.gui.view.plot_frame import PlotFrame
-from speaker_calibration.gui.view.config_frame import ConfigFrame
+# from speaker_calibration.gui.view.plot_frame import PlotFrame
 from speaker_calibration.gui.view.settings_window import SettingsWindow
+from speaker_calibration.gui.view.hardware_frame import HardwareFrame
+from speaker_calibration.gui.view.plot_config_frame import PlotConfigFrame
 from matplotlib.figure import Figure
+
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 
 class SpeakerCalibrationView(ttk.Frame):
@@ -12,8 +16,7 @@ class SpeakerCalibrationView(ttk.Frame):
     The frontend of the application.
     """
 
-    plot_frame: PlotFrame
-    config_frame: ConfigFrame
+    # plot_frame: PlotFrame
     settings_window: SettingsWindow
 
     def __init__(self, container):
@@ -25,18 +28,45 @@ class SpeakerCalibrationView(ttk.Frame):
         self.grid_columnconfigure(1, weight=1)
 
         # Position the Matplotlib figure frame
-        self.plot_frame = PlotFrame(self)
+        self.plot_frame = ttk.Frame(self)  # PlotFrame(self)
         self.plot_frame.grid(column=0, row=0, sticky="nsew")
 
         # Position the settings widgets frame
-        self.config_frame = ConfigFrame(self)
-        self.config_frame.grid(column=1, row=0, sticky="nsew")
+        self.config = ttk.Frame(self)
+        self.config.grid(column=1, row=0, sticky="nsew")
+
+        self.config.grid_columnconfigure(0, weight=1)
+        for i in range(5):
+            self.config.grid_rowconfigure(i, weight=1)
+
+        self.logo = tk.PhotoImage(file="assets/cf_logo.png")
+        self.logo_label = tk.Label(self.config, image=self.logo)
+        self.logo_label.grid(column=0, row=0)
+
+        # button
+        self.settings_button = ttk.Button(self.config, text="Open Settings Window")
+        self.settings_button.grid(column=0, row=1)
+
+        self.plot_config = PlotConfigFrame(self.config)
+        self.plot_config.grid(column=0, row=2)
+
+        # label
+        self.hardware = HardwareFrame(self.config)
+        self.hardware.grid(column=0, row=3)
+
+        # button
+        self.run_button = ttk.Button(
+            self.config, text="Run", command=self.recreate_figure
+        )
+        self.run_button.grid(row=4, column=0, pady=5)
+
+        self.create_figure()
 
         # Creates the configuration window
         self.settings_window = SettingsWindow()
 
         # Shows the configuration window when the button is pressed
-        self.config_frame.settings_button["command"] = self.settings_window.deiconify
+        self.settings_button["command"] = self.settings_window.deiconify
 
     def set_controller(self, controller):
         """
@@ -97,4 +127,28 @@ class SpeakerCalibrationView(ttk.Frame):
                 "Test Data",
             ]
 
-        self.config_frame.plot_config.plot.set_values(plot_list)
+        self.plot_config.plot.set_values(plot_list)
+
+    def recreate_figure(self):
+        # Destroy the existing canvas and toolbar
+        self.canvas.get_tk_widget().destroy()
+        self.toolbar.destroy()
+        # Create a new figure
+        self.create_figure()
+
+    def create_figure(self):
+        # Create a new Matplotlib figure
+        self.figure = Figure(figsize=(5, 5), dpi=100)
+        self.ax = self.figure.add_subplot(111)
+
+        # Create a canvas for the figure
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Create a navigation toolbar
+        self.toolbar = NavigationToolbar2Tk(self.canvas, self.plot_frame)
+        self.toolbar.update()
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Plot the initial data
+        # self.plot()

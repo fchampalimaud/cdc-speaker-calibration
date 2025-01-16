@@ -1,145 +1,127 @@
-# import tkinter as tk
-# from tkinter import ttk
-# from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-# import matplotlib.pyplot as plt
-# import numpy as np
-
-
-# class App:
-#     def __init__(self, root):
-#         self.root = root
-#         self.root.title("Matplotlib in Tkinter")
-
-#         # Create a frame for the Matplotlib figure
-#         self.figure_frame = ttk.Frame(self.root, width=500, height=400)
-#         self.figure_frame.pack(fill=tk.BOTH, expand=True)
-
-#         # Create two figures
-#         self.fig1 = self.create_figure1()
-#         self.fig2 = self.create_figure2()
-
-#         # Initially, no figure is displayed
-#         self.current_figure = None
-#         self.canvas = None
-
-#         # Create a button to show the first figure
-#         self.show_button = ttk.Button(
-#             self.root, text="Show Figure", command=self.show_figure
-#         )
-#         self.show_button.pack()
-
-#         # Create a button to switch figures
-#         self.switch_button = ttk.Button(
-#             self.root, text="Switch Figure", command=self.switch_figure
-#         )
-#         self.switch_button.pack()
-#         self.switch_button.config(state=tk.DISABLED)  # Disable switch button initially
-
-#     def create_figure1(self):
-#         fig = plt.Figure(figsize=(5, 4), dpi=100)
-#         ax = fig.add_subplot(111)
-#         x = np.linspace(0, 10, 100)
-#         y = np.sin(x)
-#         ax.plot(x, y)
-#         ax.set_title("Figure 1: Sine Wave")
-#         return fig
-
-#     def create_figure2(self):
-#         fig = plt.Figure(figsize=(5, 4), dpi=100)
-#         ax = fig.add_subplot(111)
-#         x = np.linspace(0, 10, 100)
-#         y = np.cos(x)
-#         ax.plot(x, y)
-#         ax.set_title("Figure 2: Cosine Wave")
-#         return fig
-
-#     def show_figure(self):
-#         # Show the first figure on the first button press
-#         if self.current_figure is None:
-#             self.current_figure = self.fig1
-#             self.canvas = FigureCanvasTkAgg(
-#                 self.current_figure, master=self.figure_frame
-#             )
-#             self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-#             self.canvas.draw()
-#             self.switch_button.config(state=tk.NORMAL)  # Enable switch button
-
-#     def switch_figure(self):
-#         # Clear the current figure
-#         self.canvas.get_tk_widget().destroy()
-
-#         # Switch the figure
-#         if self.current_figure == self.fig1:
-#             self.current_figure = self.fig2
-#         else:
-#             self.current_figure = self.fig1
-
-#         # Create a new canvas for the new figure
-#         self.canvas = FigureCanvasTkAgg(self.current_figure, master=self.figure_frame)
-#         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-#         self.canvas.draw()
-
-
-# if __name__ == "__main__":
-#     root = tk.Tk()
-#     app = App(root)
-#     root.mainloop()
-
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from matplotlib.widgets import Button
-
-# # Create initial data
-# data = np.random.rand(10, 10)
-
-# # Create the initial imshow plot
-# fig, ax = plt.subplots()
-# img = ax.imshow(data, cmap='plasma')
-# plt.colorbar(img)
-
-# # Function to update the data
-# def update_data(event):
-#     new_data = np.random.rand(10, 10)  # Generate new random data
-#     img.set_data(new_data)              # Update the data of the imshow
-#     plt.draw()                          # Redraw the figure
-
-# # Create a button
-# ax_button = plt.axes([0.8, 0.01, 0.1, 0.05])  # Position of the button
-# button = Button(ax_button, 'Update')
-
-# # Connect the button to the update function
-# button.on_clicked(update_data)
-
-# # Show the plot
-# plt.show()
-
-import numpy as np
+import tkinter as tk
+import tkinter as ttk
+from tkinter import Frame
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Button
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+import numpy as np
+from speaker_calibration.gui.view.settings_window import SettingsWindow
+from speaker_calibration.gui.view.hardware_frame import HardwareFrame
+from speaker_calibration.gui.view.plot_config_frame import PlotConfigFrame
 
-# Create initial data
-data = np.random.rand(10, 10)
+import ctypes
 
-# Create the initial imshow plot
-fig, ax = plt.subplots()
-img = ax.imshow(data, cmap='viridis')
-plt.colorbar(img)
+ctypes.windll.shcore.SetProcessDpiAwareness(1)
 
-# Function to update the data with a new size
-def update_data(event):
-    new_size = np.random.randint(5, 15)  # Random new size between 5 and 15
-    new_data = np.random.rand(new_size, new_size)  # Generate new random data
-    ax.clear()  # Clear the current axes
-    img = ax.imshow(new_data, cmap='viridis')  # Create a new imshow with the new data
-    # plt.colorbar(img)  # Add a colorbar
-    plt.draw()  # Redraw the figure
 
-# Create a button
-ax_button = plt.axes([0.8, 0.01, 0.1, 0.05])  # Position of the button
-button = Button(ax_button, 'Update Size')
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()  # Initialize the Tk class
+        self.title("Tkinter Matplotlib Example")
+        self.call("tk", "scaling", 1.25)
+        self.update_idletasks()
 
-# Connect the button to the update function
-button.on_clicked(update_data)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)  # Left side (figure and toolbar)
 
-# Show the plot
-plt.show()
+        # Create a frame for the grid layout
+        self.frame = ttk.Frame(self)
+        self.frame.grid(row=0, column=0, sticky="nsew")
+
+        # Configure grid weights
+        self.frame.grid_rowconfigure(0, weight=1)
+        self.frame.grid_columnconfigure(0, weight=1)  # Left side (figure and toolbar)
+        self.frame.grid_columnconfigure(1, weight=1)  # Right side (button)
+
+        # Create a frame for the figure and toolbar
+        self.figure_frame = ttk.Frame(self.frame)
+        self.figure_frame.grid(row=0, column=0, sticky="nsew")
+
+        # Position the settings widgets frame
+        self.config = ttk.Frame(self)
+        self.config.grid(column=1, row=0, sticky="nsew")
+
+        self.config.grid_columnconfigure(0, weight=1)
+        for i in range(5):
+            self.config.grid_rowconfigure(i, weight=1)
+
+        self.logo = tk.PhotoImage(file="assets/cf_logo.png")
+        self.logo_label = tk.Label(self.config, image=self.logo)
+        self.logo_label.grid(column=0, row=0)
+
+        # button
+        self.settings_button = ttk.Button(self.config, text="Open Settings Window")
+        self.settings_button.grid(column=0, row=1)
+
+        self.plot_config = PlotConfigFrame(self.config)
+        self.plot_config.grid(column=0, row=2)
+
+        # label
+        self.hardware = HardwareFrame(self.config)
+        self.hardware.grid(column=0, row=3)
+
+        # button
+        self.run_button = ttk.Button(
+            self.config, text="Run", command=self.recreate_figure
+        )
+        self.run_button.grid(row=4, column=0, pady=5)
+
+        # # Create a frame for the button
+        # self.button_frame = ttk.Frame(self.frame)
+        # self.button_frame.grid(row=0, column=1, sticky="nsew")
+
+        # self.button_frame.grid_rowconfigure(0, weight=1)
+        # self.button_frame.grid_columnconfigure(
+        #     0, weight=1
+        # )  # Left side (figure and toolbar)
+
+        # Create the initial figure
+        self.create_figure()
+
+        # # Create a button to recreate the figure
+        # self.button = ttk.Button(
+        #     self.button_frame, text="Recreate Figure", command=self.recreate_figure
+        # )
+        # self.button.grid(row=0, column=0)
+
+    def create_figure(self):
+        # Create a new Matplotlib figure
+        self.figure = plt.Figure(figsize=(5, 5), dpi=100)
+        self.ax = self.figure.add_subplot(111)
+
+        # Create a canvas for the figure
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self.figure_frame)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Create a navigation toolbar
+        self.toolbar = NavigationToolbar2Tk(self.canvas, self.figure_frame)
+        self.toolbar.update()
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Plot the initial data
+        # self.plot()
+
+    def plot(self):
+        # Clear the previous plot
+        self.ax.clear()
+        # Generate some data
+        x = np.linspace(0, 10, 100)
+        y = np.sin(x)
+        # Plot the data
+        self.ax.plot(x, y)
+        self.ax.set_title("Sine Wave")
+        self.ax.set_xlabel("X-axis")
+        self.ax.set_ylabel("Y-axis")
+        # Draw the canvas
+        self.canvas.draw()
+
+    def recreate_figure(self):
+        # Destroy the existing canvas and toolbar
+        self.canvas.get_tk_widget().destroy()
+        self.toolbar.destroy()
+        # Create a new figure
+        self.create_figure()
+
+
+if __name__ == "__main__":
+    app = App()  # Create an instance of the App class
+    app.mainloop()  # Start the Tkinter main loop
