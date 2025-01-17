@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk
 import numpy as np
 
-# from speaker_calibration.gui.view.plot_frame import PlotFrame
 from speaker_calibration.gui.view.settings_window import SettingsWindow
 from speaker_calibration.gui.view.hardware_frame import HardwareFrame
 from speaker_calibration.gui.view.plot_config_frame import PlotConfigFrame
@@ -55,9 +54,7 @@ class SpeakerCalibrationView(ttk.Frame):
         self.hardware.grid(column=0, row=3)
 
         # button
-        self.run_button = ttk.Button(
-            self.config, text="Run", command=self.recreate_figure
-        )
+        self.run_button = ttk.Button(self.config, text="Run")
         self.run_button.grid(row=4, column=0, pady=5)
 
         self.create_figure()
@@ -79,7 +76,7 @@ class SpeakerCalibrationView(ttk.Frame):
         """
         self.controller = controller
 
-    def create_figures(self):
+    def generate_figures(self):
         if self.settings_window.sound_type.get() == "Noise":
             self.figure = Figure(dpi=100)
             self.ax = self.figure.add_subplot()
@@ -95,7 +92,7 @@ class SpeakerCalibrationView(ttk.Frame):
                 "Test Signals",
                 "Test Data",
             ]
-            self.plot_frame.set_figure(self.figure)
+            self.set_figure(self.figure)
         elif self.settings_window.sound_type.get() == "Pure Tones":
             self.figure = []
             self.ax = []
@@ -129,17 +126,10 @@ class SpeakerCalibrationView(ttk.Frame):
 
         self.plot_config.plot.set_values(plot_list)
 
-    def recreate_figure(self):
-        # Destroy the existing canvas and toolbar
-        self.canvas.get_tk_widget().destroy()
-        self.toolbar.destroy()
-        # Create a new figure
-        self.create_figure()
-
     def create_figure(self):
         # Create a new Matplotlib figure
-        self.figure = Figure(figsize=(5, 5), dpi=100)
-        self.ax = self.figure.add_subplot(111)
+        self.figure = Figure(dpi=100)
+        self.ax = self.figure.add_subplot()
 
         # Create a canvas for the figure
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.plot_frame)
@@ -152,3 +142,21 @@ class SpeakerCalibrationView(ttk.Frame):
 
         # Plot the initial data
         # self.plot()
+
+    def set_figure(self, figure):
+        # Destroys current figure and toolbar
+        self.canvas.get_tk_widget().destroy()
+        self.toolbar.destroy()
+
+        self.current_figure = figure
+
+        # Creates new figure
+        self.canvas = FigureCanvasTkAgg(self.current_figure, self.plot_frame)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Creates new toolbar
+        self.toolbar = NavigationToolbar2Tk(self.canvas, self.plot_frame)
+        self.toolbar.update()
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        self.canvas.draw()

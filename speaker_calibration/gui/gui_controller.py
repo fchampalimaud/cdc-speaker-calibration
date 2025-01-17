@@ -24,7 +24,7 @@ class SpeakerCalibrationController:
         # Changes the default values of the spinboxes of the settings window
         # self.set_settings_defaults()
 
-        # self.view.run_button["command"] = self.view.plot_frame.recreate_figure
+        self.view.run_button["command"] = self.calibrate
         self.view.plot_config.plot.combobox.bind(
             "<<ComboboxSelected>>", self.change_plot
         )
@@ -143,7 +143,7 @@ class SpeakerCalibrationController:
         self.update_settings()
         self.update_hardware()
         self.model.initialize_data()
-        self.view.create_figures()
+        self.view.generate_figures()
         # self.update_calibration_parameters()
 
         # self.view.config_frame.plot_config.calibration_signal_var.set(0)
@@ -295,4 +295,4 @@ class SpeakerCalibrationController:
 
         # self.view.ax.relim()
         # self.view.ax.autoscale_view()
-        self.view.plot_frame.canvas.draw_idle()
+        self.view.canvas.draw_idle()
