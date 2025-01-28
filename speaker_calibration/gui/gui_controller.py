@@ -193,56 +193,56 @@ class SpeakerCalibrationController:
 
         # Noise Frame
         noise = []
-        for i in range(self.view.settings_window.noise.variables.size):
-            if isinstance(self.view.settings_window.noise.variables[i], tk.IntVar):
-                noise.append(self.view.settings_window.noise.variables[i].get())
+        for i in range(self.view.settings_window.frames[0].variables.size):
+            if isinstance(self.view.settings_window.frames[0].variables[i], tk.IntVar):
+                noise.append(self.view.settings_window.frames[0].variables[i].get())
             else:
-                noise.append(float(self.view.settings_window.noise.variables[i].get()))
+                noise.append(float(self.view.settings_window.frames[0].variables[i].get()))
 
         # PSD Frame
         psd = []
-        for i in range(self.view.settings_window.noise.psd.variables.size):
-            if isinstance(self.view.settings_window.noise.psd.variables[i], tk.IntVar):
-                psd.append(self.view.settings_window.noise.psd.variables[i].get())
+        for i in range(self.view.settings_window.frames[0].psd.variables.size):
+            if isinstance(self.view.settings_window.frames[0].psd.variables[i], tk.IntVar):
+                psd.append(self.view.settings_window.frames[0].psd.variables[i].get())
             else:
                 psd.append(
-                    float(self.view.settings_window.noise.psd.variables[i].get())
+                    float(self.view.settings_window.frames[0].psd.variables[i].get())
                 )
 
         # Calibration Frame
         calibration = []
-        for i in range(self.view.settings_window.noise.calibration.variables.size):
+        for i in range(self.view.settings_window.frames[0].calibration.variables.size):
             if isinstance(
-                self.view.settings_window.noise.calibration.variables[i], tk.IntVar
+                self.view.settings_window.frames[0].calibration.variables[i], tk.IntVar
             ):
                 calibration.append(
-                    self.view.settings_window.noise.calibration.variables[i].get()
+                    self.view.settings_window.frames[0].calibration.variables[i].get()
                 )
             else:
                 calibration.append(
                     float(
-                        self.view.settings_window.noise.calibration.variables[i].get()
+                        self.view.settings_window.frames[0].calibration.variables[i].get()
                     )
                 )
 
         # Test Frame
         test = []
-        for i in range(self.view.settings_window.noise.test.variables.size):
-            if isinstance(self.view.settings_window.noise.test.variables[i], tk.IntVar):
-                test.append(self.view.settings_window.noise.test.variables[i].get())
+        for i in range(self.view.settings_window.frames[0].test.variables.size):
+            if isinstance(self.view.settings_window.frames[0].test.variables[i], tk.IntVar):
+                test.append(self.view.settings_window.frames[0].test.variables[i].get())
             else:
                 test.append(
-                    float(self.view.settings_window.noise.test.variables[i].get())
+                    float(self.view.settings_window.frames[0].test.variables[i].get())
                 )
 
         # Pure Tone Frame
         pure_tone = []
-        for i in range(self.view.settings_window.pure_tone.variables.size):
-            if isinstance(self.view.settings_window.pure_tone.variables[i], tk.IntVar):
-                pure_tone.append(self.view.settings_window.pure_tone.variables[i].get())
+        for i in range(self.view.settings_window.frames[1].variables.size):
+            if isinstance(self.view.settings_window.frames[1].variables[i], tk.IntVar):
+                pure_tone.append(self.view.settings_window.frames[1].variables[i].get())
             else:
                 pure_tone.append(
-                    float(self.view.settings_window.pure_tone.variables[i].get())
+                    float(self.view.settings_window.frames[1].variables[i].get())
                 )
 
         psd_dict = dict(zip(psd_keys, psd))

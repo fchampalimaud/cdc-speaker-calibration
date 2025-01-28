@@ -162,7 +162,8 @@ cython_debug/
 #.idea/
 
 poetry.lock
-assets/
+assets/*
+!assets/cf_logo.png
 sound.bin
 liconvert-windows
 speaker_calibration/test.py
