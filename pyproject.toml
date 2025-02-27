@@ -24,3 +24,10 @@ docs = [
 
 [tool.uv.sources]
 pyharp = { git = "https://github.com/harp-tech/pyharp" }
+
+[project.scripts]
+speaker-calibration = "speaker_calibration.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

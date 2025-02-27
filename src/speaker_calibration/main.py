@@ -48,6 +48,6 @@ class SpeakerCalibrationGUI(tk.Tk):
         view.set_controller(controller)
 
 
-if __name__ == "__main__":
+def main():
     gui = SpeakerCalibrationGUI()
     gui.mainloop()
