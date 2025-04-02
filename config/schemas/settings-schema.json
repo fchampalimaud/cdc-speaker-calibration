@@ -23,7 +23,7 @@
         "att_min": {
           "anyOf": [
             {
-              "maximum": 0.0,
+              "maximum": 0,
               "type": "number"
             },
             {
@@ -37,7 +37,7 @@
         "att_max": {
           "anyOf": [
             {
-              "maximum": 0.0,
+              "maximum": 0,
               "type": "number"
             },
             {
@@ -69,6 +69,27 @@
       "title": "Calibration",
       "type": "object"
     },
+    "ComputerSoundCard": {
+      "properties": {
+        "soundcard_name": {
+          "description": "The name of the soundcard being used in the calibration.",
+          "title": "Soundcard Name",
+          "type": "string"
+        },
+        "fs": {
+          "description": "The sampling frequency of the soundcard (Hz).",
+          "exclusiveMinimum": 0,
+          "title": "Fs",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "soundcard_name",
+        "fs"
+      ],
+      "title": "ComputerSoundCard",
+      "type": "object"
+    },
     "Filter": {
       "properties": {
         "filter_input": {
@@ -84,8 +105,8 @@
         "min_value": {
           "anyOf": [
             {
-              "maximum": 80000.0,
-              "minimum": 0.0,
+              "maximum": 80000,
+              "minimum": 0,
               "type": "number"
             },
             {
@@ -99,8 +120,8 @@
         "max_value": {
           "anyOf": [
             {
-              "exclusiveMinimum": 0.0,
-              "maximum": 80000.0,
+              "exclusiveMinimum": 0,
+              "maximum": 80000,
               "type": "number"
             },
             {
@@ -137,15 +158,15 @@
         },
         "min_freq": {
           "description": "The minimum frequency value (Hz).",
-          "maximum": 80000.0,
-          "minimum": 0.0,
+          "maximum": 80000,
+          "minimum": 0,
           "title": "Min Freq",
           "type": "number"
         },
         "max_freq": {
           "description": "The maximum frequency value (Hz).",
-          "exclusiveMinimum": 0.0,
-          "maximum": 80000.0,
+          "exclusiveMinimum": 0,
+          "maximum": 80000,
           "title": "Max Freq",
           "type": "number"
         }
@@ -155,6 +176,57 @@
         "max_freq"
       ],
       "title": "Freq",
+      "type": "object"
+    },
+    "HarpSoundCard": {
+      "properties": {
+        "com_port": {
+          "description": "The COM number the soundcard corresponds to in the computer used for the calibration. The string should be of the format \"COM?\", in which \"?\" is the COM number.",
+          "pattern": "^COM\\d+$",
+          "title": "Com Port",
+          "type": "string"
+        },
+        "fs": {
+          "description": "The sampling frequency of the soundcard (Hz).",
+          "enum": [
+            96000,
+            192000
+          ],
+          "title": "Fs",
+          "type": "integer"
+        },
+        "soundcard_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The ID of the soundcard. If the soundcard is a Harp device, the ID should be of the format \"V?.? X????\", in which \"?\" are numbers.",
+          "title": "Soundcard Id"
+        },
+        "audio_amp_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The ID of the audio amplifier. If the audio amplifier is a Harp device, the ID should be of the format \"V?.? X????\", in which \"?\" are numbers.",
+          "title": "Audio Amp Id"
+        }
+      },
+      "required": [
+        "com_port",
+        "fs"
+      ],
+      "title": "HarpSoundCard",
       "type": "object"
     },
     "InverseFilter": {
@@ -167,7 +239,7 @@
         "sound_duration": {
           "anyOf": [
             {
-              "exclusiveMinimum": 0.0,
+              "exclusiveMinimum": 0,
               "type": "number"
             },
             {
@@ -181,7 +253,7 @@
         "time_constant": {
           "anyOf": [
             {
-              "exclusiveMinimum": 0.0,
+              "exclusiveMinimum": 0,
               "type": "number"
             },
             {
@@ -199,59 +271,57 @@
       "title": "InverseFilter",
       "type": "object"
     },
-    "Sound": {
+    "Moku": {
       "properties": {
-        "ramp_time": {
-          "description": "The ramp time of the sounds used during the calibration process (s).",
-          "minimum": 0.0,
-          "title": "Ramp Time",
-          "type": "number"
+        "fs": {
+          "description": "The sampling frequency of the ADC (Hz).",
+          "exclusiveMinimum": 0,
+          "maximum": 500000,
+          "title": "Fs",
+          "type": "integer"
         },
-        "amplification": {
-          "description": "The amplification of the speakers.",
-          "maximum": 1.0,
-          "minimum": 0.0,
-          "title": "Amplification",
-          "type": "number"
-        },
-        "freq": {
-          "$ref": "#/$defs/Freq",
-          "description": "The frequency-related parameters to be used in the calibration."
-        },
-        "filter": {
-          "$ref": "#/$defs/Filter",
-          "description": "The configuration parameters of the band-pass filter used."
-        },
-        "inverse_filter": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/InverseFilter"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The settings related to the inverse filter calculation. Noise calibration only!"
-        },
-        "calibration": {
-          "$ref": "#/$defs/Calibration",
-          "description": "The settings used for the actual speaker calibration."
-        },
-        "test_calibration": {
-          "$ref": "#/$defs/TestCalibration",
-          "description": "The settings used for the calibration test."
+        "address": {
+          "pattern": "^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}$|^[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}$|^[0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,4}[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){0,2}[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,3}[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){0,3}[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,2}[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){0,4}[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:)?[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}::[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}::$",
+          "title": "Address",
+          "type": "string"
         }
       },
       "required": [
-        "ramp_time",
-        "amplification",
-        "freq",
-        "filter",
-        "calibration",
-        "test_calibration"
+        "fs",
+        "address"
       ],
-      "title": "Sound",
+      "title": "Moku",
+      "type": "object"
+    },
+    "NiDaq": {
+      "properties": {
+        "fs": {
+          "description": "The sampling frequency of the ADC (Hz).",
+          "exclusiveMinimum": 0,
+          "maximum": 250000,
+          "title": "Fs",
+          "type": "integer"
+        },
+        "device_id": {
+          "description": "The sampling frequency of the ADC (Hz).",
+          "minimum": 1,
+          "title": "Device Id",
+          "type": "integer"
+        },
+        "ai_pin": {
+          "description": "The sampling frequency of the ADC (Hz).",
+          "exclusiveMinimum": 0,
+          "maximum": 7,
+          "title": "Ai Pin",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "fs",
+        "device_id",
+        "ai_pin"
+      ],
+      "title": "NiDaq",
       "type": "object"
     },
     "TestCalibration": {
@@ -264,7 +334,7 @@
         "sound_duration": {
           "anyOf": [
             {
-              "exclusiveMinimum": 0.0,
+              "exclusiveMinimum": 0,
               "type": "number"
             },
             {
@@ -333,21 +403,114 @@
       "title": "Sound Type",
       "type": "string"
     },
+    "mic_factor": {
+      "description": "The conversion factor of the microphone (V/Pa).",
+      "exclusiveMinimum": 0,
+      "title": "Mic Factor",
+      "type": "number"
+    },
     "reference_pressure": {
       "description": "The reference pressure (Pa).",
-      "exclusiveMinimum": 0.0,
+      "exclusiveMinimum": 0,
       "title": "Reference Pressure",
       "type": "number"
     },
-    "sound": {
-      "$ref": "#/$defs/Sound",
-      "description": "The sound-related configurations."
+    "ramp_time": {
+      "description": "The ramp time of the sounds used during the calibration process (s).",
+      "minimum": 0,
+      "title": "Ramp Time",
+      "type": "number"
+    },
+    "amplitude": {
+      "description": "The amplitude of the speakers.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Amplitude",
+      "type": "number"
+    },
+    "freq": {
+      "$ref": "#/$defs/Freq",
+      "description": "The frequency-related parameters to be used in the calibration."
+    },
+    "filter": {
+      "$ref": "#/$defs/Filter",
+      "description": "The configuration parameters of the band-pass filter used."
+    },
+    "inverse_filter": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/InverseFilter"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The settings related to the inverse filter calculation. Noise calibration only!"
+    },
+    "calibration": {
+      "$ref": "#/$defs/Calibration",
+      "description": "The settings used for the actual speaker calibration."
+    },
+    "test_calibration": {
+      "$ref": "#/$defs/TestCalibration",
+      "description": "The settings used for the calibration test."
+    },
+    "is_harp": {
+      "description": "Indicates whether the soundcard being calibrated is a Harp device or not.",
+      "title": "Is Harp",
+      "type": "boolean"
+    },
+    "soundcard": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/HarpSoundCard"
+        },
+        {
+          "$ref": "#/$defs/ComputerSoundCard"
+        }
+      ],
+      "description": "The soundcard details.",
+      "title": "Soundcard"
+    },
+    "is_nidaq": {
+      "description": "Indicates whether the soundcard being calibrated is a Harp device or not.",
+      "title": "Is Nidaq",
+      "type": "boolean"
+    },
+    "adc": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/NiDaq"
+        },
+        {
+          "$ref": "#/$defs/Moku"
+        }
+      ],
+      "description": "The ADC details.",
+      "title": "Adc"
+    },
+    "output_dir": {
+      "description": "The path to the output directory.",
+      "title": "Output Dir",
+      "type": "string"
     }
   },
   "required": [
     "sound_type",
+    "mic_factor",
     "reference_pressure",
-    "sound"
+    "ramp_time",
+    "amplitude",
+    "freq",
+    "filter",
+    "calibration",
+    "test_calibration",
+    "is_harp",
+    "soundcard",
+    "is_nidaq",
+    "adc",
+    "output_dir"
   ],
   "title": "Settings",
   "type": "object"

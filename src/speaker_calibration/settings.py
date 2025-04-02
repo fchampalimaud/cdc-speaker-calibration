@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field, model_validator
-from typing import Optional, Literal
-from typing_extensions import Self
 import json
+from typing import Literal, Optional, Union
+
+from pydantic import BaseModel, Field, model_validator
+from pydantic.types import StringConstraints
+from typing_extensions import Annotated, Self
 
 
 class Freq(BaseModel):
@@ -138,14 +140,65 @@ class Filter(BaseModel):
         return self
 
 
-class Sound(BaseModel):
+class ComputerSoundCard(BaseModel):
+    soundcard_name: str = Field(
+        description="The name of the soundcard being used in the calibration."
+    )
+    fs: int = Field(description="The sampling frequency of the soundcard (Hz).", gt=0)
+
+
+class HarpSoundCard(BaseModel):
+    com_port: Annotated[str, StringConstraints(pattern=r"^COM\d+$")] = Field(
+        description='The COM number the soundcard corresponds to in the computer used for the calibration. The string should be of the format "COM?", in which "?" is the COM number.'
+    )
+    fs: Literal[96000, 192000] = Field(
+        description="The sampling frequency of the soundcard (Hz)."
+    )
+    soundcard_id: Optional[str] = Field(
+        description='The ID of the soundcard. If the soundcard is a Harp device, the ID should be of the format "V?.? X????", in which "?" are numbers.',
+        default=None,
+    )
+    audio_amp_id: Optional[str] = Field(
+        description='The ID of the audio amplifier. If the audio amplifier is a Harp device, the ID should be of the format "V?.? X????", in which "?" are numbers.',
+        default=None,
+    )
+
+
+class NiDaq(BaseModel):
+    fs: int = Field(
+        description="The sampling frequency of the ADC (Hz).", gt=0, le=250000
+    )
+    device_id: int = Field(description="The sampling frequency of the ADC (Hz).", ge=1)
+    ai_pin: int = Field(
+        description="The sampling frequency of the ADC (Hz).", gt=0, le=7
+    )
+
+
+class Moku(BaseModel):
+    fs: int = Field(
+        description="The sampling frequency of the ADC (Hz).", gt=0, le=500000
+    )
+    address: Annotated[
+        str,
+        StringConstraints(
+            pattern=r"^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}$|^[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}$|^[0-9a-fA-F]{1,4}:[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,4}[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){0,2}[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,3}[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){0,3}[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,2}[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){0,4}[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:)?[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}::[0-9a-fA-F]{1,4}$|^(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}::$"
+        ),
+    ]
+
+
+class Settings(BaseModel):
+    sound_type: Literal["Noise", "Pure Tones"] = Field(
+        description="Indicates whether the calibration will be made with noise or pure tones."
+    )
+    mic_factor: float = Field(
+        description="The conversion factor of the microphone (V/Pa).", gt=0
+    )
+    reference_pressure: float = Field(description="The reference pressure (Pa).", gt=0)
     ramp_time: float = Field(
         description="The ramp time of the sounds used during the calibration process (s).",
         ge=0,
     )
-    amplification: float = Field(
-        description="The amplification of the speakers.", ge=0, le=1
-    )
+    amplitude: float = Field(description="The amplitude of the speakers.", ge=0, le=1)
     freq: Freq = Field(
         description="The frequency-related parameters to be used in the calibration."
     )
@@ -162,21 +215,24 @@ class Sound(BaseModel):
     test_calibration: TestCalibration = Field(
         description="The settings used for the calibration test."
     )
-
-
-class Settings(BaseModel):
-    sound_type: Literal["Noise", "Pure Tones"] = Field(
-        description="Indicates whether the calibration will be made with noise or pure tones."
+    is_harp: bool = Field(
+        description="Indicates whether the soundcard being calibrated is a Harp device or not."
     )
-    reference_pressure: float = Field(description="The reference pressure (Pa).", gt=0)
-    sound: Sound = Field(description="The sound-related configurations.")
+    soundcard: Union[HarpSoundCard, ComputerSoundCard] = Field(
+        description="The soundcard details."
+    )
+    is_nidaq: bool = Field(
+        description="Indicates whether the soundcard being calibrated is a Harp device or not."
+    )
+    adc: Union[NiDaq, Moku] = Field(description="The ADC details.")
+    output_dir: str = Field(description="The path to the output directory.")
 
     @model_validator(mode="after")
     def is_noise(self) -> Self:
         if self.sound_type == "noise" and not isinstance(
-            self.sound.inverse_filter, InverseFilter
+            self.inverse_filter, InverseFilter
         ):
-            raise ValueError("The sound.inverse_filter parameter must be filled.")
+            raise ValueError("The inverse_filter parameter must be filled.")
         return self
 
 
