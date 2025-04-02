@@ -1,8 +1,10 @@
+from typing import Literal, Optional
+
 import numpy as np
-from scipy.signal import butter, sosfilt
-from speaker_calibration.utils.decorators import validate_range, greater_than
-from typing import Optional, Literal
 from multipledispatch import dispatch
+from scipy.signal import butter, sosfilt
+
+from speaker_calibration.utils.decorators import greater_than, validate_range
 
 
 class Sound:
@@ -77,11 +79,11 @@ def white_noise(
 
     # Uses the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
     if inverse_filter is not None:
-        freq = np.fft.rfftfreq(duration * fs, d=1 / fs)
+        freq = np.fft.rfftfreq(int(duration * fs), d=1 / fs)
         calibration_interp = np.interp(freq, inverse_filter[:, 0], inverse_filter[:, 1])
         fft = np.fft.rfft(signal)
         rms_original_signal = np.sqrt(np.mean(signal**2))
-        signal = np.fft.irfft(fft * calibration_interp, n=fs * duration)
+        signal = np.fft.irfft(fft * calibration_interp, n=int(fs * duration))
         signal = sosfilt(sos, signal)
         signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
 
@@ -110,7 +112,7 @@ def white_noise(
 def pure_tone(
     duration: float,
     fs: int,
-    freq: float = 5000,
+    freq: float,
     phase: float = 0,
     amplitude: float = 1,
     ramp_time: float = 0.005,
@@ -120,15 +122,15 @@ def pure_tone(
 
     Parameters
     ----------
-    freq : float
-        frequency of the sinusoidal signal (Hz).
     duration : float
         duration of the signal generated (s).
     fs : int
         sampling frequency of the signal being generated (Hz).
-    phase : float
+    freq : float
+        frequency of the sinusoidal signal (Hz).
+    phase : float, optional
         phase of the sinusoidal signal.
-    amplitude : float
+    amplitude : float, optional
         amplitude of the sinusoidal signal.
     ramp_time : float, optional
         ramp time of the signal (s).
@@ -164,11 +166,11 @@ def create_sound_file(
 
     Parameters
     ----------
-    signal : numpy.ndarray
+    signal : Sound
         the signal to be written to the .bin file.
     filename : str
         the name of the .bin file.
-    speaker_side : Literal["both", "left", "right"]
+    speaker_side : Literal["both", "left", "right"], optional
         whether the sound plays in both speakers or in a single one. Possible values: "both", "left" or "right.
     """
     # Transforms the signal from values between -1 to 1 into 24-bit integers
@@ -204,14 +206,12 @@ def create_sound_file(
 
     Parameters
     ----------
-    signal_left : numpy.ndarray
+    signal_left : Sound
         the signal to be written to the .bin file that is going to be played by the left speaker.
-    signal_right : numpy.ndarray
+    signal_right : Sound
         the signal to be written to the .bin file that is going to be played by the right speaker.
     filename : str
         the name of the .bin file.
-    speaker_side : str
-        whether the sound plays in both speakers or in a single one. Possible values: "both", "left" or "right.
     """
     # Transforms the signal from values between -1 to 1 into 24-bit integers
     amplitude24bits = np.power(2, 31) - 1
@@ -225,3 +225,39 @@ def create_sound_file(
     # Writes the sound to the .bin file
     with open(filename, "wb") as f:
         wave_int.tofile(f)
+
+
+def calculate_db_spl(
+    sound: Sound,
+    mic_factor: float,
+    reference_pressure: float = 0.00002,
+    domain: Literal["time", "freq"] = "time",
+):
+    """
+    Calculates the dB SPL of the recorded signal.
+
+    Parameters
+    ----------
+    sound : Sound
+        the sound from which the dB SPL calculation will be performed.
+    mic_factor : float
+        factor of the microphone (V/Pa).
+    reference_pressure : float, optional
+        reference pressure (Pa).
+    domain : Literal["time", "freq"], optional
+        indicates whether the dB SPL calculation should be performed in the time or in the frequency domain.
+    """
+    # Remove the beginning and end of the acquisition
+    signal = sound.signal[int(0.1 * sound.signal.size) : int(0.9 * sound.signal.size)]
+
+    # Calculate dB SPL either in the time or in the frequency domain
+    if domain == "time":
+        signal_pascal = signal / mic_factor
+        rms = np.sqrt(np.mean(signal_pascal**2))
+        db_spl = 20 * np.log10(rms / reference_pressure)
+    else:
+        fft = np.abs(np.fft.fft(signal)) ** 2
+        rms = np.sqrt(np.sum(fft) / (fft.size**2 * mic_factor**2))
+        db_spl = 20 * np.log10(rms / reference_pressure)
+
+    return db_spl
