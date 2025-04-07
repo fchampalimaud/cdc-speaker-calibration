@@ -1,5 +1,9 @@
+import os
 import threading
 import time
+from datetime import datetime
+from pathlib import Path
+from typing import Literal
 
 import numpy as np
 from scipy.signal import butter, sosfilt, welch
@@ -22,6 +26,11 @@ class Calibration:
     def __init__(self, settings: Settings):
         self.settings = settings
 
+        self.path = (
+            Path() / self.settings.output_dir / datetime.now().strftime("%y%m%d_%H%M%S")
+        )
+        os.makedirs(self.path / "sounds")
+
         if self.settings.is_harp:
             self.soundcard = HarpSoundCard(self.settings.soundcard.com_port, 192000)
         else:
@@ -39,6 +48,9 @@ class Calibration:
         # Calculate the inverse filter
         if self.settings.inverse_filter.determine_filter:
             self.inverse_filter, _ = self.calculate_inverse_filter()
+            np.savetxt(
+                self.path / "inverse_filter.csv", self.inverse_filter, delimiter=","
+            )
 
         # Perform the calibration
         if self.settings.calibration.calibrate:
@@ -57,6 +69,11 @@ class Calibration:
 
             # Calculate the calibration parameters
             self.calibration_parameters = np.polyfit(log_att, self.db_spl, 1)
+            np.savetxt(
+                self.path / "calibration_parameters.csv",
+                self.calibration_parameters,
+                delimiter=",",
+            )
 
         # Test the calibration
         if self.settings.test_calibration.test:
@@ -78,7 +95,7 @@ class Calibration:
 
             # Test the calibration curve with the test attenuation factors
             self.db_spl_test, self.signals_test = self.sweep_db(
-                att_factor, self.settings.test_calibration.sound_duration
+                att_factor, self.settings.test_calibration.sound_duration, type="Test"
             )
 
     def pure_tone_calibration(self):
@@ -103,7 +120,7 @@ class Calibration:
         # Play the sound from the soundcard and record it with the microphone + DAQ system
         self.recorded_sound = self.record_sound(
             signal,
-            self.settings.output_dir + "/inverse_filter_sound.bin",
+            self.path / "sound" / "inverse_filter_sound.bin",
             self.settings.inverse_filter.sound_duration,
         )
 
@@ -122,7 +139,12 @@ class Calibration:
 
         return inverse_filter, signal
 
-    def sweep_db(self, att_array: np.ndarray, duration: float):
+    def sweep_db(
+        self,
+        att_array: np.ndarray,
+        duration: float,
+        type: Literal["Calibration", "Test"] = "Calibration",
+    ):
         """
         Plays sounds with different attenuations and calculates the correspondent intensities in dB SPL.
 
@@ -151,10 +173,15 @@ class Calibration:
                 noise_type="gaussian",  # FIXME
             )
 
+            if type == "Calibration":
+                filename = "calibration_sound_" + str(i) + ".bin"
+            else:
+                filename = "test_sound_" + str(i) + ".bin"
+
             # Play the sound from the soundcard and record it with the microphone + DAQ system
             sounds[i] = self.record_sound(
                 signal,
-                self.settings.output_dir + "/inverse_filter_sound.bin",
+                self.path / "sound" / filename,
                 duration,
                 self.settings.filter.filter_acquisition,
             )
@@ -206,7 +233,11 @@ class Calibration:
         record_thread = threading.Thread(
             target=self.adc.record_signal,
             args=[duration],
-            kwargs={"start_event": start_event, "result": result},
+            kwargs={
+                "start_event": start_event,
+                "result": result,
+                "filename": filename[:-4] + "_rec",
+            },
         )
 
         # Start both threads

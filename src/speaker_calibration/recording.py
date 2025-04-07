@@ -40,6 +40,7 @@ class NiDaq(RecordingDevice):
         ai_pin: int = 1,
         start_event: Optional[threading.Event] = None,
         result: Optional[list] = None,
+        filename: str = "file",
     ):
         """
         Records the signal with the NI-DAQ.
@@ -88,6 +89,12 @@ class NiDaq(RecordingDevice):
             if result is not None:
                 result.append(acquired_signal)
 
+        np.savetxt(
+            filename + ".csv",
+            np.stack((acquired_signal.time, acquired_signal.signal), axis=1),
+            delimiter=",",
+        )
+
         return acquired_signal
 
 
@@ -106,6 +113,7 @@ class Moku(RecordingDevice):
         channel: int = 1,
         start_event: Optional[threading.Event] = None,
         result: Optional[list] = None,
+        filename: str = "file",
     ):
         # Connect to Moku:Go
         adc = Datalogger(self.address, force_connect=True)
@@ -140,12 +148,10 @@ class Moku(RecordingDevice):
                 print(f"Remaining time {remaining_time} seconds")
 
             # Download log from Moku, use liconverter to convert this .li file to .csv
-            adc.download(
-                "persist", logFile["file_name"], os.path.join(os.getcwd(), "file.li")
-            )
+            adc.download("persist", logFile["file_name"], filename + ".li")
 
-            os.system("mokucli convert file.li --format=csv")
-            array = np.loadtxt("file.csv", comments="%", delimiter=",")
+            os.system("mokucli convert " + filename + ".li --format=csv")
+            array = np.loadtxt(filename + ".csv", comments="%", delimiter=",")
 
             acquired_signal = Sound(
                 signal=np.array([x[1] for x in array]),
