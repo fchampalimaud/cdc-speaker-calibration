@@ -120,7 +120,7 @@ class Calibration:
         # Play the sound from the soundcard and record it with the microphone + DAQ system
         self.recorded_sound = self.record_sound(
             signal,
-            self.path / "sound" / "inverse_filter_sound.bin",
+            str(self.path / "sounds" / "inverse_filter_sound.bin"),
             self.settings.inverse_filter.sound_duration,
         )
 
@@ -181,7 +181,7 @@ class Calibration:
             # Play the sound from the soundcard and record it with the microphone + DAQ system
             sounds[i] = self.record_sound(
                 signal,
-                self.path / "sound" / filename,
+                str(self.path / "sounds" / filename),
                 duration,
                 self.settings.filter.filter_acquisition,
             )
