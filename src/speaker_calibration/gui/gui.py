@@ -28,6 +28,19 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from serial import SerialException
+from speaker_calibration.protocol import Calibration
+from speaker_calibration.settings import (
+    CalibrationSettings,
+    ComputerSoundCard,
+    Filter,
+    Freq,
+    HarpSoundCard,
+    InverseFilter,
+    Moku,
+    NiDaq,
+    Settings,
+    TestCalibration,
+)
 from speaker_calibration.utils.gui import get_ports
 
 
@@ -553,12 +566,11 @@ class ApplicationWindow(QMainWindow):
         layout = QHBoxLayout(self._main)
 
         plot_layout = PlotLayout()
-        settings_layout = SettingsLayout()
-        # settings_layout = SoundCardLayout()
+        self.settings_layout = SettingsLayout()
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(settings_layout)
+        scroll_area.setWidget(self.settings_layout)
         scroll_area.setFixedWidth(320)
 
         layout.addWidget(plot_layout)
@@ -575,6 +587,87 @@ class ApplicationWindow(QMainWindow):
         # It should be safe to use the synchronous draw() method for most drawing
         # frequencies, but it is safer to use draw_idle().
         self._line.figure.canvas.draw_idle()
+
+    def run_calibration(self):
+        freq = Freq(
+            num_freqs=0,  # FIXME
+            min_freq=self.settings_layout.min_freq.value,
+            max_freq=self.settings_layout.max_freq.value,
+        )
+
+        filt = Filter(
+            filter_input=self.settings_layout.filter_input.isChecked(),
+            filter_acquisition=self.settings_layout.filter_acquisition.isChecked(),
+            min_value=self.settings_layout.min_freq_filt.value,
+            max_value=self.settings_layout.max_freq_filt.value,
+        )
+
+        inverse_filter = InverseFilter(
+            determine_filter=self.settings_layout.inverse_filter.isChecked(),
+            sound_duration=self.settings_layout.if_duration.value,
+            time_constant=self.settings_layout.time_const.value,
+        )
+
+        calibration = CalibrationSettings(
+            calibrate=self.settings_layout.calibrate.isChecked(),
+            sound_duration=self.settings_layout.calib_duration.value,
+            att_min=self.settings_layout.min_att.value,
+            att_max=self.settings_layout.max_att.value,
+            att_steps=self.settings_layout.att_steps.value,
+        )
+
+        test = TestCalibration(
+            test=self.settings_layout.test.isChecked(),
+            sound_duration=self.settings_layout.test_duration.value,
+            db_min=self.settings_layout.min_db.value,
+            db_max=self.settings_layout.max_db.value,
+            db_steps=self.settings_layout.db_steps.value,
+        )
+
+        if self.settings_layout.is_harp.isChecked():
+            soundcard = HarpSoundCard(
+                com_port=self.settings_layout.serial_port.currentText,
+                fs=int(self.settings_layout.fs_harp.currentText),
+            )
+        else:
+            soundcard = ComputerSoundCard(
+                soundcard_name="",  # FIXME
+                fs=self.settings_layout.fs_computer.value,
+            )
+
+        if self.settings_layout.adc.currentText == "NI-DAQ":
+            adc = NiDaq(
+                fs=self.settings_layout.fs_adc.value,
+                device_id=self.settings_layout.device_id.value,
+                channel=self.settings_layout.channel.value,
+            )
+        else:
+            adc = Moku(
+                fs=self.settings_layout.fs_adc.value,
+                address=self.settings_layout.address.text,
+                channel=self.settings_layout.channel.value,
+            )
+
+        settings = Settings(
+            sound_type=self.settings_layout.sound_type.currentText,
+            mic_factor=self.settings_layout.mic_factor.value,
+            reference_pressure=self.settings_layout.reference_pressure.value,
+            ramp_time=self.settings_layout.ramp_time.value,
+            amplitude=self.settings_layout.amplitude.value,
+            freq=freq,
+            filter=filt,
+            inverse_filter=inverse_filter,
+            calibration=calibration,
+            test_calibration=test,
+            is_harp=self.settings_layout.is_harp.isChecked(),
+            soundcard=soundcard,
+            adc_device=self.settings_layout.adc.currentText,
+            adc=adc,
+            output_dir="output",
+        )
+
+        self.calib = Calibration(settings=settings)
+        # TODO: complete function
 
 
 if __name__ == "__main__":
