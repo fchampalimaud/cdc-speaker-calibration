@@ -311,23 +311,23 @@
           "type": "integer"
         },
         "device_id": {
-          "description": "The sampling frequency of the ADC (Hz).",
+          "description": "The NI-DAQ ID number.",
           "minimum": 1,
           "title": "Device Id",
           "type": "integer"
         },
-        "ai_pin": {
-          "description": "The sampling frequency of the ADC (Hz).",
+        "channel": {
+          "description": "The analog input pin of the NI-DAQ being used.",
           "exclusiveMinimum": 0,
           "maximum": 7,
-          "title": "Ai Pin",
+          "title": "Channel",
           "type": "integer"
         }
       },
       "required": [
         "fs",
         "device_id",
-        "ai_pin"
+        "channel"
       ],
       "title": "NiDaq",
       "type": "object"
@@ -481,10 +481,14 @@
       "description": "The soundcard details.",
       "title": "Soundcard"
     },
-    "is_nidaq": {
-      "description": "Indicates whether the soundcard being calibrated is a Harp device or not.",
-      "title": "Is Nidaq",
-      "type": "boolean"
+    "adc_device": {
+      "description": "Indicates which device is being used as an ADC.",
+      "enum": [
+        "NI-DAQ",
+        "Moku"
+      ],
+      "title": "Adc Device",
+      "type": "string"
     },
     "adc": {
       "anyOf": [
@@ -516,7 +520,7 @@
     "test_calibration",
     "is_harp",
     "soundcard",
-    "is_nidaq",
+    "adc_device",
     "adc",
     "output_dir"
   ],

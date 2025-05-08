@@ -49,7 +49,7 @@ class TestCalibration(BaseModel):
         return self
 
 
-class Calibration(BaseModel):
+class CalibrationSettings(BaseModel):
     calibrate: bool = Field(
         description="Indicates whether the calibration is performed."
     )
@@ -168,9 +168,9 @@ class NiDaq(BaseModel):
     fs: int = Field(
         description="The sampling frequency of the ADC (Hz).", gt=0, le=250000
     )
-    device_id: int = Field(description="The sampling frequency of the ADC (Hz).", ge=1)
-    ai_pin: int = Field(
-        description="The sampling frequency of the ADC (Hz).", gt=0, le=7
+    device_id: int = Field(description="The NI-DAQ ID number.", ge=1)
+    channel: int = Field(
+        description="The analog input pin of the NI-DAQ being used.", gt=0, le=7
     )
 
 
@@ -212,7 +212,7 @@ class Settings(BaseModel):
         description="The settings related to the inverse filter calculation. Noise calibration only!",
         default=None,
     )
-    calibration: Calibration = Field(
+    calibration: CalibrationSettings = Field(
         description="The settings used for the actual speaker calibration."
     )
     test_calibration: TestCalibration = Field(
@@ -224,8 +224,8 @@ class Settings(BaseModel):
     soundcard: Union[HarpSoundCard, ComputerSoundCard] = Field(
         description="The soundcard details."
     )
-    is_nidaq: bool = Field(
-        description="Indicates whether the soundcard being calibrated is a Harp device or not."
+    adc_device: Literal["NI-DAQ", "Moku"] = Field(
+        description="Indicates which device is being used as an ADC."
     )
     adc: Union[NiDaq, Moku] = Field(description="The ADC details.")
     output_dir: str = Field(description="The path to the output directory.")

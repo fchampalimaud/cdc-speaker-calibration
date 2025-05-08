@@ -32,11 +32,10 @@ is_harp: true
 soundcard:
   com_port: COM17
   fs: 192000
-is_nidaq: true
+adc_device: NI-DAQ
 adc:
   fs: 250000
   device_id: 1
-  ai_pin: 1
+  channel: 1
   # address: fe80:0000:0000:0000:7269:79ff:feb9:62a2
-  # channel: 1
 output_dir: output
