@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMainWindow,
     QPushButton,
+    QRadioButton,
     QScrollArea,
     QSpinBox,
     QVBoxLayout,
@@ -505,11 +506,42 @@ class PlotLayout(QWidget):
         self.layout.addWidget(static_canvas)
         # TODO: add plot select
 
+        self.generate_selection()
+
         self._static_ax = static_canvas.figure.subplots()
         t = np.linspace(0, 10, 501)
         self._static_ax.plot(t, np.tan(t), ".")
 
         self.setLayout(self.layout)
+
+    def generate_selection(self):
+        layout = QHBoxLayout()
+
+        self.plot_l = QLabel("Plot: ")
+        self.plot = QComboBox()
+
+        self.intensity_index_l = QLabel("Plot Index: ")
+        self.intensity_index = QSpinBox()
+
+        self.frequency_index_l = QLabel("Frequency Index: ")
+        self.frequency_index = QSpinBox()
+
+        self.original = QRadioButton("Original Signal")
+        self.recorded = QRadioButton("Recorded Sound")
+        self.both = QRadioButton("Both")
+        self.both.setChecked(True)
+
+        layout.addWidget(self.plot_l, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.plot)
+        layout.addWidget(self.intensity_index_l, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.intensity_index)
+        layout.addWidget(self.frequency_index_l, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.frequency_index)
+        layout.addWidget(self.original, alignment=Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(self.recorded, alignment=Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(self.both, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        self.layout.addLayout(layout)
 
 
 class ApplicationWindow(QMainWindow):
