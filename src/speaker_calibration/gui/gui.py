@@ -5,6 +5,7 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+from pyharp.device import Device, HarpMessage
 from PySide6.QtCore import Qt
 
 # from PySide6.QtGui import QDoubleValidator
@@ -17,6 +18,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QPushButton,
     QScrollArea,
@@ -24,7 +26,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
+from serial import SerialException
 from speaker_calibration.utils.gui import get_ports
 
 
@@ -44,9 +46,13 @@ class SettingsLayout(QWidget):
         self.generate_calibration_layout()
         self.generate_test_layout()
 
+        self.run = QPushButton("Run")
+        self.layout.addWidget(self.run)
+
         self.setLayout(self.layout)
 
         self.on_is_harp_changed(True)
+        self.on_adc_changed(True)
 
     def generate_soundcard_layout(self):
         soundcard_gb = QGroupBox("Soundcard")
@@ -62,6 +68,7 @@ class SettingsLayout(QWidget):
         self.serial_port.setPlaceholderText("COMx")
         self.serial_port.addItems(get_ports())
         self.serial_port.setFixedWidth(self.WIDGETS_WIDTH)
+        self.serial_port.currentIndexChanged.connect(self.connect_soundcard)
 
         self.fs_harp_l = QLabel("Sampling Frequency (Hz)")
         self.fs_harp = QComboBox()
@@ -73,6 +80,7 @@ class SettingsLayout(QWidget):
         self.fs_computer_l.setFixedWidth(self.LABEL_WIDTH)
         self.fs_computer = QSpinBox()
         self.fs_computer.setRange(1, 48000)
+        self.fs_computer.setValue(48000)
         self.fs_computer.setFixedWidth(self.WIDGETS_WIDTH)
 
         form.addRow("Harp SoundCard", self.is_harp)
@@ -87,6 +95,8 @@ class SettingsLayout(QWidget):
         adc_gb = QGroupBox("ADC")
         form = QFormLayout()
 
+        self.adc_l = QLabel("ADC")
+        self.adc_l.setFixedWidth(self.LABEL_WIDTH)
         self.adc = QComboBox()
         self.adc.addItems(["NI-DAQ", "Moku:Go"])
         self.adc.setCurrentIndex(0)
@@ -104,15 +114,17 @@ class SettingsLayout(QWidget):
         self.device_id.setMinimum(1)
         self.device_id.setFixedWidth(self.WIDGETS_WIDTH)
 
-        # TODO: Moku address
+        self.address_l = QLabel("Device Address")
+        self.address = QLineEdit()
 
         self.channel = QSpinBox()
         self.channel.setRange(0, 7)
         self.channel.setFixedWidth(self.WIDGETS_WIDTH)
 
-        form.addRow("ADC", self.adc)
+        form.addRow(self.adc_l, self.adc)
         form.addRow("ADC Sampling Frequency (Hz)", self.fs_adc)
         form.addRow(self.device_id_l, self.device_id)
+        form.addRow(self.address_l, self.address)
         form.addRow("Channel", self.channel)
 
         adc_gb.setLayout(form)
@@ -122,6 +134,8 @@ class SettingsLayout(QWidget):
         filter_gb = QGroupBox("Filter")
         form = QFormLayout()
 
+        self.filter_input_l = QLabel("Filter Input")
+        self.filter_input_l.setFixedWidth(self.LABEL_WIDTH)
         self.filter_input = QCheckBox()
         self.filter_input.setChecked(True)
         self.filter_input.stateChanged.connect(self.on_filter_changed)
@@ -143,7 +157,7 @@ class SettingsLayout(QWidget):
         self.max_freq_filt.setValue(20000)
         self.max_freq_filt.setFixedWidth(self.WIDGETS_WIDTH)
 
-        form.addRow("Filter Input", self.filter_input)
+        form.addRow(self.filter_input_l, self.filter_input)
         form.addRow("Filter Acquisition", self.filter_acquisition)
         form.addRow(self.min_freq_l, self.min_freq_filt)
         form.addRow(self.max_freq_l, self.max_freq_filt)
@@ -166,6 +180,7 @@ class SettingsLayout(QWidget):
         self.amplitude = QDoubleSpinBox()
         self.amplitude.setRange(0, 1)
         self.amplitude.setValue(1)
+        self.amplitude.setSingleStep(0.01)
         self.amplitude.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.ramp_time = QDoubleSpinBox()
@@ -185,11 +200,23 @@ class SettingsLayout(QWidget):
         self.max_freq.setValue(20000)
         self.max_freq.setFixedWidth(self.WIDGETS_WIDTH)
 
+        self.mic_factor = QDoubleSpinBox()
+        self.mic_factor.setDecimals(5)
+        self.mic_factor.setSingleStep(0.00001)
+        self.mic_factor.setValue(0.41887)
+
+        self.reference_pressure = QDoubleSpinBox()
+        self.reference_pressure.setDecimals(6)
+        self.reference_pressure.setValue(0.00002)
+        self.reference_pressure.setSingleStep(0.000005)
+
         form.addRow(self.sound_type_l, self.sound_type)
         form.addRow("Amplitude", self.amplitude)
         form.addRow("Ramp Time (s)", self.ramp_time)
         form.addRow("Minimum Frequency (Hz)", self.min_freq)
         form.addRow("Maximum Frequency (Hz)", self.max_freq)
+        form.addRow("Microphone Factor (V/Pa)", self.mic_factor)
+        form.addRow("Reference Pressure (Pa)", self.reference_pressure)
 
         protocol_gb.setLayout(form)
         self.layout.addWidget(protocol_gb)
@@ -198,6 +225,8 @@ class SettingsLayout(QWidget):
         self.inverse_filter_gb = QGroupBox("Inverse Filter")
         form = QFormLayout()
 
+        self.inverse_filter_l = QLabel("Determine Filter")
+        self.inverse_filter_l.setFixedWidth(self.LABEL_WIDTH)
         self.inverse_filter = QCheckBox()
         self.inverse_filter.setChecked(True)
         self.inverse_filter.stateChanged.connect(self.on_inverse_filter_changed)
@@ -205,6 +234,7 @@ class SettingsLayout(QWidget):
         self.if_duration_l = QLabel("Sound Duration (s)")
         self.if_duration_l.setFixedWidth(self.LABEL_WIDTH)
         self.if_duration = QDoubleSpinBox()
+        self.if_duration.setSingleStep(0.01)
         self.if_duration.setMinimum(0)
         self.if_duration.setValue(30)
         self.if_duration.setFixedWidth(self.WIDGETS_WIDTH)
@@ -217,7 +247,7 @@ class SettingsLayout(QWidget):
         self.time_const.setValue(0.005)
         self.time_const.setFixedWidth(self.WIDGETS_WIDTH)
 
-        form.addRow("Determine Filter", self.inverse_filter)
+        form.addRow(self.inverse_filter_l, self.inverse_filter)
         form.addRow(self.if_duration_l, self.if_duration)
         form.addRow(self.time_const_l, self.time_const)
 
@@ -228,6 +258,8 @@ class SettingsLayout(QWidget):
         calibrate_gb = QGroupBox("Calibrate")
         form = QFormLayout()
 
+        self.calibrate_l = QLabel("Calibrate")
+        self.calibrate_l.setFixedWidth(self.LABEL_WIDTH)
         self.calibrate = QCheckBox()
         self.calibrate.setChecked(True)
         self.calibrate.stateChanged.connect(self.on_calibration_changed)
@@ -235,19 +267,22 @@ class SettingsLayout(QWidget):
         self.calib_duration_l = QLabel("Sound Duration (s)")
         self.calib_duration_l.setFixedWidth(self.LABEL_WIDTH)
         self.calib_duration = QDoubleSpinBox()
+        self.calib_duration.setSingleStep(0.01)
         self.calib_duration.setMinimum(0)
         self.calib_duration.setValue(15)
         self.calib_duration.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.min_att_l = QLabel("Minimum Attenuation")
         self.min_att = QDoubleSpinBox()
-        self.min_att.setMaximum(0)
+        self.min_att.setSingleStep(0.01)
+        self.min_att.setRange(-10, 0)
         self.min_att.setValue(0)
         self.min_att.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.max_att_l = QLabel("Maximum Attenuation")
         self.max_att = QDoubleSpinBox()
-        self.max_att.setMaximum(0)
+        self.max_att.setSingleStep(0.01)
+        self.max_att.setRange(-10, 0)
         self.max_att.setValue(-1)
         self.max_att.setFixedWidth(self.WIDGETS_WIDTH)
 
@@ -257,7 +292,7 @@ class SettingsLayout(QWidget):
         self.att_steps.setValue(15)
         self.att_steps.setFixedWidth(self.WIDGETS_WIDTH)
 
-        form.addRow("Calibrate", self.calibrate)
+        form.addRow(self.calibrate_l, self.calibrate)
         form.addRow(self.calib_duration_l, self.calib_duration)
         form.addRow(self.min_att_l, self.min_att)
         form.addRow(self.max_att_l, self.max_att)
@@ -270,6 +305,8 @@ class SettingsLayout(QWidget):
         test_gb = QGroupBox("Test Calibration")
         form = QFormLayout()
 
+        self.test_l = QLabel("Test")
+        self.test_l.setFixedWidth(self.LABEL_WIDTH)
         self.test = QCheckBox()
         self.test.setChecked(True)
         self.test.stateChanged.connect(self.on_test_changed)
@@ -277,18 +314,21 @@ class SettingsLayout(QWidget):
         self.test_duration_l = QLabel("Sound Duration (s)")
         self.test_duration_l.setFixedWidth(self.LABEL_WIDTH)
         self.test_duration = QDoubleSpinBox()
+        self.test_duration.setSingleStep(0.01)
         self.test_duration.setMinimum(0)
         self.test_duration.setValue(15)
         self.test_duration.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.min_db_l = QLabel("Minimum dB SPL")
         self.min_db = QDoubleSpinBox()
+        self.min_db.setSingleStep(0.01)
         self.min_db.setMinimum(0)
         self.min_db.setValue(30)
         self.min_db.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.max_db_l = QLabel("Maximum dB SPL")
         self.max_db = QDoubleSpinBox()
+        self.max_db.setSingleStep(0.01)
         self.max_db.setMinimum(0)
         self.max_db.setValue(70)
         self.max_db.setFixedWidth(self.WIDGETS_WIDTH)
@@ -299,7 +339,7 @@ class SettingsLayout(QWidget):
         self.db_steps.setValue(5)
         self.db_steps.setFixedWidth(self.WIDGETS_WIDTH)
 
-        form.addRow("Test", self.test)
+        form.addRow(self.test_l, self.test)
         form.addRow(self.test_duration_l, self.test_duration)
         form.addRow(self.min_db_l, self.min_db)
         form.addRow(self.max_db_l, self.max_db)
@@ -330,7 +370,8 @@ class SettingsLayout(QWidget):
         if self.adc.currentText() == "NI-DAQ":
             self.device_id_l.show()
             self.device_id.show()
-            # TODO: Moku address
+            self.address_l.hide()
+            self.address.hide()
             self.fs_adc.setRange(1, 250000)
             self.fs_adc.setValue(250000)
             self.channel.setRange(0, 7)
@@ -339,7 +380,8 @@ class SettingsLayout(QWidget):
         else:
             self.device_id_l.hide()
             self.device_id.hide()
-            # TODO: Moku address
+            self.address_l.show()
+            self.address.show()
             self.fs_adc.setRange(1, 500000)
             self.fs_adc.setValue(500000)
             self.channel.setRange(1, 2)
@@ -425,6 +467,28 @@ class SettingsLayout(QWidget):
             self.db_steps_l.setVisible(False)
             self.db_steps.setVisible(False)
             self.adjustSize()
+
+    def connect_soundcard(self, index):
+        if hasattr(self, "soundcard"):
+            self.soundcard.disconnect()
+
+        if self.serial_port.currentText() == "Refresh":
+            self.serial_port.clear()
+            self.serial_port.addItems(get_ports())
+            return
+
+        try:
+            self.soundcard = Device(self.serial_port.currentText())
+            if self.soundcard.WHO_AM_I == 1280:
+                self.soundcard.send(HarpMessage.WriteU8(41, 0).frame, False)
+                self.soundcard.send(HarpMessage.WriteU8(44, 2).frame, False)
+            else:
+                # showwarning("Warning", "This is not a Harp Soundcard.")
+                self.serial_port.setCurrentIndex(-1)
+                self.soundcard.disconnect()
+        except SerialException:
+            self.serial_port.setCurrentIndex(-1)
+            # showwarning("Warning", "This is not a Harp device.")
 
 
 class PlotLayout(QWidget):
