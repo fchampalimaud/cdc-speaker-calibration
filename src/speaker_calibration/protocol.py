@@ -23,8 +23,9 @@ class Calibration:
     soundcard: SoundCard
     adc: RecordingDevice
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, callback: callable = None):
         self.settings = settings
+        self.callback = callback
 
         self.path = (
             Path() / self.settings.output_dir / datetime.now().strftime("%y%m%d_%H%M%S")
@@ -36,10 +37,15 @@ class Calibration:
         else:
             self.soundcard = None
 
-        if self.settings.is_nidaq:
+        if self.settings.adc_device == "NI-DAQ":
             self.adc = NiDaq(self.settings.adc.device_id, self.settings.adc.fs)
         else:
             self.adc = Moku(self.settings.adc.address, self.settings.adc.fs)
+
+        if self.settings.sound_type == "Noise":
+            self.noise_calibration()
+        else:
+            self.pure_tone_calibration()
 
     def noise_calibration(self):
         """
@@ -47,10 +53,17 @@ class Calibration:
         """
         # Calculate the inverse filter
         if self.settings.inverse_filter.determine_filter:
-            self.inverse_filter, _ = self.calculate_inverse_filter()
+            self.inverse_filter, psd_signal, psd_recorded = (
+                self.calculate_inverse_filter()
+            )
             np.savetxt(
                 self.path / "inverse_filter.csv", self.inverse_filter, delimiter=","
             )
+
+            if self.callback is not None:
+                self.callback(
+                    "Inverse Filter", self.inverse_filter, psd_signal, psd_recorded
+                )
 
         # Perform the calibration
         if self.settings.calibration.calibrate:
@@ -61,6 +74,9 @@ class Calibration:
                 self.settings.calibration.att_steps,
             )
             att_factor = 10**log_att
+
+            if self.callback is not None:
+                self.callback("Pre-calibration", log_att)
 
             # Generate and play the sounds for every attenuation value
             self.db_spl, self.signals = self.sweep_db(
@@ -84,8 +100,8 @@ class Calibration:
                 self.settings.test_calibration.db_steps,
             )
 
-            # if callback is not None:
-            #     callback([att_test], "Pre-test")
+            if self.callback is not None:
+                self.callback("Pre-test", att_test)
 
             # Use the calibration parameters and the dB array to generate the correspondent attenuation values that will be used in the calibration test
             att_test = (
@@ -95,7 +111,7 @@ class Calibration:
 
             # Test the calibration curve with the test attenuation factors
             self.db_spl_test, self.signals_test = self.sweep_db(
-                att_factor, self.settings.test_calibration.sound_duration, type="Test"
+                att_test, self.settings.test_calibration.sound_duration, type="Test"
             )
 
     def pure_tone_calibration(self):
@@ -118,7 +134,7 @@ class Calibration:
         )
 
         # Play the sound from the soundcard and record it with the microphone + DAQ system
-        self.recorded_sound = self.record_sound(
+        recorded_sound = self.record_sound(
             signal,
             str(self.path / "sounds" / "inverse_filter_sound.bin"),
             self.settings.inverse_filter.sound_duration,
@@ -126,9 +142,9 @@ class Calibration:
 
         # Calculate the inverse filter from the acquired signal
         freq, psd = welch(
-            self.recorded_sound.signal[
-                int(0.1 * self.recorded_sound.signal.size) : int(
-                    0.9 * self.recorded_sound.signal.size
+            recorded_sound.signal[
+                int(0.1 * recorded_sound.signal.size) : int(
+                    0.9 * recorded_sound.signal.size
                 )
             ],
             fs=self.settings.adc.fs,
@@ -137,7 +153,7 @@ class Calibration:
         inverse_filter = 1 / np.sqrt(psd)
         inverse_filter = np.stack((freq, inverse_filter), axis=1)
 
-        return inverse_filter, signal
+        return inverse_filter, signal, recorded_sound
 
     def sweep_db(
         self,
@@ -189,14 +205,8 @@ class Calibration:
             # Calculate the intensity in dB SPL
             db_spl[i] = calculate_db_spl(sounds[i], self.settings.mic_factor)
 
-            # print("Attenuation factor: " + str(att_array[i]))
-            # print("dB SPL after calibration: " + str(db_spl[i]))
-
-            # if callback is not None:
-            #     if message == "Calibration":
-            #         callback([signals[i], i], message)
-            #     if message == "Test":
-            #         callback([signals[i], i], message)
+            if self.callback is not None:
+                self.callback(type, i, signal, sounds[i], db_spl[i])
 
         return db_spl, sounds
 
