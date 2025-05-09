@@ -1,9 +1,8 @@
 import sys
 import time
+from typing import Literal
 
 import numpy as np
-from matplotlib.backends.backend_qtagg import FigureCanvas
-from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from pyharp.device import Device, HarpMessage
 from PySide6.QtCore import QObject, Qt, QThread, Signal, Slot
@@ -24,6 +23,7 @@ from PySide6.QtWidgets import (
     QRadioButton,
     QScrollArea,
     QSpinBox,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -41,7 +41,7 @@ from speaker_calibration.settings import (
     Settings,
     TestCalibration,
 )
-from speaker_calibration.utils.gui import get_ports
+from speaker_calibration.utils.gui import MatplotlibWidget, get_ports
 
 
 class SettingsLayout(QWidget):
@@ -510,19 +510,23 @@ class PlotLayout(QWidget):
 
         self.layout = QVBoxLayout()
 
-        static_canvas = FigureCanvas(Figure(figsize=(5, 3)))
-        # Ideally one would use self.addToolBar here, but it is slightly
-        # incompatible between PyQt6 and other bindings, so we just add the
-        # toolbar as a plain widget instead.
-        self.layout.addWidget(NavigationToolbar(static_canvas, self))
-        self.layout.addWidget(static_canvas)
-        # TODO: add plot select
+        self.inverse_filter = MatplotlibWidget(Figure(figsize=(5, 3)))
+        self.psd_signal = MatplotlibWidget(Figure(figsize=(5, 3)))
+        self.calib = MatplotlibWidget(Figure(figsize=(5, 3)))
+        self.calib_signals = MatplotlibWidget(Figure(figsize=(5, 3)))
+        self.test = MatplotlibWidget(Figure(figsize=(5, 3)))
+        self.test_signals = MatplotlibWidget(Figure(figsize=(5, 3)))
+
+        self.stacked_widget = QStackedWidget()
+        self.stacked_widget.addWidget(self.inverse_filter)
+        self.stacked_widget.addWidget(self.psd_signal)
+        self.stacked_widget.addWidget(self.calib)
+        self.stacked_widget.addWidget(self.calib_signals)
+        self.stacked_widget.addWidget(self.test)
+        self.stacked_widget.addWidget(self.test_signals)
+        self.layout.addWidget(self.stacked_widget)
 
         self.generate_selection()
-
-        self._static_ax = static_canvas.figure.subplots()
-        t = np.linspace(0, 10, 501)
-        self._static_ax.plot(t, np.tan(t), ".")
 
         self.setLayout(self.layout)
 
@@ -530,7 +534,7 @@ class PlotLayout(QWidget):
         layout = QHBoxLayout()
 
         self.plot_l = QLabel("Plot: ")
-        self.plot = QComboBox()
+        self.plots = QComboBox()
 
         self.intensity_index_l = QLabel("Plot Index: ")
         self.intensity_index = QSpinBox()
@@ -544,7 +548,7 @@ class PlotLayout(QWidget):
         self.both.setChecked(True)
 
         layout.addWidget(self.plot_l, alignment=Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.plot)
+        layout.addWidget(self.plots)
         layout.addWidget(self.intensity_index_l, alignment=Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.intensity_index)
         layout.addWidget(self.frequency_index_l, alignment=Qt.AlignmentFlag.AlignRight)
@@ -554,6 +558,35 @@ class PlotLayout(QWidget):
         layout.addWidget(self.both, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.layout.addLayout(layout)
+
+    def reset_figures(self, calib_type: Literal["Noise", "Pure Tones"]):
+        while self.plots.count() > 0:
+            self.plots.removeItem(0)
+
+        if calib_type == "Noise":
+            self.plots.addItems(
+                [
+                    "Inverse_Filter",
+                    "PSD Signal",
+                    "Calibration",
+                    "Calibration Signals",
+                    "Test",
+                    "Test Signals",
+                ]
+            )
+
+            self.inverse_filter.ax.add_plots(1)
+            self.psd_signal.ax.add_plots(2)
+            self.calib.ax.add_plots(2)
+            self.calib_signals.ax.add_plots(2)
+            self.test.ax.add_plots(2)
+            self.test_signals.ax.add_plots(2)
+
+        else:
+            # TODO
+            self.plots.addItems(
+                ["Calibration", "Calibration Signals", "Test", "Test Signals"]
+            )
 
 
 class ApplicationWindow(QMainWindow):
@@ -681,6 +714,20 @@ class ApplicationWindow(QMainWindow):
         self.work_requested.emit()
 
         self.settings_layout.run.setEnabled(False)
+
+    def calibration_callback(self, code: str, *args):
+        if code == "Inverse Filter":
+            self.plot_layout.inverse_filter.plot[0].set_data(args[0][0], args[0][1])
+            self.plot_layout.psd_signal.plot[0].set_data(args[1].time, args[1].signal)
+            self.plot_layout.psd_signal.plot[1].set_data(args[2].time, args[2].signal)
+        elif code == "Pre-calibration":
+            pass
+        elif code == "Calibration":
+            pass
+        elif code == "Pre-test":
+            pass
+        elif code == "Test":
+            pass
 
     def on_task_finished(self):
         self.settings_layout.run.setEnabled(True)
