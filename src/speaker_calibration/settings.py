@@ -224,7 +224,7 @@ class Settings(BaseModel):
     soundcard: Union[HarpSoundCard, ComputerSoundCard] = Field(
         description="The soundcard details."
     )
-    adc_device: Literal["NI-DAQ", "Moku"] = Field(
+    adc_device: Literal["NI-DAQ", "Moku:Go"] = Field(
         description="Indicates which device is being used as an ADC."
     )
     adc: Union[NiDaq, Moku] = Field(description="The ADC details.")
