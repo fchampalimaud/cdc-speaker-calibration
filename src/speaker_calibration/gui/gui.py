@@ -41,7 +41,7 @@ from speaker_calibration.settings import (
     Settings,
     TestCalibration,
 )
-from speaker_calibration.utils.gui import MatplotlibWidget, get_ports
+from speaker_calibration.utils.gui import MatplotlibWidget, PlotData, get_ports
 
 
 class SettingsLayout(QWidget):
@@ -563,10 +563,17 @@ class PlotLayout(QWidget):
         while self.plots.count() > 0:
             self.plots.removeItem(0)
 
+        self.inverse_filter.add_plots(1)
+        self.psd_signal.add_plots(2)
+        self.calib.add_plots(2)
+        self.calib_signals.add_plots(2)
+        self.test.add_plots(2)
+        self.test_signals.add_plots(2)
+
         if calib_type == "Noise":
             self.plots.addItems(
                 [
-                    "Inverse_Filter",
+                    "Inverse Filter",
                     "PSD Signal",
                     "Calibration",
                     "Calibration Signals",
@@ -574,13 +581,6 @@ class PlotLayout(QWidget):
                     "Test Signals",
                 ]
             )
-
-            self.inverse_filter.ax.add_plots(1)
-            self.psd_signal.ax.add_plots(2)
-            self.calib.ax.add_plots(2)
-            self.calib_signals.ax.add_plots(2)
-            self.test.ax.add_plots(2)
-            self.test_signals.ax.add_plots(2)
 
         else:
             # TODO
@@ -599,7 +599,7 @@ class ApplicationWindow(QMainWindow):
 
         layout = QHBoxLayout(self._main)
 
-        plot_layout = PlotLayout()
+        self.plot_layout = PlotLayout()
         self.settings_layout = SettingsLayout()
 
         scroll_area = QScrollArea()
@@ -608,8 +608,9 @@ class ApplicationWindow(QMainWindow):
         scroll_area.setFixedWidth(320)
 
         self.settings_layout.run.clicked.connect(self.run_calibration)
+        self.plot_layout.plots.currentIndexChanged.connect(self.switch_plots)
 
-        layout.addWidget(plot_layout)
+        layout.addWidget(self.plot_layout)
         layout.addWidget(scroll_area)
 
         self.showMaximized()
@@ -621,8 +622,8 @@ class ApplicationWindow(QMainWindow):
     def _update_canvas(self):
         self._line.set_data(self.xdata, self.ydata)
         # It should be safe to use the synchronous draw() method for most drawing
-        # frequencies, but it is safer to use draw_idle().
-        self._line.figure.canvas.draw_idle()
+        # frequencies, but it is safer to use draw().
+        self._line.figure.canvas.draw()
 
     def run_calibration(self):
         freq = Freq(
@@ -702,10 +703,16 @@ class ApplicationWindow(QMainWindow):
             output_dir="output",
         )
 
-        # self.calib = Calibration(settings=settings)
+        self.plot_data = PlotData(
+            type=self.settings_layout.sound_type.currentText(),
+            num_amp=self.settings_layout.att_steps.value(),
+            num_freq=1,  # FIXME
+            num_db=self.settings_layout.db_steps.value(),
+        )
+        self.plot_layout.reset_figures(self.settings_layout.sound_type.currentText())
 
         self.worker_thread = QThread()
-        self.worker = Worker(settings)
+        self.worker = Worker(settings, self.calibration_callback)
         self.worker.moveToThread(self.worker_thread)
         self.worker.finished.connect(self.on_task_finished)
         self.work_requested.connect(self.worker.run)
@@ -717,17 +724,102 @@ class ApplicationWindow(QMainWindow):
 
     def calibration_callback(self, code: str, *args):
         if code == "Inverse Filter":
-            self.plot_layout.inverse_filter.plot[0].set_data(args[0][0], args[0][1])
-            self.plot_layout.psd_signal.plot[0].set_data(args[1].time, args[1].signal)
-            self.plot_layout.psd_signal.plot[1].set_data(args[2].time, args[2].signal)
+            self.plot_data.inverse_filter = args[0]
+            self.plot_data.psd_signal[0] = args[1]
+            self.plot_data.psd_signal[1] = args[2]
         elif code == "Pre-calibration":
-            pass
+            self.plot_data.calib[:, 0] = args[0]
         elif code == "Calibration":
-            pass
+            self.plot_data.calib[args[0], 1] = args[3]
+            self.plot_data.calib_signals[args[0], 0] = args[1]
+            self.plot_data.calib_signals[args[0], 1] = args[2]
         elif code == "Pre-test":
-            pass
+            self.plot_data.test[:, 0] = args[0]
         elif code == "Test":
-            pass
+            self.plot_data.test[args[0], 1] = args[3]
+            self.plot_data.test_signals[args[0], 0] = args[1]
+            self.plot_data.test_signals[args[0], 1] = args[2]
+
+        self.add_data()
+
+    def switch_plots(self, index=None):
+        match self.plot_layout.plots.currentText():
+            case "Inverse Filter":
+                self.plot_layout.stacked_widget.setCurrentIndex(0)
+            case "PSD Signal":
+                self.plot_layout.stacked_widget.setCurrentIndex(1)
+            case "Calibration":
+                self.plot_layout.stacked_widget.setCurrentIndex(2)
+            case "Calibration Signals":
+                self.plot_layout.stacked_widget.setCurrentIndex(3)
+            case "Test":
+                self.plot_layout.stacked_widget.setCurrentIndex(4)
+            case "Test Signals":
+                self.plot_layout.stacked_widget.setCurrentIndex(5)
+        self.add_data()
+
+    def add_data(self):
+        match self.plot_layout.plots.currentText():
+            case "Inverse Filter":
+                self.plot_layout.inverse_filter.plot[0].set_data(
+                    self.plot_data.inverse_filter[:, 0],
+                    self.plot_data.inverse_filter[:, 1],
+                )
+                self.plot_layout.inverse_filter.ax.relim()
+                self.plot_layout.inverse_filter.ax.autoscale_view()
+                self.plot_layout.inverse_filter.canvas.draw()
+            case "PSD Signal":
+                self.plot_layout.psd_signal.plot[0].set_data(
+                    self.plot_data.psd_signal[0].time,
+                    self.plot_data.psd_signal[0].signal,
+                )
+                self.plot_layout.psd_signal.plot[1].set_data(
+                    self.plot_data.psd_signal[1].time,
+                    self.plot_data.psd_signal[1].signal,
+                )
+                self.plot_layout.psd_signal.ax.relim()
+                self.plot_layout.psd_signal.ax.autoscale_view()
+                self.plot_layout.psd_signal.canvas.draw()
+            case "Calibration":
+                self.plot_layout.calib.plot[0].set_data(
+                    self.plot_data.calib[:, 0], self.plot_data.calib[:, 1]
+                )
+                self.plot_layout.calib.ax.relim()
+                self.plot_layout.calib.ax.autoscale_view()
+                self.plot_layout.calib.canvas.draw()
+            case "Calibration Signals":
+                index = self.plot_layout.intensity_index.value()
+                self.plot_layout.calib_signals.plot[0].set_data(
+                    self.plot_data.calib_signals[index, 0].time,
+                    self.plot_data.calib_signals[index, 0].signal,
+                )
+                self.plot_layout.calib_signals.plot[1].set_data(
+                    self.plot_data.calib_signals[index, 1].time,
+                    self.plot_data.calib_signals[index, 1].signal,
+                )
+                self.plot_layout.calib_signals.ax.relim()
+                self.plot_layout.calib_signals.ax.autoscale_view()
+                self.plot_layout.calib_signals.canvas.draw()
+            case "Test":
+                self.plot_layout.test.plot[0].set_data(
+                    self.plot_data.test[:, 0], self.plot_data.test[:, 1]
+                )
+                self.plot_layout.test.ax.relim()
+                self.plot_layout.test.ax.autoscale_view()
+                self.plot_layout.test.canvas.draw()
+            case "Test Signals":
+                index = self.plot_layout.intensity_index.value()
+                self.plot_layout.test_signals.plot[0].set_data(
+                    self.plot_data.test_signals[index, 0].time,
+                    self.plot_data.test_signals[index, 0].signal,
+                )
+                self.plot_layout.test_signals.plot[1].set_data(
+                    self.plot_data.test_signals[index, 1].time,
+                    self.plot_data.test_signals[index, 1].signal,
+                )
+                self.plot_layout.test_signals.ax.relim()
+                self.plot_layout.test_signals.ax.autoscale_view()
+                self.plot_layout.test_signals.canvas.draw()
 
     def on_task_finished(self):
         self.settings_layout.run.setEnabled(True)
@@ -741,13 +833,14 @@ class ApplicationWindow(QMainWindow):
 class Worker(QObject):
     finished = Signal()
 
-    def __init__(self, settings):
+    def __init__(self, settings, calibration_callback):
         super(Worker, self).__init__()
         self.settings = settings
+        self.calibration_callback = calibration_callback
 
     @Slot()
     def run(self):
-        calib = Calibration(self.settings)
+        calib = Calibration(self.settings, self.calibration_callback)
         self.finished.emit()
 
         # return calib
