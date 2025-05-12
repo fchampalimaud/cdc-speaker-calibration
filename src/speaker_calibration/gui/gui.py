@@ -615,16 +615,6 @@ class ApplicationWindow(QMainWindow):
 
         self.showMaximized()
 
-    def _update_ydata(self):
-        # Shift the sinusoid as a function of time.
-        self.ydata = np.sin(self.xdata + time.time())
-
-    def _update_canvas(self):
-        self._line.set_data(self.xdata, self.ydata)
-        # It should be safe to use the synchronous draw() method for most drawing
-        # frequencies, but it is safer to use draw().
-        self._line.figure.canvas.draw()
-
     def run_calibration(self):
         freq = Freq(
             num_freqs=1,  # FIXME
