@@ -57,7 +57,10 @@ class Calibration:
                 self.calculate_inverse_filter()
             )
             np.savetxt(
-                self.path / "inverse_filter.csv", self.inverse_filter, delimiter=","
+                self.path / "inverse_filter.csv",
+                self.inverse_filter,
+                delimiter=",",
+                fmt="%f",
             )
 
             if self.callback is not None:
