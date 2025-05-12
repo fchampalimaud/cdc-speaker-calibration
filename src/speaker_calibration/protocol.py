@@ -92,6 +92,7 @@ class Calibration:
                 self.path / "calibration_parameters.csv",
                 self.calibration_parameters,
                 delimiter=",",
+                fmt="%f",
             )
 
         # Test the calibration
