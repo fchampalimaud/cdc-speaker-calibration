@@ -1,13 +1,8 @@
 import sys
-import time
 from typing import Literal
 
-import numpy as np
-from matplotlib.figure import Figure
 from pyharp.device import Device, HarpMessage
-from PySide6.QtCore import QObject, Qt, QThread, Signal, Slot
-
-# from PySide6.QtGui import QDoubleValidator
+from PySide6.QtCore import QObject, Qt, QThread, QThreadPool, Signal, Slot
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -41,7 +36,7 @@ from speaker_calibration.settings import (
     Settings,
     TestCalibration,
 )
-from speaker_calibration.utils.gui import MatplotlibWidget, PlotData, get_ports
+from speaker_calibration.utils.gui import Plot, get_ports
 
 
 class SettingsLayout(QWidget):
@@ -330,7 +325,7 @@ class SettingsLayout(QWidget):
         self.test_duration = QDoubleSpinBox()
         self.test_duration.setSingleStep(0.01)
         self.test_duration.setMinimum(0)
-        self.test_duration.setValue(15)
+        self.test_duration.setValue(5)
         self.test_duration.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.min_db_l = QLabel("Minimum dB SPL")
@@ -779,8 +774,8 @@ class ApplicationWindow(QMainWindow):
         )
 
         self.worker_thread = QThread()
-        self.worker = Worker(settings, self.calibration_callback)
         self.worker = Worker(self.settings, self.plot.calibration_callback)
+        self.worker.moveToThread(self.worker_thread)
         self.worker.finished.connect(self.on_task_finished)
         self.work_requested.connect(self.worker.run)
         self.worker_thread.start()

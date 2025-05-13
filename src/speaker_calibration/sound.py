@@ -68,7 +68,7 @@ def white_noise(
     # Generates the base white noise (either gaussian or uniform)
     if noise_type == "gaussian":
         # The gaussian samples are rescaled so that 99% of the samples are between -1 and 1
-        signal = 1 / 3 * np.random.randn(num_samples)
+        signal = 2 / 3 * np.random.randn(num_samples)
     else:
         signal = np.random.uniform(low=-1.0, high=1.0, size=num_samples)
 
