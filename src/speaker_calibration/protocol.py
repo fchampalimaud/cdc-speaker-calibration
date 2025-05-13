@@ -184,7 +184,7 @@ class Calibration:
             signal = white_noise(
                 self.settings.inverse_filter.sound_duration,
                 self.settings.soundcard.fs,
-                self.settings.amplitude,
+                self.settings.amplitude * att_array[i],
                 self.settings.ramp_time,
                 self.settings.filter.filter_input,
                 self.settings.filter.min_value,
