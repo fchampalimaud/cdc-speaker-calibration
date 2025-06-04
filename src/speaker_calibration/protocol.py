@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
+from scipy.interpolate import RBFInterpolator, griddata
 from scipy.signal import butter, sosfilt, welch
 
 from speaker_calibration.recording import Moku, NiDaq, RecordingDevice
@@ -14,6 +15,7 @@ from speaker_calibration.sound import (
     Sound,
     calculate_db_spl,
     create_sound_file,
+    pure_tone,
     white_noise,
 )
 from speaker_calibration.soundcards import HarpSoundCard, SoundCard
@@ -119,7 +121,87 @@ class Calibration:
             )
 
     def pure_tone_calibration(self):
-        pass
+        # Perform the calibration
+        if self.settings.calibration.calibrate:
+            freq = np.linspace(
+                self.settings.freq.min_freq,
+                self.settings.freq.max_freq,
+                self.settings.freq.num_freqs,
+            )
+            amp = np.linspace(
+                0, 1, self.settings.calibration.att_steps
+            )  # TODO: check whether it's better to use log spaced att_array
+            freq, amp = np.meshgrid(freq, amp, indexing="ij")
+            db = np.zeros(freq.shape)
+            calib_array = np.stack((freq, amp, db), axis=2)
+
+            calib_array, _ = self.sweep_2d_space(
+                calib_array, self.settings.calibration.sound_duration, "Calibration"
+            )
+
+            calib = calib_array.reshape(calib_array.shape[0] * calib_array.shape[1], 3)
+
+            np.savetxt(
+                self.path / "calibration.csv",
+                calib,
+                delimiter=",",
+                fmt="%f",
+            )
+
+        # Test the calibration
+        if self.settings.test_calibration.test:
+            # flattened_array = calib_array.reshape(
+            #     calib_array.shape[0] * calib_array.shape[1], 3
+            # )
+            # interp = RBFInterpolator(flattened_array[:, 0:2], flattened_array[:, 2])
+
+            test_freq = np.linspace(
+                self.settings.freq.min_freq,
+                self.settings.freq.max_freq,
+                self.settings.freq.num_freqs,
+            )  # TODO: add way to choose a different freq array for testing
+            test_db = np.linspace(
+                self.settings.test_calibration.db_min,
+                self.settings.test_calibration.db_max,
+                self.settings.test_calibration.db_steps,
+            )
+
+            x_calib = np.stack((freq, db), axis=2).reshape(
+                freq.shape[0] * freq.shape[1], 2
+            )
+            x_test = np.stack((test_freq, test_db), axis=2).reshape(
+                test_freq.shape[0] * test_freq.shape[1], 2
+            )
+
+            y = griddata(x_calib, amp.reshape(-1), x_test, method="linear")
+
+            test_array = np.stack(
+                (test_freq, y.reshape(freq.shape[0], freq.shape[1]), test_db), axis=2
+            )
+
+            test_array2, _ = self.sweep_2d_space(
+                test_array, self.settings.test_calibration.sound_duration, "Test"
+            )
+
+            # if self.callback is not None:
+            #     self.callback("Pre-calibration", log_att)
+
+            test = np.stack(
+                (
+                    test_array[:, :, 0],
+                    test_array[:, :, 1],
+                    test_array[:, :, 2],
+                    test_array2[:, :, 2],
+                ),
+                axis=2,
+            )
+
+            np.savetxt(
+                self.path / "test_calibration.csv",
+                test,
+                delimiter=",",
+                fmt="%f",
+            )
 
     def calculate_inverse_filter(self):
         """
@@ -182,7 +264,7 @@ class Calibration:
         for i in range(att_array.size):
             # Generate the noise
             signal = white_noise(
-                self.settings.inverse_filter.sound_duration,
+                duration,
                 self.settings.soundcard.fs,
                 self.settings.amplitude * att_array[i],
                 self.settings.ramp_time,
@@ -213,6 +295,64 @@ class Calibration:
                 self.callback(type, i, signal, sounds[i], db_spl[i])
 
         return db_spl, sounds
+
+    def sweep_2d_space(
+        self,
+        calib_array: np.ndarray,
+        duration: float,
+        type: Literal["Calibration", "Test"] = "Calibration",
+    ):
+        """
+        Plays sounds with different attenuations and calculates the correspondent intensities in dB SPL.
+
+        Parameters
+        ----------
+        att_array : np.ndarray
+            the array containing the attenuation levels to be used in the different sounds.
+        duration : float
+            the duration of the sounds (s).
+        """
+        # Initialization of the output arrays
+        sounds = np.zeros((calib_array.shape[0], calib_array.shape[1]), dtype=Sound)
+
+        for i in range(calib_array.shape[0]):
+            for j in range(calib_array.shape[1]):
+                # Check if amplitude value is NaN
+                if np.isnan(calib_array[i, j, 1]):
+                    calib_array[i, j, 2] = np.nan
+                    continue
+
+                # Generate the noise
+                signal = pure_tone(
+                    duration,
+                    self.settings.soundcard.fs,
+                    calib_array[i, j, 0],
+                    amplitude=calib_array[i, j, 1],
+                    ramp_time=self.settings.ramp_time,
+                )
+
+                if type == "Calibration":
+                    filename = "calibration_sound_" + str(i) + ".bin"
+                else:
+                    filename = "test_sound_" + str(i) + ".bin"
+
+                # Play the sound from the soundcard and record it with the microphone + DAQ system
+                sounds[i, j] = self.record_sound(
+                    signal,
+                    str(self.path / "sounds" / filename),
+                    duration,
+                    self.settings.filter.filter_acquisition,
+                )
+
+                # Calculate the intensity in dB SPL
+                calib_array[i, j, 2] = calculate_db_spl(
+                    sounds[i, j], self.settings.mic_factor
+                )
+
+                if self.callback is not None:
+                    self.callback(type, i, signal, sounds[i, j], calib_array[i, j, 2])
+
+        return calib_array, sounds
 
     def record_sound(
         self, signal: Sound, filename: str, duration: float, filter: bool = False
