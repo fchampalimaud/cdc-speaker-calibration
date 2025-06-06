@@ -124,9 +124,9 @@ class Calibration:
         # Perform the calibration
         if self.settings.calibration.calibrate:
             freq = np.linspace(
-                self.settings.freq.min_freq,
-                self.settings.freq.max_freq,
-                self.settings.freq.num_freqs,
+                self.settings.calibration.freq.min_freq,
+                self.settings.calibration.freq.max_freq,
+                self.settings.calibration.freq.num_freqs,
             )
             amp = np.linspace(
                 0, 1, self.settings.calibration.att_steps
@@ -156,15 +156,17 @@ class Calibration:
             # interp = RBFInterpolator(flattened_array[:, 0:2], flattened_array[:, 2])
 
             test_freq = np.linspace(
-                self.settings.freq.min_freq,
-                self.settings.freq.max_freq,
-                self.settings.freq.num_freqs,
-            )  # TODO: add way to choose a different freq array for testing
+                self.settings.test_calibration.freq.min_freq,
+                self.settings.test_calibration.freq.max_freq,
+                self.settings.test_calibration.freq.num_freqs,
+            )
             test_db = np.linspace(
                 self.settings.test_calibration.db_min,
                 self.settings.test_calibration.db_max,
                 self.settings.test_calibration.db_steps,
             )
+
+            test_freq, test_db = np.meshgrid(test_freq, test_db, indexing="ij")
 
             x_calib = np.stack((freq, db), axis=2).reshape(
                 freq.shape[0] * freq.shape[1], 2
