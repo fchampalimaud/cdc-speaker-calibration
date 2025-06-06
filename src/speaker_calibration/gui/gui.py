@@ -62,6 +62,7 @@ class SettingsLayout(QWidget):
 
         self.on_is_harp_changed(True)
         self.on_adc_changed(True)
+        self.on_sound_type_changed(0)
 
     def generate_soundcard_layout(self):
         soundcard_gb = QGroupBox("Soundcard")
@@ -153,14 +154,14 @@ class SettingsLayout(QWidget):
         self.filter_acquisition.setChecked(True)
         self.filter_acquisition.stateChanged.connect(self.on_filter_changed)
 
-        self.min_freq_l = QLabel("Minimum Frequency (Hz)")
-        self.min_freq_l.setFixedWidth(self.LABEL_WIDTH)
+        self.min_freq_filt_l = QLabel("Minimum Frequency (Hz)")
+        self.min_freq_filt_l.setFixedWidth(self.LABEL_WIDTH)
         self.min_freq_filt = QSpinBox()
         self.min_freq_filt.setRange(0, 80000)
         self.min_freq_filt.setValue(5000)
         self.min_freq_filt.setFixedWidth(self.WIDGETS_WIDTH)
 
-        self.max_freq_l = QLabel("Maximum Frequency (Hz)")
+        self.max_freq_filt_l = QLabel("Maximum Frequency (Hz)")
         self.max_freq_filt = QSpinBox()
         self.max_freq_filt.setRange(0, 80000)
         self.max_freq_filt.setValue(20000)
@@ -168,8 +169,8 @@ class SettingsLayout(QWidget):
 
         form.addRow(self.filter_input_l, self.filter_input)
         form.addRow("Filter Acquisition", self.filter_acquisition)
-        form.addRow(self.min_freq_l, self.min_freq_filt)
-        form.addRow(self.max_freq_l, self.max_freq_filt)
+        form.addRow(self.min_freq_filt_l, self.min_freq_filt)
+        form.addRow(self.max_freq_filt_l, self.max_freq_filt)
 
         filter_gb.setLayout(form)
         self.layout.addWidget(filter_gb)
@@ -199,11 +200,13 @@ class SettingsLayout(QWidget):
         self.ramp_time.setValue(0.005)
         self.ramp_time.setFixedWidth(self.WIDGETS_WIDTH)
 
+        self.min_freq_l = QLabel("Minimum Frequency (Hz)")
         self.min_freq = QSpinBox()
         self.min_freq.setRange(0, 80000)
         self.min_freq.setValue(5000)
         self.min_freq.setFixedWidth(self.WIDGETS_WIDTH)
 
+        self.max_freq_l = QLabel("Maximum Frequency (Hz)")
         self.max_freq = QSpinBox()
         self.max_freq.setRange(0, 80000)
         self.max_freq.setValue(20000)
@@ -222,8 +225,8 @@ class SettingsLayout(QWidget):
         form.addRow(self.sound_type_l, self.sound_type)
         form.addRow("Amplitude", self.amplitude)
         form.addRow("Ramp Time (s)", self.ramp_time)
-        form.addRow("Minimum Frequency (Hz)", self.min_freq)
-        form.addRow("Maximum Frequency (Hz)", self.max_freq)
+        form.addRow(self.min_freq_l, self.min_freq)
+        form.addRow(self.max_freq_l, self.max_freq)
         form.addRow("Microphone Factor (V/Pa)", self.mic_factor)
         form.addRow("Reference Pressure (Pa)", self.reference_pressure)
 
@@ -245,6 +248,8 @@ class SettingsLayout(QWidget):
         self.if_duration = QDoubleSpinBox()
         self.if_duration.setSingleStep(0.01)
         self.if_duration.setMinimum(0)
+        self.if_duration.setDecimals(3)
+        self.if_duration.setSingleStep(0.005)
         self.if_duration.setValue(30)
         self.if_duration.setFixedWidth(self.WIDGETS_WIDTH)
 
@@ -278,8 +283,28 @@ class SettingsLayout(QWidget):
         self.calib_duration = QDoubleSpinBox()
         self.calib_duration.setSingleStep(0.01)
         self.calib_duration.setMinimum(0)
+        self.calib_duration.setDecimals(3)
+        self.calib_duration.setSingleStep(0.005)
         self.calib_duration.setValue(15)
         self.calib_duration.setFixedWidth(self.WIDGETS_WIDTH)
+
+        self.calib_min_freq_l = QLabel("Minimum Frequency (Hz)")
+        self.calib_min_freq = QSpinBox()
+        self.calib_min_freq.setRange(0, 80000)
+        self.calib_min_freq.setValue(5000)
+        self.calib_min_freq.setFixedWidth(self.WIDGETS_WIDTH)
+
+        self.calib_max_freq_l = QLabel("Maximum Frequency (Hz)")
+        self.calib_max_freq = QSpinBox()
+        self.calib_max_freq.setRange(0, 80000)
+        self.calib_max_freq.setValue(20000)
+        self.calib_max_freq.setFixedWidth(self.WIDGETS_WIDTH)
+
+        self.calib_freq_steps_l = QLabel("Frequency Steps")
+        self.calib_freq_steps = QSpinBox()
+        self.calib_freq_steps.setMinimum(0)
+        self.calib_freq_steps.setValue(10)
+        self.calib_freq_steps.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.min_att_l = QLabel("Minimum Attenuation")
         self.min_att = QDoubleSpinBox()
@@ -303,6 +328,9 @@ class SettingsLayout(QWidget):
 
         form.addRow(self.calibrate_l, self.calibrate)
         form.addRow(self.calib_duration_l, self.calib_duration)
+        form.addRow(self.calib_min_freq_l, self.calib_min_freq)
+        form.addRow(self.calib_max_freq_l, self.calib_max_freq)
+        form.addRow(self.calib_freq_steps_l, self.calib_freq_steps)
         form.addRow(self.min_att_l, self.min_att)
         form.addRow(self.max_att_l, self.max_att)
         form.addRow(self.att_steps_l, self.att_steps)
@@ -325,8 +353,28 @@ class SettingsLayout(QWidget):
         self.test_duration = QDoubleSpinBox()
         self.test_duration.setSingleStep(0.01)
         self.test_duration.setMinimum(0)
+        self.test_duration.setDecimals(3)
+        self.test_duration.setSingleStep(0.005)
         self.test_duration.setValue(5)
         self.test_duration.setFixedWidth(self.WIDGETS_WIDTH)
+
+        self.test_min_freq_l = QLabel("Minimum Frequency (Hz)")
+        self.test_min_freq = QSpinBox()
+        self.test_min_freq.setRange(0, 80000)
+        self.test_min_freq.setValue(5000)
+        self.test_min_freq.setFixedWidth(self.WIDGETS_WIDTH)
+
+        self.test_max_freq_l = QLabel("Maximum Frequency (Hz)")
+        self.test_max_freq = QSpinBox()
+        self.test_max_freq.setRange(0, 80000)
+        self.test_max_freq.setValue(20000)
+        self.test_max_freq.setFixedWidth(self.WIDGETS_WIDTH)
+
+        self.test_freq_steps_l = QLabel("Frequency Steps")
+        self.test_freq_steps = QSpinBox()
+        self.test_freq_steps.setMinimum(2)
+        self.test_freq_steps.setValue(10)
+        self.test_freq_steps.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.min_db_l = QLabel("Minimum dB SPL")
         self.min_db = QDoubleSpinBox()
@@ -350,6 +398,9 @@ class SettingsLayout(QWidget):
 
         form.addRow(self.test_l, self.test)
         form.addRow(self.test_duration_l, self.test_duration)
+        form.addRow(self.test_min_freq_l, self.test_min_freq)
+        form.addRow(self.test_max_freq_l, self.test_max_freq)
+        form.addRow(self.test_freq_steps_l, self.test_freq_steps)
         form.addRow(self.min_db_l, self.min_db)
         form.addRow(self.max_db_l, self.max_db)
         form.addRow(self.db_steps_l, self.db_steps)
@@ -399,24 +450,56 @@ class SettingsLayout(QWidget):
 
     def on_filter_changed(self, state):
         if self.filter_input.isChecked() or self.filter_acquisition.isChecked():
-            self.min_freq_l.show()
+            self.min_freq_filt_l.show()
             self.min_freq_filt.show()
-            self.max_freq_l.show()
+            self.max_freq_filt_l.show()
             self.max_freq_filt.show()
             self.adjustSize()
         else:
-            self.min_freq_l.hide()
+            self.min_freq_filt_l.hide()
             self.min_freq_filt.hide()
-            self.max_freq_l.hide()
+            self.max_freq_filt_l.hide()
             self.max_freq_filt.hide()
             self.adjustSize()
 
     def on_sound_type_changed(self, index):
         if self.sound_type.currentText() == "Noise":
             self.inverse_filter_gb.show()
+            self.min_freq_l.show()
+            self.min_freq.show()
+            self.max_freq_l.show()
+            self.max_freq.show()
+            self.calib_min_freq_l.hide()
+            self.calib_min_freq.hide()
+            self.calib_max_freq_l.hide()
+            self.calib_max_freq.hide()
+            self.calib_freq_steps_l.hide()
+            self.calib_freq_steps.hide()
+            self.test_min_freq_l.hide()
+            self.test_min_freq.hide()
+            self.test_max_freq_l.hide()
+            self.test_max_freq.hide()
+            self.test_freq_steps_l.hide()
+            self.test_freq_steps.hide()
             self.adjustSize()
         else:
             self.inverse_filter_gb.hide()
+            self.min_freq_l.hide()
+            self.min_freq.hide()
+            self.max_freq_l.hide()
+            self.max_freq.hide()
+            self.calib_min_freq_l.show()
+            self.calib_min_freq.show()
+            self.calib_max_freq_l.show()
+            self.calib_max_freq.show()
+            self.calib_freq_steps_l.show()
+            self.calib_freq_steps.show()
+            self.test_min_freq_l.show()
+            self.test_min_freq.show()
+            self.test_max_freq_l.show()
+            self.test_max_freq.show()
+            self.test_freq_steps_l.show()
+            self.test_freq_steps.show()
             self.adjustSize()
 
     def on_inverse_filter_changed(self, state):
@@ -444,9 +527,22 @@ class SettingsLayout(QWidget):
             self.att_steps_l.setVisible(True)
             self.att_steps.setVisible(True)
             self.adjustSize()
+            if self.sound_type.currentText() == "Pure Tones":
+                self.calib_min_freq_l.setVisible(True)
+                self.calib_min_freq.setVisible(True)
+                self.calib_max_freq_l.setVisible(True)
+                self.calib_max_freq.setVisible(True)
+                self.calib_freq_steps_l.setVisible(True)
+                self.calib_freq_steps.setVisible(True)
         else:
             self.calib_duration_l.setVisible(False)
             self.calib_duration.setVisible(False)
+            self.calib_min_freq_l.setVisible(False)
+            self.calib_min_freq.setVisible(False)
+            self.calib_max_freq_l.setVisible(False)
+            self.calib_max_freq.setVisible(False)
+            self.calib_freq_steps_l.setVisible(False)
+            self.calib_freq_steps.setVisible(False)
             self.min_att_l.setVisible(False)
             self.min_att.setVisible(False)
             self.max_att_l.setVisible(False)
@@ -459,6 +555,12 @@ class SettingsLayout(QWidget):
         if state:
             self.test_duration_l.setVisible(True)
             self.test_duration.setVisible(True)
+            self.test_min_freq_l.setVisible(True)
+            self.test_min_freq.setVisible(True)
+            self.test_max_freq_l.setVisible(True)
+            self.test_max_freq.setVisible(True)
+            self.test_freq_steps_l.setVisible(True)
+            self.test_freq_steps.setVisible(True)
             self.min_db_l.setVisible(True)
             self.min_db.setVisible(True)
             self.max_db_l.setVisible(True)
@@ -469,6 +571,12 @@ class SettingsLayout(QWidget):
         else:
             self.test_duration_l.setVisible(False)
             self.test_duration.setVisible(False)
+            self.test_min_freq_l.setVisible(False)
+            self.test_min_freq.setVisible(False)
+            self.test_max_freq_l.setVisible(False)
+            self.test_max_freq.setVisible(False)
+            self.test_freq_steps_l.setVisible(False)
+            self.test_freq_steps.setVisible(False)
             self.min_db_l.setVisible(False)
             self.min_db.setVisible(False)
             self.max_db_l.setVisible(False)
@@ -563,7 +671,7 @@ class PlotLayout(QWidget):
 
     def reset_figures(
         self, calib_type: Literal["Noise", "Pure Tones"], num_amp, num_freqs, num_db
-    ):
+    ):  # TODO: add test num_freqs
         while self.plot_selection.count() > 0:
             self.plot_selection.removeItem(0)
 
@@ -690,7 +798,6 @@ class ApplicationWindow(QMainWindow):
 
     def run_calibration(self):
         freq = Freq(
-            num_freqs=1,  # FIXME
             min_freq=self.settings_layout.min_freq.value(),
             max_freq=self.settings_layout.max_freq.value(),
         )
@@ -708,17 +815,31 @@ class ApplicationWindow(QMainWindow):
             time_constant=self.settings_layout.time_const.value(),
         )
 
+        calib_freq = Freq(
+            min_freq=self.settings_layout.calib_min_freq.value(),
+            max_freq=self.settings_layout.calib_max_freq.value(),
+            num_freqs=self.settings_layout.calib_freq_steps.value(),
+        )
+
         calibration = CalibrationSettings(
             calibrate=self.settings_layout.calibrate.isChecked(),
             sound_duration=self.settings_layout.calib_duration.value(),
+            freq=calib_freq,
             att_min=self.settings_layout.min_att.value(),
             att_max=self.settings_layout.max_att.value(),
             att_steps=self.settings_layout.att_steps.value(),
         )
 
+        test_freq = Freq(
+            min_freq=self.settings_layout.test_min_freq.value(),
+            max_freq=self.settings_layout.test_max_freq.value(),
+            num_freqs=self.settings_layout.test_freq_steps.value(),
+        )
+
         test = TestCalibration(
             test=self.settings_layout.test.isChecked(),
             sound_duration=self.settings_layout.test_duration.value(),
+            freq=test_freq,
             db_min=self.settings_layout.min_db.value(),
             db_max=self.settings_layout.max_db.value(),
             db_steps=self.settings_layout.db_steps.value(),
