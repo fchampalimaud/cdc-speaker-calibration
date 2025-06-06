@@ -1,6 +1,6 @@
 {
   "$defs": {
-    "Calibration": {
+    "CalibrationSettings": {
       "properties": {
         "calibrate": {
           "description": "Indicates whether the calibration is performed.",
@@ -19,6 +19,17 @@
           "default": null,
           "description": "The duration of the calibration sounds.",
           "title": "Sound Duration"
+        },
+        "freq": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Freq"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The frequency-related parameters to be used in the calibration."
         },
         "att_min": {
           "anyOf": [
@@ -64,9 +75,10 @@
         }
       },
       "required": [
-        "calibrate"
+        "calibrate",
+        "freq"
       ],
-      "title": "Calibration",
+      "title": "CalibrationSettings",
       "type": "object"
     },
     "ComputerSoundCard": {
@@ -353,6 +365,17 @@
           "description": "The duration of the test sounds.",
           "title": "Sound Duration"
         },
+        "freq": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Freq"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The frequency-related parameters to be used in the calibration."
+        },
         "db_min": {
           "anyOf": [
             {
@@ -395,7 +418,8 @@
         }
       },
       "required": [
-        "test"
+        "test",
+        "freq"
       ],
       "title": "TestCalibration",
       "type": "object"
@@ -437,7 +461,14 @@
       "type": "number"
     },
     "freq": {
-      "$ref": "#/$defs/Freq",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Freq"
+        },
+        {
+          "type": "null"
+        }
+      ],
       "description": "The frequency-related parameters to be used in the calibration."
     },
     "filter": {
@@ -457,7 +488,7 @@
       "description": "The settings related to the inverse filter calculation. Noise calibration only!"
     },
     "calibration": {
-      "$ref": "#/$defs/Calibration",
+      "$ref": "#/$defs/CalibrationSettings",
       "description": "The settings used for the actual speaker calibration."
     },
     "test_calibration": {
@@ -485,7 +516,7 @@
       "description": "Indicates which device is being used as an ADC.",
       "enum": [
         "NI-DAQ",
-        "Moku"
+        "Moku:Go"
       ],
       "title": "Adc Device",
       "type": "string"

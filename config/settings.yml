@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=schemas/settings-schema.json
-sound_type: Noise
+sound_type: Pure Tones
 mic_factor: 0.41887
 reference_pressure: 0.00002
 ramp_time: 0.005
@@ -18,24 +18,32 @@ inverse_filter:
   time_constant: 0.005
 calibration:
   calibrate: true
-  sound_duration: 1
+  sound_duration: 0.150
+  freq:
+    min_freq: 5000
+    max_freq: 20000
+    num_freqs: 3
   att_min: 0
   att_max: -1
-  att_steps: 15
+  att_steps: 3
 test_calibration:
   test: true
-  sound_duration: 1
+  sound_duration: 0.150
+  freq:
+    min_freq: 6000
+    max_freq: 19000
+    num_freqs: 3
   db_min: 30
   db_max: 70
-  db_steps: 5
+  db_steps: 3
 is_harp: true
 soundcard:
   com_port: COM17
   fs: 192000
-adc_device: NI-DAQ
+adc_device: Moku:Go
 adc:
-  fs: 250000
-  device_id: 1
+  fs: 500000
+  # device_id: 1
+  address: fe80:0000:0000:0000:7269:79ff:feb9:62a2
   channel: 1
-  # address: fe80:0000:0000:0000:7269:79ff:feb9:62a2
 output_dir: output

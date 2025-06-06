@@ -25,6 +25,9 @@ class TestCalibration(BaseModel):
     sound_duration: Optional[float] = Field(
         description="The duration of the test sounds.", default=None, gt=0
     )
+    freq: Optional[Freq] = Field(
+        description="The frequency-related parameters to be used in the calibration."
+    )
     db_min: Optional[float] = Field(
         description="The minimum nominal dB SPL value to be tested.", default=None
     )
@@ -55,6 +58,9 @@ class CalibrationSettings(BaseModel):
     )
     sound_duration: Optional[float] = Field(
         description="The duration of the calibration sounds.", default=None
+    )
+    freq: Optional[Freq] = Field(
+        description="The frequency-related parameters to be used in the calibration."
     )
     att_min: Optional[float] = Field(
         description="The minimum attenuation value.", default=None, le=0
@@ -202,7 +208,7 @@ class Settings(BaseModel):
         ge=0,
     )
     amplitude: float = Field(description="The amplitude of the speakers.", ge=0, le=1)
-    freq: Freq = Field(
+    freq: Optional[Freq] = Field(
         description="The frequency-related parameters to be used in the calibration."
     )
     filter: Filter = Field(
