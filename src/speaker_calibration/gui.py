@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from serial import SerialException
+
 from speaker_calibration.protocol import Calibration
 from speaker_calibration.settings import (
     CalibrationSettings,
@@ -621,12 +622,12 @@ class PlotLayout(QWidget):
 
     def create_dictionary(self):
         self.plots = {
-            "Calibration Data": Plot(),
-            "Calibration Signals": Plot(),
-            "Test Data": Plot(),
-            "Test Signals": Plot(),
-            "Inverse Filter": Plot(),
-            "Inverse Filter Signal": Plot(),
+            "Calibration Data": Plot(plot_type="Data"),
+            "Calibration Signals": Plot(plot_type="Signals"),
+            "Test Data": Plot(plot_type="Data"),
+            "Test Signals": Plot(plot_type="Signals"),
+            "Inverse Filter": Plot(plot_type="Inverse Filter"),
+            "Inverse Filter Signal": Plot(plot_type="Inverse Filter Signal"),
         }
 
         self.fig = QStackedWidget()
@@ -643,14 +644,12 @@ class PlotLayout(QWidget):
 
         self.plot_l = QLabel("Plot: ")
         self.plot_selection = QComboBox()
-        # self.plot_selection.currentIndexChanged.connect(self.switch_plots)
 
-        self.intensity_index_l = QLabel("Plot Index: ")
-        self.intensity_index = QSpinBox()
-        self.intensity_index.valueChanged.connect(self.draw_data)
+        self.amp_index_l = QLabel("Plot Index: ")
+        self.amp_index = QSpinBox()
 
-        self.frequency_index_l = QLabel("Frequency Index: ")
-        self.frequency_index = QSpinBox()
+        self.freq_index_l = QLabel("Frequency Index: ")
+        self.freq_index = QSpinBox()
 
         self.original = QRadioButton("Original Signal")
         self.recorded = QRadioButton("Recorded Sound")
@@ -659,10 +658,10 @@ class PlotLayout(QWidget):
 
         layout.addWidget(self.plot_l, alignment=Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.plot_selection)
-        layout.addWidget(self.intensity_index_l, alignment=Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.intensity_index)
-        layout.addWidget(self.frequency_index_l, alignment=Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.frequency_index)
+        layout.addWidget(self.amp_index_l, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.amp_index)
+        layout.addWidget(self.freq_index_l, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.freq_index)
         layout.addWidget(self.original, alignment=Qt.AlignmentFlag.AlignHCenter)
         layout.addWidget(self.recorded, alignment=Qt.AlignmentFlag.AlignHCenter)
         layout.addWidget(self.both, alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -670,104 +669,45 @@ class PlotLayout(QWidget):
         self.layout.addLayout(layout)
 
     def reset_figures(
-        self, calib_type: Literal["Noise", "Pure Tones"], num_amp, num_freqs, num_db
-    ):  # TODO: add test num_freqs
+        self,
+        calib_type: Literal["Noise", "Pure Tones"],
+        num_amp,
+        num_freqs,
+        num_db,
+        num_test_freqs,
+    ):
         while self.plot_selection.count() > 0:
             self.plot_selection.removeItem(0)
 
         if calib_type == "Noise":
             self.plot_selection.addItems(self.plots.keys())
         else:
-            self.plot_selection.addItems(self.plots.keys()[:-2])
+            self.plot_selection.addItems(list(self.plots.keys())[:-2])
 
         for key in self.plots:
-            self.plots[key].generate_plots(key, calib_type)
-            self.plots[key].init_array(key, calib_type, num_amp, num_freqs, num_db)
+            self.plots[key].generate_plots(calib_type)
 
-    def draw_data(self):
-        match self.plot_selection.currentText():
-            case "Calibration Data":
-                self.plots["Calibration Data"].plot.plot[0].set_data(
-                    self.plots["Calibration Data"].data[:, 0],
-                    self.plots["Calibration Data"].data[:, 1],
-                )
-                self.plots["Calibration Data"].plot.ax.relim()
-                self.plots["Calibration Data"].plot.ax.autoscale_view()
-                self.plots["Calibration Data"].plot.canvas.draw()
-            case "Calibration Signals":
-                index = self.intensity_index.value()
-                self.plots["Calibration Signals"].plot.plot[0].set_data(
-                    self.plots["Calibration Signals"].data[index, 0].time,
-                    self.plots["Calibration Signals"].data[index, 0].signal,
-                )
-                self.plots["Calibration Signals"].plot.plot[1].set_data(
-                    self.plots["Calibration Signals"].data[index, 1].time,
-                    self.plots["Calibration Signals"].data[index, 1].signal,
-                )
-                self.plots["Calibration Signals"].plot.ax.relim()
-                self.plots["Calibration Signals"].plot.ax.autoscale_view()
-                self.plots["Calibration Signals"].plot.canvas.draw()
-            case "Test Data":
-                self.plots["Test Data"].plot.plot[0].set_data(
-                    self.plots["Test Data"].data[:, 0],
-                    self.plots["Test Data"].data[:, 1],
-                )
-                self.plots["Test Data"].plot.ax.relim()
-                self.plots["Test Data"].plot.ax.autoscale_view()
-                self.plots["Test Data"].plot.canvas.draw()
-            case "Test Signals":
-                index = self.intensity_index.value()
-                self.plots["Test Signals"].plot.plot[0].set_data(
-                    self.plots["Test Signals"].data[index, 0].time,
-                    self.plots["Test Signals"].data[index, 0].signal,
-                )
-                self.plots["Test Signals"].plot.plot[1].set_data(
-                    self.plots["Test Signals"].data[index, 1].time,
-                    self.plots["Test Signals"].data[index, 1].signal,
-                )
-                self.plots["Test Signals"].plot.ax.relim()
-                self.plots["Test Signals"].plot.ax.autoscale_view()
-                self.plots["Test Signals"].plot.canvas.draw()
-            case "Inverse Filter":
-                self.plots["Inverse Filter"].plot.plot[0].set_data(
-                    self.plots["Inverse Filter"].data[:, 0],
-                    self.plots["Inverse Filter"].data[:, 1],
-                )
-                self.plots["Inverse Filter"].plot.ax.relim()
-                self.plots["Inverse Filter"].plot.ax.autoscale_view()
-                self.plots["Inverse Filter"].plot.canvas.draw()
-            case "Inverse Filter Signal":
-                self.plots["Inverse Filter Signal"].plot.plot[0].set_data(
-                    self.plots["Inverse Filter Signal"].data[0].time,
-                    self.plots["Inverse Filter Signal"].data[0].signal,
-                )
-                self.plots["Inverse Filter Signal"].plot.plot[1].set_data(
-                    self.plots["Inverse Filter Signal"].data[1].time,
-                    self.plots["Inverse Filter Signal"].data[1].signal,
-                )
-                self.plots["Inverse Filter Signal"].plot.ax.relim()
-                self.plots["Inverse Filter Signal"].plot.ax.autoscale_view()
-                self.plots["Inverse Filter Signal"].plot.canvas.draw()
+        self.plots["Calibration Data"].init_array(num_amp, num_freqs)
+        self.plots["Calibration Signals"].init_array(num_amp, num_freqs)
+        self.plots["Test Data"].init_array(num_db, num_test_freqs)
+        self.plots["Test Signals"].init_array(num_db, num_test_freqs)
+        self.plots["Inverse Filter"].init_array()
+        self.plots["Inverse Filter Signal"].init_array()
 
     def calibration_callback(self, code: str, *args):
         if code == "Inverse Filter":
-            self.plots["Inverse Filter"].data = args[0]
-            self.plots["Inverse Filter Signal"].data[0] = args[1]
-            self.plots["Inverse Filter Signal"].data[1] = args[2]
+            self.plots["Inverse Filter"].add_data(False, *args)
+            self.plots["Inverse Filter Signal"].add_data(False, *args)
         elif code == "Pre-calibration":
-            self.plots["Calibration Data"].data[:, 0] = args[0]
+            self.plots["Calibration Data"].add_data(True, *args)
         elif code == "Calibration":
-            self.plots["Calibration Data"].data[args[0], 1] = args[3]
-            self.plots["Calibration Signals"].data[args[0], 0] = args[1]
-            self.plots["Calibration Signals"].data[args[0], 1] = args[2]
+            self.plots["Calibration Data"].add_data(False, *args)
+            self.plots["Calibration Signals"].add_data(False, *args)
         elif code == "Pre-test":
-            self.plots["Test Data"].data[:, 0] = args[0]
+            self.plots["Test Data"].add_data(True, *args)
         elif code == "Test":
-            self.plots["Test Data"].data[args[0], 1] = args[3]
-            self.plots["Test Signals"].data[args[0], 0] = args[1]
-            self.plots["Test Signals"].data[args[0], 1] = args[2]
-
-        self.draw_data()
+            self.plots["Test Data"].add_data(False, *args)
+            self.plots["Test Signals"].add_data(False, *args)
 
 
 class ApplicationWindow(QMainWindow):
@@ -790,6 +730,8 @@ class ApplicationWindow(QMainWindow):
 
         self.settings_layout.run.clicked.connect(self.run_calibration)
         self.plot.plot_selection.currentIndexChanged.connect(self.switch_plots)
+        self.plot.amp_index.valueChanged.connect(self.update_indexes)
+        self.plot.freq_index.valueChanged.connect(self.update_indexes)
 
         layout.addWidget(self.plot)
         layout.addWidget(scroll_area)
@@ -890,8 +832,9 @@ class ApplicationWindow(QMainWindow):
         self.plot.reset_figures(
             self.settings_layout.sound_type.currentText(),
             num_amp=self.settings_layout.att_steps.value(),
-            num_freqs=1,  # FIXME
+            num_freqs=self.settings_layout.calib_freq_steps.value(),
             num_db=self.settings_layout.db_steps.value(),
+            num_test_freqs=self.settings_layout.test_freq_steps.value(),
         )
 
         self.worker_thread = QThread()
@@ -909,28 +852,40 @@ class ApplicationWindow(QMainWindow):
         match self.plot.plot_selection.currentText():
             case "Calibration Data":
                 self.plot.fig.setCurrentIndex(0)
-                self.plot.intensity_index.setMaximum(0)
+                self.plot.amp_index.setMaximum(0)
+                self.plot.freq_index.setMaximum(0)
             case "Calibration Signals":
                 self.plot.fig.setCurrentIndex(1)
-                self.plot.intensity_index.setMaximum(
-                    self.settings.calibration.att_steps - 1
+                self.plot.amp_index.setMaximum(self.settings.calibration.att_steps - 1)
+                self.plot.freq_index.setMaximum(
+                    self.settings.calibration.freq.num_freqs - 1
                 )
             case "Test Data":
                 self.plot.fig.setCurrentIndex(2)
-                self.plot.intensity_index.setMaximum(0)
+                self.plot.amp_index.setMaximum(0)
+                self.plot.freq_index.setMaximum(0)
             case "Test Signals":
                 self.plot.fig.setCurrentIndex(3)
-                self.plot.intensity_index.setMaximum(
-                    self.settings.calibration.db_steps - 1
+                self.plot.amp_index.setMaximum(
+                    self.settings.test_calibration.db_steps - 1
+                )
+                self.plot.freq_index.setMaximum(
+                    self.settings.test_calibration.freq.num_freqs - 1
                 )
             case "Inverse Filter":
                 self.plot.fig.setCurrentIndex(4)
-                self.plot.intensity_index.setMaximum(0)
+                self.plot.amp_index.setMaximum(0)
+                self.plot.freq_index.setMaximum(0)
             case "Inverse Filter Signal":
                 self.plot.fig.setCurrentIndex(5)
-                self.plot.intensity_index.setMaximum(0)
-        self.plot.intensity_index.setValue(0)
-        self.plot.draw_data()
+                self.plot.amp_index.setMaximum(0)
+                self.plot.freq_index.setMaximum(0)
+        self.plot.amp_index.setValue(0)
+        self.plot.freq_index.setValue(0)
+
+    def update_indexes(self, index=None):
+        plot = self.plot.plots[self.plot.plot_selection.currentText()]
+        plot.update_indexes(self.plot.amp_index.value(), self.plot.freq_index.value())
 
     def on_task_finished(self):
         self.settings_layout.run.setEnabled(True)

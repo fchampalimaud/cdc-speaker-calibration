@@ -135,6 +135,9 @@ class Calibration:
             db = np.zeros(freq.shape)
             calib_array = np.stack((freq, amp, db), axis=2)
 
+            if self.callback is not None:
+                self.callback("Pre-calibration", calib_array[:, :, 0:2])
+
             calib_array, _ = self.sweep_2d_space(
                 calib_array, self.settings.calibration.sound_duration, "Calibration"
             )
@@ -174,6 +177,9 @@ class Calibration:
             x_test = np.stack((test_freq, test_db), axis=2).reshape(
                 test_freq.shape[0] * test_freq.shape[1], 2
             )
+
+            if self.callback is not None:
+                self.callback("Pre-test", x_test)
 
             y = griddata(x_calib, amp.reshape(-1), x_test, method="linear")
 
@@ -352,7 +358,9 @@ class Calibration:
                 )
 
                 if self.callback is not None:
-                    self.callback(type, i, signal, sounds[i, j], calib_array[i, j, 2])
+                    self.callback(
+                        type, i, j, signal, sounds[i, j], calib_array[i, j, 2]
+                    )
 
         return calib_array, sounds
 
