@@ -1,8 +1,10 @@
+import ctypes
 import sys
 from typing import Literal
 
 from pyharp.device import Device, HarpMessage
 from PySide6.QtCore import QObject, Qt, QThread, QThreadPool, Signal, Slot
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -38,6 +40,9 @@ from speaker_calibration.settings import (
     TestCalibration,
 )
 from speaker_calibration.utils.gui import Plot, get_ports
+
+myappid = "fchampalimaud.cdc.speaker_calibration"
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 
 class SettingsLayout(QWidget):
@@ -717,6 +722,8 @@ class ApplicationWindow(QMainWindow):
         super().__init__()
         self._main = QWidget()
         self.setCentralWidget(self._main)
+        self.setWindowTitle("Speaker Calibration")
+        self.setWindowIcon(QIcon("docs/img/favicon.ico"))
 
         layout = QHBoxLayout(self._main)
 
@@ -910,9 +917,7 @@ class Worker(QObject):
         self.finished.emit()
 
 
-if __name__ == "__main__":
-    # Check whether there is already a running QApplication (e.g., if running
-    # from an IDE).
+def main():
     qapp = QApplication.instance()
     if not qapp:
         qapp = QApplication(sys.argv)
