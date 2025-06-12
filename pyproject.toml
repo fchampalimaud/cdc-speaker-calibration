@@ -23,13 +23,15 @@ dependencies = [
 [project.optional-dependencies]
 docs = [
     "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.14",
 ]
 
 [tool.uv.sources]
 pyharp = { git = "https://github.com/harp-tech/pyharp" }
 
 [project.scripts]
-speaker-calibration = "speaker_calibration.main:main"
+cli-app = "speaker_calibration.main:main"
+gui-app = "speaker_calibration.gui:main"
 
 [build-system]
 requires = ["hatchling"]
