@@ -3,7 +3,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 from scipy.interpolate import RBFInterpolator, griddata
@@ -22,28 +22,54 @@ from speaker_calibration.soundcards import HarpSoundCard, SoundCard
 
 
 class Calibration:
+    """
+    The calibration class which performs and stores the results from the type of calibration specified in the settings object.
+
+    Attributes
+    ----------
+    settings : Settings
+        the object containing the settings to be used in the calibration protocol
+    soundcard : SoundCard
+        the object that allows the calibration code to interface with the soundcard used in the calibration
+    adc : RecordingDevice
+        the object the allows the calibration code to interface with the ADC used in the calibration
+    path : Path
+        the path to the output file of the current calibration
+    callback : Optional[callable]
+        a callback function that allows the calibration code to periodically send data to the user interface with some data based on a keyword
+    """
+
+    settings: Settings
     soundcard: SoundCard
     adc: RecordingDevice
+    path: Path
+    callback: Optional[callable]
 
-    def __init__(self, settings: Settings, callback: callable = None):
+    def __init__(self, settings: Settings, callback: Optional[callable] = None):
         self.settings = settings
         self.callback = callback
 
+        # Define the path for the output directory for the current calibration
         self.path = (
             Path() / self.settings.output_dir / datetime.now().strftime("%y%m%d_%H%M%S")
         )
+        # Create the output directory structure for the current calibration
         os.makedirs(self.path / "sounds")
 
+        # Initiate the soundcard to be used in the calibration
         if self.settings.is_harp:
             self.soundcard = HarpSoundCard(self.settings.soundcard.com_port, 192000)
         else:
+            # TODO: implement interface with computer soundcard
             self.soundcard = None
 
+        # Initiate the ADC to be used in the calibration
         if self.settings.adc_device == "NI-DAQ":
             self.adc = NiDaq(self.settings.adc.device_id, self.settings.adc.fs)
         else:
             self.adc = Moku(self.settings.adc.address, self.settings.adc.fs)
 
+        # Perform the calibration according to the sound type (Noise or Pure Tone)
         if self.settings.sound_type == "Noise":
             self.noise_calibration()
         else:
@@ -84,7 +110,7 @@ class Calibration:
                 self.callback("Pre-calibration", log_att)
 
             # Generate and play the sounds for every attenuation value
-            self.db_spl, self.signals = self.sweep_db(
+            self.db_spl, self.signals = self.noise_sweep(
                 att_factor, self.settings.calibration.sound_duration
             )
 
@@ -116,7 +142,7 @@ class Calibration:
             att_test = 10**att_test
 
             # Test the calibration curve with the test attenuation factors
-            self.db_spl_test, self.signals_test = self.sweep_db(
+            self.db_spl_test, self.signals_test = self.noise_sweep(
                 att_test, self.settings.test_calibration.sound_duration, type="Test"
             )
 
@@ -138,7 +164,7 @@ class Calibration:
             if self.callback is not None:
                 self.callback("Pre-calibration", calib_array[:, :, 0:2])
 
-            calib_array, _ = self.sweep_2d_space(
+            calib_array, _ = self.pure_tone_sweep(
                 calib_array, self.settings.calibration.sound_duration, "Calibration"
             )
 
@@ -187,7 +213,7 @@ class Calibration:
                 (test_freq, y.reshape(freq.shape[0], freq.shape[1]), test_db), axis=2
             )
 
-            test_array2, _ = self.sweep_2d_space(
+            test_array2, _ = self.pure_tone_sweep(
                 test_array, self.settings.test_calibration.sound_duration, "Test"
             )
 
@@ -249,7 +275,7 @@ class Calibration:
 
         return inverse_filter, signal, recorded_sound
 
-    def sweep_db(
+    def noise_sweep(
         self,
         att_array: np.ndarray,
         duration: float,
@@ -304,7 +330,7 @@ class Calibration:
 
         return db_spl, sounds
 
-    def sweep_2d_space(
+    def pure_tone_sweep(
         self,
         calib_array: np.ndarray,
         duration: float,
