@@ -23,9 +23,9 @@ calibration:
     min_freq: 5000
     max_freq: 20000
     num_freqs: 3
-  att_min: 0
-  att_max: -1
-  att_steps: 3
+  amp_min: 0
+  amp_max: -1
+  amp_steps: 3
 test_calibration:
   test: true
   sound_duration: 0.150

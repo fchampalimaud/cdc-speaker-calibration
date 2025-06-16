@@ -62,14 +62,14 @@ class CalibrationSettings(BaseModel):
     freq: Optional[Freq] = Field(
         description="The frequency-related parameters to be used in the calibration."
     )
-    att_min: Optional[float] = Field(
-        description="The minimum attenuation value.", default=None, le=0
+    amp_min: Optional[float] = Field(
+        description="The minimum amplitude value.", default=None, le=0
     )
-    att_max: Optional[float] = Field(
-        description="The maximum attenuation value.", default=None, le=0
+    amp_max: Optional[float] = Field(
+        description="The maximum amplitude value.", default=None, le=0
     )
-    att_steps: Optional[int] = Field(
-        description="The number of attenuation values to use in the calibration.",
+    amp_steps: Optional[int] = Field(
+        description="The number of amplitude values to use in the calibration.",
         default=None,
         gt=0,
     )
@@ -78,9 +78,9 @@ class CalibrationSettings(BaseModel):
     def use_calibration(self) -> Self:
         if self.calibrate and not (
             isinstance(self.sound_duration, float)
-            and isinstance(self.att_min, float)
-            and isinstance(self.att_max, float)
-            and isinstance(self.att_steps, int)
+            and isinstance(self.amp_min, float)
+            and isinstance(self.amp_max, float)
+            and isinstance(self.amp_steps, int)
         ):
             raise ValueError(
                 "All of the following parameters must be correctly filled: sound_duration, att_min, att_max, att_steps."

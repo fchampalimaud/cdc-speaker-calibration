@@ -774,9 +774,9 @@ class ApplicationWindow(QMainWindow):
             calibrate=self.settings_layout.calibrate.isChecked(),
             sound_duration=self.settings_layout.calib_duration.value(),
             freq=calib_freq,
-            att_min=self.settings_layout.min_att.value(),
-            att_max=self.settings_layout.max_att.value(),
-            att_steps=self.settings_layout.att_steps.value(),
+            amp_min=self.settings_layout.min_att.value(),
+            amp_max=self.settings_layout.max_att.value(),
+            amp_steps=self.settings_layout.att_steps.value(),
         )
 
         test_freq = Freq(
@@ -863,7 +863,7 @@ class ApplicationWindow(QMainWindow):
                 self.plot.freq_index.setMaximum(0)
             case "Calibration Signals":
                 self.plot.fig.setCurrentIndex(1)
-                self.plot.amp_index.setMaximum(self.settings.calibration.att_steps - 1)
+                self.plot.amp_index.setMaximum(self.settings.calibration.amp_steps - 1)
                 self.plot.freq_index.setMaximum(
                     self.settings.calibration.freq.num_freqs - 1
                 )

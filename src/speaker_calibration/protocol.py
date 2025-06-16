@@ -99,23 +99,23 @@ class Calibration:
         # Perform the calibration
         if self.settings.calibration.calibrate:
             # Generate the attenuation values to be used in the calibration
-            log_att = np.linspace(
-                self.settings.calibration.att_min,
-                self.settings.calibration.att_max,
-                self.settings.calibration.att_steps,
+            log_amp = np.linspace(
+                self.settings.calibration.amp_min,
+                self.settings.calibration.amp_max,
+                self.settings.calibration.amp_steps,
             )
-            att_factor = 10**log_att
+            amp_factor = 10**log_amp
 
             if self.callback is not None:
-                self.callback("Pre-calibration", log_att)
+                self.callback("Pre-calibration", log_amp)
 
             # Generate and play the sounds for every attenuation value
             self.db_spl, self.signals = self.noise_sweep(
-                att_factor, self.settings.calibration.sound_duration
+                amp_factor, self.settings.calibration.sound_duration
             )
 
             # Calculate the calibration parameters
-            self.calibration_parameters = np.polyfit(log_att, self.db_spl, 1)
+            self.calibration_parameters = np.polyfit(log_amp, self.db_spl, 1)
             np.savetxt(
                 self.path / "calibration_parameters.csv",
                 self.calibration_parameters,
@@ -155,8 +155,8 @@ class Calibration:
                 self.settings.calibration.freq.num_freqs,
             )
             amp = np.linspace(
-                0, 1, self.settings.calibration.att_steps
-            )  # TODO: check whether it's better to use log spaced att_array
+                0, 1, self.settings.calibration.amp_steps
+            )  # TODO: check whether it's better to use log spaced amp_array
             freq, amp = np.meshgrid(freq, amp, indexing="ij")
             db = np.zeros(freq.shape)
             calib_array = np.stack((freq, amp, db), axis=2)
@@ -277,7 +277,7 @@ class Calibration:
 
     def noise_sweep(
         self,
-        att_array: np.ndarray,
+        amp_array: np.ndarray,
         duration: float,
         type: Literal["Calibration", "Test"] = "Calibration",
     ):
@@ -292,15 +292,15 @@ class Calibration:
             the duration of the sounds (s).
         """
         # Initialization of the output arrays
-        sounds = np.zeros(att_array.size, dtype=Sound)
-        db_spl = np.zeros(att_array.size)
+        sounds = np.zeros(amp_array.size, dtype=Sound)
+        db_spl = np.zeros(amp_array.size)
 
-        for i in range(att_array.size):
+        for i in range(amp_array.size):
             # Generate the noise
             signal = white_noise(
                 duration,
                 self.settings.soundcard.fs,
-                self.settings.amplitude * att_array[i],
+                self.settings.amplitude * amp_array[i],
                 self.settings.ramp_time,
                 self.settings.filter.filter_input,
                 self.settings.filter.min_value,
