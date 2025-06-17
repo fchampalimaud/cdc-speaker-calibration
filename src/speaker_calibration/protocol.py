@@ -437,8 +437,8 @@ class Calibration:
         """
         # Upload the sound to the Harp SoundCard in case one is used
         if isinstance(self.soundcard, HarpSoundCard):
-            create_sound_file(signal, filename)
-            self.soundcard.load_sound(filename=filename)
+            create_sound_file(signal, str(filename))
+            self.soundcard.load_sound(filename=str(filename))
 
         # Create the result list to pass to the recording thread
         result = []
@@ -454,7 +454,7 @@ class Calibration:
             kwargs={
                 "start_event": start_event,
                 "result": result,
-                "filename": filename[:-4] + "_rec",
+                "filename": str(filename)[:-4] + "_rec",
             },
         )
 
