@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 from abc import ABC, abstractmethod
 from typing import Literal, Optional
 
@@ -57,14 +58,20 @@ class HarpSoundCard(SoundCard):
         index : int, optional
             the index in which the sound will be stored.
         """
-        os.system(
-            "cmd /c .\\assets\\toSoundCard.exe "
-            + filename
-            + " "
-            + str(index)
-            + " 0 "
-            + str(self.fs)
-        )
+        while True:
+            output = os.popen(
+                "cmd /c .\\assets\\toSoundCard.exe "
+                + filename
+                + " "
+                + str(index)
+                + " 0 "
+                + str(self.fs)
+            ).read()
+
+            if "Bandwidth: " in output:
+                break
+            print(output)
+            time.sleep(3)
 
 
 # TODO
