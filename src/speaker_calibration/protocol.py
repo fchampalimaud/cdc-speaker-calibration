@@ -278,6 +278,7 @@ class Calibration:
             signal,
             self.path / "sounds" / "inverse_filter_sound.bin",
             self.settings.inverse_filter.sound_duration,
+            use_mic_response=True,
         )
 
         # Calculate the inverse filter from the acquired signal
@@ -419,7 +420,12 @@ class Calibration:
         return calib_array, sounds
 
     def record_sound(
-        self, signal: Sound, filename: Path, duration: float, filter: bool = False
+        self,
+        signal: Sound,
+        filename: Path,
+        duration: float,
+        filter: bool = False,
+        use_mic_response: bool = False,
     ):
         """
         Records the sounds.
@@ -470,7 +476,7 @@ class Calibration:
         # Filter the acquired signal if desired
         if filter:
             sos = butter(
-                3,
+                16,
                 [
                     self.settings.filter.min_value,
                     self.settings.filter.max_value,
@@ -480,5 +486,20 @@ class Calibration:
                 fs=self.adc.fs,
             )
             result[0].signal = sosfilt(sos, result[0].signal)
+
+        if use_mic_response:
+            mic_response = np.loadtxt(
+                "assets/mic_freq_response.csv", delimiter=",", skiprows=1
+            )  # TODO: de-hardcode file
+            freq = np.fft.rfftfreq(
+                int(duration * self.settings.adc.fs), d=1 / self.settings.adc.fs
+            )
+            fft = np.fft.rfft(result[0].signal)
+            response_interp = np.interp(freq, mic_response[:, 0], mic_response[:, 2])
+            response_interp[(freq < 4 | freq > 20000)] = 1
+
+            fft = fft / response_interp
+
+            result[0].signal = np.fft.irfft(fft)
 
         return result[0]
