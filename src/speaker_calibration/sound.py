@@ -68,14 +68,9 @@ def white_noise(
     # Generates the base white noise (either gaussian or uniform)
     if noise_type == "gaussian":
         # The gaussian samples are rescaled so that 99% of the samples are between -1 and 1
-        signal = 2 / 3 * np.random.randn(num_samples)
+        signal = 1 / 3 * np.random.randn(num_samples)
     else:
         signal = np.random.uniform(low=-1.0, high=1.0, size=num_samples)
-
-    # Applies a 3th-order butterworth band-pass filter to the signal
-    if filter:
-        sos = butter(3, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs)
-        signal = sosfilt(sos, signal)
 
     # Uses the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
     if inverse_filter is not None:
@@ -84,10 +79,18 @@ def white_noise(
         fft = np.fft.rfft(signal)
         rms_original_signal = np.sqrt(np.mean(signal**2))
         signal = np.fft.irfft(fft * calibration_interp, n=int(fs * duration))
+        # signal = sosfilt(sos, signal)
+        # signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
+
+    # Applies a 16th-order butterworth band-pass filter to the signal
+    if filter:
+        rms_original_signal = np.sqrt(np.mean(signal**2))
+        sos = butter(16, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs)
         signal = sosfilt(sos, signal)
         signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
 
     # Truncates the signal between -1 and 1
+    signal = amplitude * signal
     signal[(signal < -1)] = -1
     signal[(signal > 1)] = 1
 
@@ -98,7 +101,7 @@ def white_noise(
         (ramp, np.ones(num_samples - ramp_samples * 2), np.flip(ramp)), axis=None
     )
     white_noise = Sound(
-        amplitude * np.multiply(signal, ramped_signal),
+        np.multiply(signal, ramped_signal),
         np.linspace(0, duration, int(fs * duration)),
     )
 
