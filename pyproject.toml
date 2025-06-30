@@ -1,7 +1,7 @@
 [project]
 name = "speaker-calibration"
 version = "0.1.0"
-description = "Add your description here"
+description = "This project allows to perform calibration of speakers both with white noises or pure tones."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
