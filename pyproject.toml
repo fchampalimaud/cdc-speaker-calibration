@@ -30,7 +30,7 @@ docs = [
 pyharp = { git = "https://github.com/harp-tech/pyharp" }
 
 [project.scripts]
-cli-app = "speaker_calibration.main:main"
+cli-app = "speaker_calibration.protocol:main"
 gui-app = "speaker_calibration.gui:main"
 
 [build-system]

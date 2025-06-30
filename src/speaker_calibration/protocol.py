@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Literal, Optional
 
 import numpy as np
+import yaml
 from scipy.interpolate import RBFInterpolator, griddata
 from scipy.signal import butter, sosfilt, welch
 
@@ -503,3 +504,11 @@ class Calibration:
             result[0].signal = np.fft.irfft(fft)
 
         return result[0]
+
+
+def main():
+    with open("config/settings.yml", "r") as file:
+        data = yaml.safe_load(file)
+
+    settings = Settings(**data)
+    Calibration(settings)
