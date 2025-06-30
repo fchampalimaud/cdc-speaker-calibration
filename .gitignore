@@ -161,10 +161,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-poetry.lock
 assets/*
 !assets/cf_logo.png
-sound.bin
-liconvert-windows
-speaker_calibration/test.py
 output/

@@ -1,5 +1,0 @@
-label,from_,to,increment,spinbox_width,int_value
-Sound Duration (s),1,60,1,10,1
-Minimum Attenuation,-10,0,0.1,10,0
-Maximum Attenuation,-10,0,0.1,10,0
-Attenuation Steps,1,100,1,10,1

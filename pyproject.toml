@@ -1,24 +1,38 @@
 [project]
 name = "speaker-calibration"
 version = "0.1.0"
-description = "Add your description here"
+description = "This project allows to perform calibration of speakers both with white noises or pure tones."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "matplotlib>=3.9.2",
+    "moku>=3.3.3",
     "multipledispatch>=1.0.0",
     "nidaqmx>=1.0.1",
     "numpy>=2.1.3",
+    "pydantic>=2.10.4",
     "pyharp",
     "pyserial>=3.5",
+    "pyside6>=6.9.0",
     "pyyaml>=6.0.2",
     "scipy>=1.14.1",
-]
-
-[project.optional-dependencies]
-docs = [
-    "mkdocs>=1.6.1",
+    "soundcard>=0.4.3",
+    "zeroconf>=0.146.1",
 ]
 
 [tool.uv.sources]
 pyharp = { git = "https://github.com/harp-tech/pyharp" }
+
+[project.scripts]
+cli-app = "speaker_calibration.protocol:main"
+gui-app = "speaker_calibration.gui:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.14",
+]

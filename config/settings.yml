@@ -1,41 +1,49 @@
-sound_type: Pure Tone
-fs_adc: 250000
-ramp_time: 0.005
-amplification: 0.2
-freq_min: 5000
-freq_max: 20000
-mic_factor: 10
+# yaml-language-server: $schema=schemas/settings-schema.json
+sound_type: Pure Tones
+mic_factor: 0.41887
 reference_pressure: 0.00002
-noise:
-  calculate_filter: true
+ramp_time: 0.005
+amplitude: 1
+freq:
+  min_freq: 5000
+  max_freq: 20000
+filter:
+  filter_input: true
+  filter_acquisition: true
+  min_value: 5000
+  max_value: 20000
+inverse_filter: 
+  determine_filter: true
+  sound_duration: 1
+  time_constant: 0.005
+calibration:
   calibrate: true
-  test_calibration: true
-  psd:
-    duration: 30
-    time_constant: 0.005
-    smooth_window: 1
-  calibration:
-    duration: 15
-    att_min: 0
-    att_max: -1
-    att_steps: 15
-  test:
-    duration: 5
-    db_min: 30
-    db_max: 70
-    db_steps: 5
-pure_tones:
-  calibrate: true
-  test_calibration: true
-  calibration:
-    duration: 0.15
-    num_freqs: 5
-    att_min: 0
-    att_max: -1
-    att_steps: 15
-  test:
-    duration: 0.15
-    num_freqs: 5
-    db_min: 30
-    db_max: 70
-    db_steps: 5
+  sound_duration: 0.150
+  freq:
+    min_freq: 5000
+    max_freq: 20000
+    num_freqs: 3
+  amp_min: 0
+  amp_max: -1
+  amp_steps: 3
+test_calibration:
+  test: true
+  sound_duration: 0.150
+  freq:
+    min_freq: 6000
+    max_freq: 19000
+    num_freqs: 3
+  db_min: 30
+  db_max: 70
+  db_steps: 3
+is_harp: true
+soundcard:
+  com_port: COM17
+  fs: 192000
+adc_device: Moku:Go
+adc:
+  fs: 500000
+  # device_id: 1
+  address: fe80:0000:0000:0000:7269:79ff:feb9:62a2
+  channel: 1
+output_dir: output
