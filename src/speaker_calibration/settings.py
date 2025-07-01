@@ -154,7 +154,9 @@ class ComputerSoundCard(BaseModel):
 
 
 class HarpSoundCard(BaseModel):
-    com_port: Annotated[str, StringConstraints(pattern=r"^COM\d+$")] = Field(
+    com_port: Annotated[
+        str, StringConstraints(pattern=r"^((COM\d+)|(/dev/ttyUSB\d+))$")
+    ] = Field(
         description='The COM number the soundcard corresponds to in the computer used for the calibration. The string should be of the format "COM?", in which "?" is the COM number.'
     )
     fs: Literal[96000, 192000] = Field(

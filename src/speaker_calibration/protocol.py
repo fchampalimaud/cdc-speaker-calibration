@@ -157,6 +157,9 @@ class Calibration:
 
     # FIXME: the function doesn't currently allow to perform only some of the calibration steps isolated (e.g. calibration test), because there's no way to load a previously performed calibration
     def pure_tone_calibration(self):
+        """
+        Performs the pure tone speaker calibration.
+        """
         # Perform the calibration
         if self.settings.calibration.calibrate:
             # Generate the array of frequencies to be used in the calibration
@@ -261,6 +264,15 @@ class Calibration:
     def calculate_inverse_filter(self):
         """
         Calculates the inverse filter used in the noise calibration protocol.
+
+        Returns
+        -------
+        inverse_filter : numpy.ndarray
+            The 2D array representing the speaker inverse filter.
+        signal : Sound
+            The generated signal used in the inverse filter calculation.
+        recorded_signal : Sound
+            The acquired signal used in the inverse filter calculation.
         """
         # Generate the white noise
         signal = white_noise(
@@ -309,11 +321,18 @@ class Calibration:
         Parameters
         ----------
         amp_array : np.ndarray
-            the array containing the amplitude levels to be used in the different sounds.
+            The array containing the amplitude levels to be used in the different sounds.
         duration : float
-            the duration of the sounds (s).
+            The duration of the sounds (s).
         type : Literal["Calibration", "Test"], optional
-            indicates whether this function is being run in the calibration or in the test of a calibration
+            Indicates whether this function is being run in the calibration or in the test of a calibration
+
+        Returns
+        -------
+        db_spl : numpy.ndarray
+            The array containing the measured dB SPL values for each amplification value.
+        sounds : numpy.ndarray
+            The array containing both the original and acquired signals for each amplification value.
         """
         # Initialization of the output arrays
         sounds = np.zeros(amp_array.size, dtype=Sound)
@@ -368,11 +387,18 @@ class Calibration:
         Parameters
         ----------
         calib_array : np.ndarray
-            the array containing the frequency and amplitude values to be used in the different sounds.
+            The array containing the frequency and amplitude values to be used in the different sounds.
         duration : float
-            the duration of the sounds (s).
+            The duration of the sounds (s).
         type : Literal["Calibration", "Test"], optional
-            indicates whether this function is being run in the calibration or in the test of a calibration
+            Indicates whether this function is being run in the calibration or in the test of a calibration
+
+        Returns
+        -------
+        calib_array : numpy.ndarray
+            The array containing the measured dB SPL values for each frequency and amplification values.
+        sounds : numpy.ndarray
+            The array containing both the original and acquired signals for each frequency and amplification values.
         """
         # Initialization of the output arrays
         sounds = np.zeros((calib_array.shape[0], calib_array.shape[1]), dtype=Sound)
@@ -434,13 +460,20 @@ class Calibration:
         Parameters
         ----------
         signal : Sound
-            the signal to be played and recorded.
+            The signal to be played and recorded.
         filename : str
-            the path to the file to which the sound will be saved to and from which the sound is upload from (in case a Harp SoundCard is used).
+            The path to the file to which the sound will be saved to and from which the sound is upload from (in case a Harp SoundCard is used).
         duration : float
-            the duration of the sound (s).
+            The duration of the sound (s).
         filter : bool, optional
-            indicates whether the acquired signal should be filtered or not.
+            Indicates whether the acquired signal should be filtered or not.
+        use_mic_response : bool, optional
+            Indicates whether the microphone frequency response should be used as a compensation method. It's useful when calculating the speaker inverse filter.
+
+        Returns
+        -------
+        sound : Sound
+            The recorded sound.
         """
         # Upload the sound to the Harp SoundCard in case one is used
         if isinstance(self.soundcard, HarpSoundCard):
@@ -488,6 +521,7 @@ class Calibration:
             )
             result[0].signal = sosfilt(sos, result[0].signal)
 
+        # Use microphone frequency response to calculate the "real" relative FFT, mainly used to calculate the inverse filter
         if use_mic_response:
             mic_response = np.loadtxt(
                 "assets/mic_freq_response.csv", delimiter=",", skiprows=1

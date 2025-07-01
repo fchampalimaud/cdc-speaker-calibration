@@ -8,6 +8,17 @@ from speaker_calibration.utils.decorators import greater_than, validate_range
 
 
 class Sound:
+    """
+    The class representing a sound.
+
+    Attributes
+    ----------
+    signal : numpy.ndarray
+        The 1D array containing the signal itself.
+    time : Optional[numpy.ndarray]
+        The 1D array containing the time axis of the signal.
+    """
+
     signal: np.ndarray
     time: Optional[np.ndarray]
 
@@ -39,62 +50,63 @@ def white_noise(
     Parameters
     ----------
     duration : float
-        duration of the signal generated (s).
+        Duration of the signal generated (s).
     fs : int
-        sampling frequency of the signal being generated (Hz).
+        Sampling frequency of the signal being generated (Hz).
     amplitude : float, optional
-        amplitude factor of the speakers.
+        Amplitude factor of the speakers.
     ramp_time : float, optional
-        ramp time of the signal (s).
+        Ramp time of the signal (s).
     filter : bool, optional
-        whether to filter the signal or not.
+        Whether to filter the signal or not.
     freq_min : float, optional
-        minimum frequency to consider to pass band (Hz).
+        Minimum frequency to consider to pass band (Hz).
     freq_max : float, optional
-        maximum frequency to consider to pass band (Hz).
+        Maximum frequency to consider to pass band (Hz).
     inverse_filter : Optional[np.ndarray], optional
-        the inverse filter to be used to flatten the power spectral density of the sound played by the speakers.
+        The inverse filter to be used to flatten the power spectral density of the sound played by the speakers.
     noise_type : Literal["gaussian", "uniform"], optional
-        whether the generated white noise should be gaussian or uniform.
+        Whether the generated white noise should be gaussian or uniform.
 
     Returns
     -------
     white_noise : Sound
-        the generated white noise.
+        The generated white noise.
     """
-    # Calculates the number of samples of the signal
+    # Calculate the number of samples of the signal
     num_samples = int(fs * duration)
 
-    # Generates the base white noise (either gaussian or uniform)
+    # Generate the base white noise (either gaussian or uniform)
     if noise_type == "gaussian":
         # The gaussian samples are rescaled so that 99% of the samples are between -1 and 1
         signal = 1 / 3 * np.random.randn(num_samples)
     else:
         signal = np.random.uniform(low=-1.0, high=1.0, size=num_samples)
 
-    # Uses the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
+    # Calculate the RMS of the original signal to be used in a future normalization
+    rms_original_signal = np.sqrt(np.mean(signal**2))
+
+    # Use the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
     if inverse_filter is not None:
         freq = np.fft.rfftfreq(int(duration * fs), d=1 / fs)
         calibration_interp = np.interp(freq, inverse_filter[:, 0], inverse_filter[:, 1])
         fft = np.fft.rfft(signal)
-        rms_original_signal = np.sqrt(np.mean(signal**2))
         signal = np.fft.irfft(fft * calibration_interp, n=int(fs * duration))
-        # signal = sosfilt(sos, signal)
-        # signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
 
     # Applies a 16th-order butterworth band-pass filter to the signal
     if filter:
-        rms_original_signal = np.sqrt(np.mean(signal**2))
         sos = butter(16, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs)
         signal = sosfilt(sos, signal)
-        signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
 
-    # Truncates the signal between -1 and 1
+    # Normalize the signal
+    signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
+
+    # Truncate the signal between -1 and 1
     signal = amplitude * signal
     signal[(signal < -1)] = -1
     signal[(signal > 1)] = 1
 
-    # Applies a ramp at the beginning and at the end of the signal and the input amplitude factor
+    # Apply a ramp at the beginning and at the end of the signal and the input amplitude factor
     ramp_samples = int(np.floor(fs * ramp_time))
     ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
     ramped_signal = np.concatenate(
@@ -126,28 +138,28 @@ def pure_tone(
     Parameters
     ----------
     duration : float
-        duration of the signal generated (s).
+        Duration of the signal generated (s).
     fs : int
-        sampling frequency of the signal being generated (Hz).
+        Sampling frequency of the signal being generated (Hz).
     freq : float
-        frequency of the sinusoidal signal (Hz).
+        Frequency of the sinusoidal signal (Hz).
     phase : float, optional
-        phase of the sinusoidal signal.
+        Phase of the sinusoidal signal.
     amplitude : float, optional
-        amplitude of the sinusoidal signal.
+        Amplitude of the sinusoidal signal.
     ramp_time : float, optional
-        ramp time of the signal (s).
+        Ramp time of the signal (s).
 
     Returns
     -------
     pure_tone : Sound
-        the generated pure tone.
+        The generated pure tone.
     """
     # Sinusoidal signal generation
     t = np.linspace(0, duration, int(fs * duration))
     signal = amplitude * np.sin(2 * np.pi * freq * t + phase)
 
-    # Applies a ramp at the beginning and at the end of the signal
+    # Apply a ramp at the beginning and at the end of the signal
     ramp_samples = int(np.floor(fs * ramp_time))
     ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
     ramped_signal = np.concatenate(
@@ -170,13 +182,13 @@ def create_sound_file(
     Parameters
     ----------
     signal : Sound
-        the signal to be written to the .bin file.
+        The signal to be written to the .bin file.
     filename : str
-        the name of the .bin file.
+        The name of the .bin file.
     speaker_side : Literal["both", "left", "right"], optional
-        whether the sound plays in both speakers or in a single one. Possible values: "both", "left" or "right.
+        Whether the sound plays in both speakers or in a single one. Possible values: "both", "left" or "right.
     """
-    # Transforms the signal from values between -1 to 1 into 24-bit integers
+    # Transform the signal from values between -1 to 1 into 24-bit integers
     amplitude24bits = np.power(2, 31) - 1
 
     if speaker_side == "both":
@@ -189,11 +201,11 @@ def create_sound_file(
         wave_left = 0 * signal.signal
         wave_right = amplitude24bits * signal.signal
 
-    # Groups the signals to be played in the left and right channels/speakers in a single array
+    # Group the signals to be played in the left and right channels/speakers in a single array
     stereo = np.stack((wave_left, wave_right), axis=1)
     wave_int = stereo.astype(np.int32)
 
-    # Writes the sound to the .bin file
+    # Write the sound to the .bin file
     with open(filename, "wb") as f:
         wave_int.tofile(f)
 
@@ -210,22 +222,22 @@ def create_sound_file(
     Parameters
     ----------
     signal_left : Sound
-        the signal to be written to the .bin file that is going to be played by the left speaker.
+        The signal to be written to the .bin file that is going to be played by the left speaker.
     signal_right : Sound
-        the signal to be written to the .bin file that is going to be played by the right speaker.
+        The signal to be written to the .bin file that is going to be played by the right speaker.
     filename : str
-        the name of the .bin file.
+        The name of the .bin file.
     """
-    # Transforms the signal from values between -1 to 1 into 24-bit integers
+    # Transform the signal from values between -1 to 1 into 24-bit integers
     amplitude24bits = np.power(2, 31) - 1
     wave_left = amplitude24bits * signal_left.signal
     wave_right = amplitude24bits * signal_right.signal
 
-    # Groups the signals to be played in the left and right channels/speakers in a single array
+    # Group the signals to be played in the left and right channels/speakers in a single array
     stereo = np.stack((wave_left, wave_right), axis=1)
     wave_int = stereo.astype(np.int32)
 
-    # Writes the sound to the .bin file
+    # Write the sound to the .bin file
     with open(filename, "wb") as f:
         wave_int.tofile(f)
 
@@ -242,13 +254,13 @@ def calculate_db_spl(
     Parameters
     ----------
     sound : Sound
-        the sound from which the dB SPL calculation will be performed.
+        The sound from which the dB SPL calculation will be performed.
     mic_factor : float
-        factor of the microphone (V/Pa).
+        Factor of the microphone (V/Pa).
     reference_pressure : float, optional
-        reference pressure (Pa).
+        Reference pressure (Pa).
     domain : Literal["time", "freq"], optional
-        indicates whether the dB SPL calculation should be performed in the time or in the frequency domain.
+        Indicates whether the dB SPL calculation should be performed in the time or in the frequency domain.
     """
     # Remove the beginning and end of the acquisition
     signal = sound.signal[int(0.1 * sound.signal.size) : int(0.9 * sound.signal.size)]
