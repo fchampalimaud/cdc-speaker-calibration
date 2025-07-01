@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QMessageBox,
     QPushButton,
     QRadioButton,
     QScrollArea,
@@ -494,18 +495,20 @@ class SettingsLayout(QWidget):
             self.min_freq.hide()
             self.max_freq_l.hide()
             self.max_freq.hide()
-            self.calib_min_freq_l.show()
-            self.calib_min_freq.show()
-            self.calib_max_freq_l.show()
-            self.calib_max_freq.show()
-            self.calib_freq_steps_l.show()
-            self.calib_freq_steps.show()
-            self.test_min_freq_l.show()
-            self.test_min_freq.show()
-            self.test_max_freq_l.show()
-            self.test_max_freq.show()
-            self.test_freq_steps_l.show()
-            self.test_freq_steps.show()
+            if self.calibrate.isChecked():
+                self.calib_min_freq_l.show()
+                self.calib_min_freq.show()
+                self.calib_max_freq_l.show()
+                self.calib_max_freq.show()
+                self.calib_freq_steps_l.show()
+                self.calib_freq_steps.show()
+            if self.test.isChecked():
+                self.test_min_freq_l.show()
+                self.test_min_freq.show()
+                self.test_max_freq_l.show()
+                self.test_max_freq.show()
+                self.test_freq_steps_l.show()
+                self.test_freq_steps.show()
             self.adjustSize()
 
     def on_inverse_filter_changed(self, state):
@@ -592,7 +595,10 @@ class SettingsLayout(QWidget):
             self.adjustSize()
 
     def connect_soundcard(self, index):
-        if self.serial_port.currentText() == "Refresh":
+        if (
+            self.serial_port.currentText() == "Refresh"
+            or self.serial_port.currentText() == ""
+        ):
             self.serial_port.clear()
             self.serial_port.addItems(get_ports())
             return
@@ -605,12 +611,12 @@ class SettingsLayout(QWidget):
                 self.soundcard.disconnect()
 
             else:
-                # showwarning("Warning", "This is not a Harp Soundcard.")
+                QMessageBox.warning(self, "Warning", "This is not a Harp Soundcard.")
                 self.serial_port.setCurrentIndex(-1)
                 self.soundcard.disconnect()
         except SerialException:
             self.serial_port.setCurrentIndex(-1)
-            # showwarning("Warning", "This is not a Harp device.")
+            QMessageBox.warning(self, "Warning", "This is not a Harp device.")
 
 
 class PlotLayout(QWidget):
@@ -899,7 +905,8 @@ class ApplicationWindow(QMainWindow):
         self.worker_thread.quit()
 
     def closeEvent(self, event):
-        self.worker_thread.quit()
+        if hasattr(self, "worker_thread"):
+            self.worker_thread.quit()
         event.accept()  # Accept the close event
 
 
