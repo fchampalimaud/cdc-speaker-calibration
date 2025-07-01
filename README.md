@@ -1,4 +1,4 @@
-# cdc-speaker-calibration
+# Speaker Calibration Protocol
 
 This repository contains the Python code used during the speaker calibration protocol. 
 

@@ -1,16 +1,29 @@
-site_name: Speaker Calibration Documentation
-nav:
-  - Home: index.md
-  - Speaker Calibration:
-    - Installation: installation.md
-    - Usage: usage.md
-    - Protocols: protocols.md
-  - Latency Measurements:
-    - Protocol: latency.md
+site_name: Speaker Calibration
+repo_url: "https://github.com/fchampalimaud/cdc-speaker-calibration"
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+            show_root_heading: true
+            show_submodules: true
+            show_source: false
+  - include-markdown
+  - gh-admonitions
+
+markdown_extensions:
+  - admonition
+
 theme:
   name: material
-  favicon: img/favicon.ico
+  icon:
+    repo: fontawesome/brands/github
   logo: img/logo_white.svg
+  favicon: img/favicon.ico
+  features:
+    - navigation.expand
   palette:
   - media: "(prefers-color-scheme)"
     toggle:
@@ -26,3 +39,23 @@ theme:
     toggle:
       icon: material/weather-night
       name: Switch to system preference
+
+nav:
+  - Home: index.md
+  - Speaker Calibration:
+    - Installation: installation.md
+    - Usage: usage.md
+    - Protocols: protocols.md
+  - Latency Measurements:
+    - Protocol: latency.md
+  - API:
+    - Sound: api/sound.md
+    - Soundcards: api/soundcards.md
+    - Recording: api/recording.md
+    - Protocol: api/protocol.md
+    - Settings: api/settings.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/fchampalimaud/pyharp

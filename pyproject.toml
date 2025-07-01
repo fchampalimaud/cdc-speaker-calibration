@@ -34,5 +34,8 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "mkdocs>=1.6.1",
+    "mkdocs-github-admonitions-plugin>=0.1.1",
+    "mkdocs-include-markdown-plugin>=7.1.6",
     "mkdocs-material>=9.6.14",
+    "mkdocstrings-python>=1.16.12",
 ]
