@@ -8,7 +8,7 @@ from typing import Literal, Optional
 import numpy as np
 import yaml
 from scipy.interpolate import RBFInterpolator, griddata
-from scipy.signal import butter, sosfilt, welch
+from scipy.signal import butter, resample, sosfilt, welch
 
 from speaker_calibration.recording import Moku, NiDaq, RecordingDevice
 from speaker_calibration.settings import Settings
@@ -16,6 +16,7 @@ from speaker_calibration.sound import (
     Sound,
     calculate_db_spl,
     create_sound_file,
+    log_chirp,
     pure_tone,
     white_noise,
 )
@@ -308,6 +309,42 @@ class Calibration:
         inverse_filter = np.stack((freq, inverse_filter), axis=1)
 
         return inverse_filter, signal, recorded_sound
+
+    def new_inverse_filter(self):
+        signal = log_chirp(
+            self.settings.inverse_filter.sound_duration,
+            self.settings.soundcard.fs,
+            self.settings.filter.min_value,
+            self.settings.filter.max_value,
+            self.settings.amplitude,
+            self.settings.ramp_time,
+        )
+
+        # Play the sound from the soundcard and record it with the microphone + DAQ system
+        recorded_sound = self.record_sound(
+            signal,
+            self.path / "sounds" / "inverse_filter_sound.bin",
+            self.settings.inverse_filter.sound_duration,
+            # use_mic_response=True,
+        )
+
+        recorded_sound.signal = resample(
+            recorded_sound.signal,
+            self.settings.inverse_filter.sound_duration * self.settings.soundcard.fs,
+        )
+
+        # Filter the acquired signal if desired
+        if filter:
+            sos = butter(
+                16,
+                500,
+                btype="highpass",
+                output="sos",
+                fs=self.adc.fs,
+            )
+            recorded_sound.signal = sosfilt(sos, recorded_sound.signal)
+
+        # TODO: continue
 
     def noise_sweep(
         self,
