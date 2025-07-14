@@ -17,14 +17,23 @@ class Sound:
         The 1D array containing the signal itself.
     time : Optional[numpy.ndarray]
         The 1D array containing the time axis of the signal.
+    inverse_filter : Optional[numpy.ndarray]
+        The 1D array containing the inverse filter of the signal.
     """
 
     signal: np.ndarray
     time: Optional[np.ndarray]
+    inverse_filter: Optional[np.ndarray]
 
-    def __init__(self, signal: np.ndarray, time: Optional[np.ndarray] = None):
+    def __init__(
+        self,
+        signal: np.ndarray,
+        time: Optional[np.ndarray] = None,
+        inverse_filter: Optional[np.ndarray] = None,
+    ):
         self.signal = signal
         self.time = time
+        self.inverse_filter = inverse_filter
 
 
 @greater_than("duration", 0)
