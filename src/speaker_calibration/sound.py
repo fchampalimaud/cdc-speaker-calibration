@@ -179,6 +179,42 @@ def pure_tone(
     return pure_tone
 
 
+# TODO: add docstring
+def log_chirp(
+    duration: float,
+    fs: int,
+    freq_min: float,
+    freq_max: float,
+    phase: float = 0,
+    amplitude: float = 1,
+    ramp_time: float = 0.005,
+):
+    # Calculate helper parameter
+    log_param = duration / np.log(freq_max / freq_min)
+
+    # Generate signal
+    time = np.linspace(0, duration, int(fs * duration))
+    signal = amplitude * np.sin(
+        2 * np.pi * freq_min * log_param * (np.exp(time / log_param) - 1) + phase
+    )
+
+    # Apply ramp
+    ramp_samples = int(np.floor(fs * ramp_time))
+    ramp = np.linspace(0, 1, ramp_samples) ** 2
+    ramped_signal = np.concatenate(
+        (ramp, np.ones(time.size - ramp_samples * 2), np.flip(ramp)), axis=None
+    )
+    signal = np.multiply(signal, ramped_signal)
+
+    # Calculate inverse filter
+    inverse_filter = np.flip(signal) * np.exp(-time / log_param)
+
+    # Create Sound object
+    chirp = Sound(signal, time, inverse_filter)
+
+    return chirp
+
+
 @dispatch(Sound, str, speaker_side=str)
 def create_sound_file(
     signal: Sound,
