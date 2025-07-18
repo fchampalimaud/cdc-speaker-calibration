@@ -8,7 +8,8 @@ from typing import Literal, Optional
 import numpy as np
 import yaml
 from scipy.interpolate import RBFInterpolator, griddata
-from scipy.signal import butter, resample, sosfilt, welch
+from scipy.ndimage import uniform_filter1d
+from scipy.signal import butter, firwin2, freqs, lfilter, resample, sosfilt, welch
 
 from speaker_calibration.recording import Moku, NiDaq, RecordingDevice
 from speaker_calibration.settings import Settings
@@ -21,6 +22,7 @@ from speaker_calibration.sound import (
     white_noise,
 )
 from speaker_calibration.soundcards import HarpSoundCard, SoundCard
+from speaker_calibration.utils import nextpow2
 
 
 class Calibration:
@@ -84,9 +86,10 @@ class Calibration:
         """
         # Calculate the inverse filter
         if self.settings.inverse_filter.determine_filter:
-            self.inverse_filter, psd_signal, psd_recorded = (
-                self.calculate_inverse_filter()
-            )
+            # self.inverse_filter, psd_signal, psd_recorded = (
+            #     self.calculate_inverse_filter()
+            # )
+            self.inverse_filter, psd_signal, psd_recorded = self.new_inverse_filter()
 
             # Save inverse filter
             np.savetxt(
@@ -96,11 +99,11 @@ class Calibration:
                 fmt="%f",
             )
 
-            # Send inverse filter and signals to the interface
-            if self.callback is not None:
-                self.callback(
-                    "Inverse Filter", self.inverse_filter, psd_signal, psd_recorded
-                )
+            # # Send inverse filter and signals to the interface
+            # if self.callback is not None:
+            #     self.callback(
+            #         "Inverse Filter", self.inverse_filter, psd_signal, psd_recorded
+            #     )
 
         # Perform the calibration
         if self.settings.calibration.calibrate:
@@ -310,7 +313,14 @@ class Calibration:
 
         return inverse_filter, signal, recorded_sound
 
-    def new_inverse_filter(self):
+    def new_inverse_filter(
+        self,
+        smooth_window: int = 20,
+        freq_min: float = 5000,
+        freq_max: float = 20000,
+        min_boost_db: float = -24,
+        max_boost_db: float = 12,
+    ):
         signal = log_chirp(
             self.settings.inverse_filter.sound_duration,
             self.settings.soundcard.fs,
@@ -330,7 +340,9 @@ class Calibration:
 
         recorded_sound.signal = resample(
             recorded_sound.signal,
-            self.settings.inverse_filter.sound_duration * self.settings.soundcard.fs,
+            int(
+                self.settings.inverse_filter.sound_duration * self.settings.soundcard.fs
+            ),
         )
 
         # Filter the acquired signal if desired
@@ -344,7 +356,70 @@ class Calibration:
             )
             recorded_sound.signal = sosfilt(sos, recorded_sound.signal)
 
+        num_fft_samples = int(
+            2
+            ** nextpow2(
+                recorded_sound.signal.size / 2 + signal.inverse_filter.size / 2 - 1
+            )
+        )
+        signal_fft = np.fft.rfft(recorded_sound.signal, num_fft_samples)
+        inv_fft = np.fft.rfft(signal.inverse_filter, num_fft_samples)
+        ir_fft = np.multiply(signal_fft, inv_fft)
+        impulse_response = np.fft.irfft(ir_fft)
+
+        peak_pos = np.argmax(impulse_response) - 150
+        hr_ir = impulse_response[peak_pos : peak_pos + 8192]
+        new_num_fft = int(2 ** nextpow2(hr_ir.size / 2))
+        transfer_function = np.abs(np.fft.rfft(hr_ir, new_num_fft))
+        freq = np.fft.rfftfreq(
+            new_num_fft, d=1 / self.settings.soundcard.fs
+        )  # FIXME: possibly
+
+        print(transfer_function)
+
+        transfer_function = uniform_filter1d(
+            transfer_function, smooth_window, mode="nearest"
+        )
+
+        inv_transfer_func = 1 / (transfer_function + 1e-10)
+
+        mean_gain = np.mean(
+            inv_transfer_func[
+                (inv_transfer_func >= freq_min) & (inv_transfer_func <= freq_max)
+            ]
+        )
+
+        inv_transfer_func /= mean_gain
+
+        min_boost_linear = 10 ** (min_boost_db / 20)
+        max_boost_linear = 10 ** (max_boost_db / 20)
+
+        inv_transfer_func[inv_transfer_func < min_boost_linear] = min_boost_linear
+        inv_transfer_func[inv_transfer_func > max_boost_linear] = max_boost_linear
+
+        # if filter:
+        b, a = butter(
+            16,
+            [4000, 21000],
+            btype="bandpass",
+            output="ba",
+            fs=192000,
+        )
+        w, h = freqs(b, a, freq.size)
+
+        print(transfer_function)
+        print(inv_transfer_func)
+
+        inv_transfer_func[-1] = 0
+
+        final_filter = firwin2(
+            4096, freq, np.multiply(inv_transfer_func, abs(h)), fs=192000
+        )  # TODO: verify freq
+
+        # lfilter(final_filter, 1, signal)
         # TODO: continue
+
+        return final_filter, signal, recorded_sound
 
     def noise_sweep(
         self,
@@ -568,7 +643,7 @@ class Calibration:
             )
             fft = np.fft.rfft(result[0].signal)
             response_interp = np.interp(freq, mic_response[:, 0], mic_response[:, 2])
-            response_interp[(freq < 4 | freq > 20000)] = 1
+            response_interp[(freq < 4) | (freq > 20000)] = 1
 
             fft = fft / response_interp
 

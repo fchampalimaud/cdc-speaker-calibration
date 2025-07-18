@@ -2,7 +2,7 @@ from typing import Literal, Optional
 
 import numpy as np
 from multipledispatch import dispatch
-from scipy.signal import butter, sosfilt
+from scipy.signal import butter, lfilter, sosfilt
 
 from speaker_calibration.utils.decorators import greater_than, validate_range
 
@@ -97,10 +97,7 @@ def white_noise(
 
     # Use the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
     if inverse_filter is not None:
-        freq = np.fft.rfftfreq(int(duration * fs), d=1 / fs)
-        calibration_interp = np.interp(freq, inverse_filter[:, 0], inverse_filter[:, 1])
-        fft = np.fft.rfft(signal)
-        signal = np.fft.irfft(fft * calibration_interp, n=int(fs * duration))
+        signal = lfilter(inverse_filter, 1, signal)
 
     # Applies a 16th-order butterworth band-pass filter to the signal
     if filter:
