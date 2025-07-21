@@ -9,7 +9,7 @@ import numpy as np
 import yaml
 from scipy.interpolate import RBFInterpolator, griddata
 from scipy.ndimage import uniform_filter1d
-from scipy.signal import butter, firwin2, freqs, lfilter, resample, sosfilt, welch
+from scipy.signal import butter, firwin2, freqz_sos, resample, sosfilt, welch
 
 from speaker_calibration.recording import Moku, NiDaq, RecordingDevice
 from speaker_calibration.settings import Settings
@@ -375,8 +375,6 @@ class Calibration:
             new_num_fft, d=1 / self.settings.soundcard.fs
         )  # FIXME: possibly
 
-        print(transfer_function)
-
         transfer_function = uniform_filter1d(
             transfer_function, smooth_window, mode="nearest"
         )
@@ -398,26 +396,23 @@ class Calibration:
         inv_transfer_func[inv_transfer_func > max_boost_linear] = max_boost_linear
 
         # if filter:
-        b, a = butter(
+        sos = butter(
             16,
-            [4000, 21000],
+            [5000, 20000],
             btype="bandpass",
-            output="ba",
+            output="sos",
             fs=192000,
         )
-        w, h = freqs(b, a, freq.size)
+        w, h = freqz_sos(sos, freq.size)
 
-        print(transfer_function)
-        print(inv_transfer_func)
+        new_h = np.interp(freq, w, np.abs(h))
 
-        inv_transfer_func[-1] = 0
+        response = np.multiply(inv_transfer_func, abs(new_h))
+        response[-1] = 0
 
         final_filter = firwin2(
-            4096, freq, np.multiply(inv_transfer_func, abs(h)), fs=192000
+            4096, freq, response / max(response), fs=192000
         )  # TODO: verify freq
-
-        # lfilter(final_filter, 1, signal)
-        # TODO: continue
 
         return final_filter, signal, recorded_sound
 
