@@ -327,7 +327,7 @@ class Calibration:
             self.settings.filter.min_value,
             self.settings.filter.max_value,
             self.settings.amplitude,
-            self.settings.ramp_time,
+            # self.settings.ramp_time,
         )
 
         # Play the sound from the soundcard and record it with the microphone + DAQ system
@@ -381,11 +381,7 @@ class Calibration:
 
         inv_transfer_func = 1 / (transfer_function + 1e-10)
 
-        mean_gain = np.mean(
-            inv_transfer_func[
-                (inv_transfer_func >= freq_min) & (inv_transfer_func <= freq_max)
-            ]
-        )
+        mean_gain = np.mean(inv_transfer_func[(freq >= freq_min) & (freq <= freq_max)])
 
         inv_transfer_func /= mean_gain
 
@@ -397,13 +393,13 @@ class Calibration:
 
         # if filter:
         sos = butter(
-            16,
+            32,
             [5000, 20000],
             btype="bandpass",
             output="sos",
             fs=192000,
         )
-        w, h = freqz_sos(sos, freq.size)
+        w, h = freqz_sos(sos, fs=192000)
 
         new_h = np.interp(freq, w, np.abs(h))
 

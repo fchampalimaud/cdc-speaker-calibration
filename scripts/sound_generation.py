@@ -36,7 +36,7 @@ def upload_sound(
     signal_left = white_noise(
         duration,
         fs,
-        amplification=attenuation_left,
+        amplitude=attenuation_left,
         freq_min=5000,
         freq_max=20000,
         inverse_filter=cf_left,
@@ -44,7 +44,7 @@ def upload_sound(
     signal_right = white_noise(
         duration,
         fs,
-        amplification=attenuation_right,
+        amplitude=attenuation_right,
         freq_min=5000,
         freq_max=20000,
         inverse_filter=cf_right,
