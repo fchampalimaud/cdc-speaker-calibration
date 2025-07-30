@@ -356,21 +356,17 @@ class Calibration:
             )
             recorded_sound.signal = sosfilt(sos, recorded_sound.signal)
 
-        num_fft_samples = int(
-            2
-            ** nextpow2(
-                recorded_sound.signal.size / 2 + signal.inverse_filter.size / 2 - 1
-            )
-        )
-        signal_fft = np.fft.rfft(recorded_sound.signal, num_fft_samples)
-        inv_fft = np.fft.rfft(signal.inverse_filter, num_fft_samples)
+        num_fft = recorded_sound.signal.size + signal.inverse_filter.size - 1
+        num_fft_samples = int(2 ** nextpow2(num_fft))
+        signal_fft = np.fft.fft(recorded_sound.signal, num_fft_samples)
+        inv_fft = np.fft.fft(signal.inverse_filter, num_fft_samples)
         ir_fft = np.multiply(signal_fft, inv_fft)
-        impulse_response = np.fft.irfft(ir_fft)
+        impulse_response = np.fft.ifft(ir_fft)[0:num_fft]
 
-        peak_pos = np.argmax(impulse_response) - 150
+        peak_pos = max(0, np.argmax(np.abs(impulse_response)) - 150)
         hr_ir = impulse_response[peak_pos : peak_pos + 8192]
-        new_num_fft = int(2 ** nextpow2(hr_ir.size / 2))
-        transfer_function = np.abs(np.fft.rfft(hr_ir, new_num_fft))
+        new_num_fft = int(2 ** nextpow2(hr_ir.size))
+        transfer_function = np.abs(np.fft.fft(hr_ir, new_num_fft))
         freq = np.fft.rfftfreq(
             new_num_fft, d=1 / self.settings.soundcard.fs
         )  # FIXME: possibly
@@ -403,7 +399,7 @@ class Calibration:
 
         new_h = np.interp(freq, w, np.abs(h))
 
-        response = np.multiply(inv_transfer_func, abs(new_h))
+        response = np.multiply(inv_transfer_func[0 : (freq.size - 1)], abs(new_h))
         response[-1] = 0
 
         final_filter = firwin2(
