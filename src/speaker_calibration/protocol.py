@@ -352,7 +352,7 @@ class Calibration:
                 500,
                 btype="highpass",
                 output="sos",
-                fs=self.adc.fs,
+                fs=self.settings.soundcard.fs,
             )
             recorded_sound.signal = sosfilt(sos, recorded_sound.signal)
 
