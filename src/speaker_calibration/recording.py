@@ -112,12 +112,8 @@ class NiDaq(RecordingDevice):
             if result is not None:
                 result.append(acquired_signal)
 
-        # Save the acquired signal to a CSV file
-        np.savetxt(
-            filename + ".csv",
-            np.stack((acquired_signal.time, acquired_signal.signal), axis=1),
-            delimiter=",",
-        )
+        # Save the acquired signal to a binary file
+        acquired_signal.save(filename)
 
         return acquired_signal
 

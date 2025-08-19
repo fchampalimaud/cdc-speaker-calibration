@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Literal, Optional
 
 import numpy as np
@@ -34,6 +35,14 @@ class Sound:
         self.signal = signal
         self.time = time
         self.inverse_filter = inverse_filter
+
+    def save(self, filename: Path):
+        if self.time is not None:
+            sound_array = np.stack((self.time, self.signal), axis=1)
+        else:
+            sound_array = self.signal
+
+        np.save(filename, sound_array)
 
 
 @greater_than("duration", 0)
