@@ -5,6 +5,7 @@ description = "This project allows to perform calibration of speakers both with 
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "ipykernel>=6.30.0",
     "matplotlib>=3.9.2",
     "moku>=3.3.3",
     "multipledispatch>=1.0.0",
