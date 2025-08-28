@@ -3,7 +3,8 @@ from typing import Literal, Optional
 
 import numpy as np
 from multipledispatch import dispatch
-from scipy.signal import butter, lfilter, sosfilt
+from scipy.signal import butter, lfilter, sosfilt, welch
+from scipy.signal.windows import flattop
 
 from speaker_calibration.utils.decorators import greater_than, validate_range
 
@@ -110,7 +111,7 @@ def white_noise(
 
     # Applies a 16th-order butterworth band-pass filter to the signal
     if filter:
-        sos = butter(16, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs)
+        sos = butter(32, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs)
         signal = sosfilt(sos, signal)
 
     # Normalize the signal
@@ -327,3 +328,28 @@ def calculate_db_spl(
         db_spl = 20 * np.log10(rms / reference_pressure)
 
     return db_spl
+
+
+# FIXME
+def fft_welch(noise, fs, time_cons, win=None):
+    window = flattop(int(time_cons * fs), sym=False)
+    win_sum_squared = np.sum(window**2)
+    win_sum = np.sum(window)
+
+    freq, fft = welch(
+        noise,
+        fs=fs,
+        window=window,
+    )
+
+    power_spectrum = fft * (fs * win_sum_squared / 2)
+    power_spectrum[0] *= 2
+
+    if noise.size % 2 == 0:
+        power_spectrum[-1] *= 2
+
+    abs_y_win = np.sqrt(power_spectrum)
+
+    fft = (2 / win_sum) * abs_y_win
+
+    return freq, fft
