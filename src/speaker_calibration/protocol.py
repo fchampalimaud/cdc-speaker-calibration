@@ -9,7 +9,7 @@ import numpy as np
 import yaml
 from scipy.interpolate import RBFInterpolator, griddata
 from scipy.ndimage import uniform_filter1d
-from scipy.signal import butter, firwin2, freqz_sos, resample, sosfilt, welch
+from scipy.signal import butter, firwin2, freqz_sos, resample, sosfilt
 
 from speaker_calibration.recording import Moku, NiDaq, RecordingDevice
 from speaker_calibration.settings import Settings
@@ -86,18 +86,12 @@ class Calibration:
         """
         # Calculate the inverse filter
         if self.settings.inverse_filter.determine_filter:
-            # self.inverse_filter, psd_signal, psd_recorded = (
-            #     self.calculate_inverse_filter()
-            # )
-            self.inverse_filter, psd_signal, psd_recorded = self.new_inverse_filter()
+            self.inverse_filter, psd_signal, psd_recorded = (
+                self.calculate_inverse_filter()
+            )
 
             # Save inverse filter
-            np.savetxt(
-                self.path / "inverse_filter.csv",
-                self.inverse_filter,
-                delimiter=",",
-                fmt="%f",
-            )
+            np.save(self.path / "inverse_filter.npy", self.inverse_filter)
 
             # # Send inverse filter and signals to the interface
             # if self.callback is not None:
@@ -128,11 +122,8 @@ class Calibration:
             self.calibration_parameters = np.polyfit(log_amp, self.db_spl, 1)
 
             # Save the calibration parameters
-            np.savetxt(
-                self.path / "calibration_parameters.csv",
-                self.calibration_parameters,
-                delimiter=",",
-                fmt="%f",
+            np.save(
+                self.path / "calibration_parameters.npy", self.calibration_parameters
             )
 
         # Test the calibration
@@ -265,55 +256,7 @@ class Calibration:
                 fmt="%f",
             )
 
-    def calculate_inverse_filter(self):
-        """
-        Calculates the inverse filter used in the noise calibration protocol.
-
-        Returns
-        -------
-        inverse_filter : numpy.ndarray
-            The 2D array representing the speaker inverse filter.
-        signal : Sound
-            The generated signal used in the inverse filter calculation.
-        recorded_signal : Sound
-            The acquired signal used in the inverse filter calculation.
-        """
-        # Generate the white noise
-        signal = white_noise(
-            self.settings.inverse_filter.sound_duration,
-            self.settings.soundcard.fs,
-            self.settings.amplitude,
-            self.settings.ramp_time,
-            self.settings.filter.filter_input,
-            self.settings.filter.min_value,
-            self.settings.filter.max_value,
-            noise_type="gaussian",  # FIXME
-        )
-
-        # Play the sound from the soundcard and record it with the microphone + DAQ system
-        recorded_sound = self.record_sound(
-            signal,
-            self.path / "sounds" / "inverse_filter_sound.bin",
-            self.settings.inverse_filter.sound_duration,
-            use_mic_response=True,
-        )
-
-        # Calculate the inverse filter from the acquired signal
-        freq, psd = welch(
-            recorded_sound.signal[
-                int(0.1 * recorded_sound.signal.size) : int(
-                    0.9 * recorded_sound.signal.size
-                )
-            ],
-            fs=self.settings.adc.fs,
-            nperseg=self.settings.inverse_filter.time_constant * self.settings.adc.fs,
-        )
-        inverse_filter = 1 / np.sqrt(psd)
-        inverse_filter = np.stack((freq, inverse_filter), axis=1)
-
-        return inverse_filter, signal, recorded_sound
-
-    def new_inverse_filter(
+    def calculate_inverse_filter(
         self,
         smooth_window: int = 20,
         freq_min: float = 5000,
@@ -324,8 +267,8 @@ class Calibration:
         signal = log_chirp(
             self.settings.inverse_filter.sound_duration,
             self.settings.soundcard.fs,
-            self.settings.filter.min_value,
-            self.settings.filter.max_value,
+            2000,  # FIXME: de-hardcode parameter
+            30000,  # FIXME: de-hardcode parameter
             self.settings.amplitude,
             # self.settings.ramp_time,
         )
@@ -348,7 +291,7 @@ class Calibration:
         # Filter the acquired signal if desired
         if filter:
             sos = butter(
-                16,
+                32,
                 500,
                 btype="highpass",
                 output="sos",
@@ -376,6 +319,7 @@ class Calibration:
         )
 
         inv_transfer_func = 1 / (transfer_function + 1e-10)
+        inv_transfer_func = inv_transfer_func[0 : freq.size]
 
         mean_gain = np.mean(inv_transfer_func[(freq >= freq_min) & (freq <= freq_max)])
 
@@ -393,18 +337,16 @@ class Calibration:
             [5000, 20000],
             btype="bandpass",
             output="sos",
-            fs=192000,
+            fs=self.settings.soundcard.fs,
         )
-        w, h = freqz_sos(sos, fs=192000)
+        w, h = freqz_sos(sos, fs=self.settings.soundcard.fs)
 
         new_h = np.interp(freq, w, np.abs(h))
 
-        response = np.multiply(inv_transfer_func[0 : (freq.size - 1)], abs(new_h))
+        response = np.multiply(inv_transfer_func, abs(new_h))
         response[-1] = 0
 
-        final_filter = firwin2(
-            4096, freq, response / max(response), fs=192000
-        )  # TODO: verify freq
+        final_filter = firwin2(4096, freq, response, fs=self.settings.soundcard.fs)
 
         return final_filter, signal, recorded_sound
 
@@ -609,7 +551,7 @@ class Calibration:
         # Filter the acquired signal if desired
         if filter:
             sos = butter(
-                16,
+                32,
                 [
                     self.settings.filter.min_value,
                     self.settings.filter.max_value,
