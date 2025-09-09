@@ -330,7 +330,7 @@ def calculate_db_spl(
     return db_spl
 
 
-# FIXME
+# FIXME: window??
 def fft_welch(noise, fs, time_cons, win=None):
     window = flattop(int(time_cons * fs), sym=False)
     win_sum_squared = np.sum(window**2)

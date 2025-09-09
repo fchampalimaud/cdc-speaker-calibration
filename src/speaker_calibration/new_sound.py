@@ -34,7 +34,7 @@ class Sound:
         self._signal = signal
         self._fs = fs
         self._time = time
-        self._duration = signal.size / 192000.0
+        self._duration = signal.size / fs
 
     @property
     def signal(self):
@@ -63,6 +63,7 @@ class Sound:
 
 class WhiteNoise(Sound):
     def __init__(
+        self,
         duration,
         fs,
         amplitude: float = 1,
@@ -73,11 +74,47 @@ class WhiteNoise(Sound):
         eq_filter: Optional[np.ndarray] = None,
         noise_type: Literal["gaussian", "uniform"] = "gaussian",
     ):
+        self._amplitude = amplitude
+        self._ramp_time = ramp_time
+        self._type = noise_type
+
+        noise = self._generate_noise(
+            duration,
+            fs,
+            filter,
+            freq_min,
+            freq_max,
+            eq_filter,
+        )
+
+        super().__init__(noise, fs, np.linspace(0, duration, int(fs * duration)))
+
+    @property
+    def amplitude(self):
+        return self._amplitude
+
+    @property
+    def ramp_time(self):
+        return self._ramp_time
+
+    @property
+    def type(self):
+        return self._type
+
+    def _generate_noise(
+        self,
+        duration,
+        fs,
+        filter: bool = False,
+        freq_min: float = 5000,
+        freq_max: float = 20000,
+        eq_filter: Optional[np.ndarray] = None,
+    ):
         # Calculate the number of samples of the signal
         num_samples = int(fs * duration)
 
         # Generate the base white noise (either gaussian or uniform)
-        if noise_type == "gaussian":
+        if self.type == "gaussian":
             # The gaussian samples are rescaled so that 99% of the samples are between -1 and 1
             signal = 1 / 3 * np.random.randn(num_samples)
         else:
@@ -101,107 +138,60 @@ class WhiteNoise(Sound):
         signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
 
         # Truncate the signal between -1 and 1
-        signal = amplitude * signal
+        signal = self.amplitude * signal
         signal[(signal < -1)] = -1
         signal[(signal > 1)] = 1
 
         # Apply a ramp at the beginning and at the end of the signal and the input amplitude factor
-        ramp_samples = int(np.floor(fs * ramp_time))
+        ramp_samples = int(np.floor(fs * self.ramp_time))
         ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
         ramped_signal = np.concatenate(
             (ramp, np.ones(num_samples - ramp_samples * 2), np.flip(ramp)), axis=None
         )
-        white_noise = Sound(
-            np.multiply(signal, ramped_signal),
-            np.linspace(0, duration, int(fs * duration)),
+
+        return np.multiply(signal, ramped_signal)
+
+
+class PureTone(Sound):
+    def __init__(
+        self,
+        duration: float,
+        fs: int,
+        freq: float,
+        phase: float = 0,
+        amplitude: float = 1,
+        ramp_time: float = 0.005,
+    ):
+        self._freq = freq
+        self._phase = phase
+        self._amplitude = amplitude
+        self._ramp_time = ramp_time
+
+        # Sinusoidal signal generation
+        time = np.linspace(0, duration, int(fs * duration))
+        signal = amplitude * np.sin(2 * np.pi * freq * time + phase)
+
+        # Apply a ramp at the beginning and at the end of the signal
+        ramp_samples = int(np.floor(fs * ramp_time))
+        ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
+        ramped_signal = np.concatenate(
+            (ramp, np.ones(time.size - ramp_samples * 2), np.flip(ramp)), axis=None
         )
 
+        super().__init__(np.multiply(signal, ramped_signal), fs, time)
 
-# @greater_than("duration", 0)
-# @greater_than("fs", 0)
-# @validate_range("amplitude", 0, 1)
-# @greater_than("ramp_time", 0)
-# @validate_range("freq_min", 0, 80000)
-# @validate_range("freq_max", 0, 80000)
-# def white_noise(
-#     duration: float,
-#     fs: int,
-#     amplitude: float = 1,
-#     ramp_time: float = 0.005,
-#     filter: bool = True,
-#     freq_min: float = 0,
-#     freq_max: float = 80000,
-#     inverse_filter: Optional[np.ndarray] = None,
-#     noise_type: Literal["gaussian", "uniform"] = "gaussian",
-# ) -> Sound:
-#     """
-#     Generates a white noise.
+    @property
+    def freq(self):
+        return self._freq
 
-#     Parameters
-#     ----------
-#     duration : float
-#         Duration of the signal generated (s).
-#     fs : int
-#         Sampling frequency of the signal being generated (Hz).
-#     amplitude : float, optional
-#         Amplitude factor of the speakers.
-#     ramp_time : float, optional
-#         Ramp time of the signal (s).
-#     filter : bool, optional
-#         Whether to filter the signal or not.
-#     freq_min : float, optional
-#         Minimum frequency to consider to pass band (Hz).
-#     freq_max : float, optional
-#         Maximum frequency to consider to pass band (Hz).
-#     inverse_filter : Optional[np.ndarray], optional
-#         The inverse filter to be used to flatten the power spectral density of the sound played by the speakers.
-#     noise_type : Literal["gaussian", "uniform"], optional
-#         Whether the generated white noise should be gaussian or uniform.
+    @property
+    def phase(self):
+        return self._phase
 
-#     Returns
-#     -------
-#     white_noise : Sound
-#         The generated white noise.
-#     """
-#     # Calculate the number of samples of the signal
-#     num_samples = int(fs * duration)
+    @property
+    def amplitude(self):
+        return self._amplitude
 
-#     # Generate the base white noise (either gaussian or uniform)
-#     if noise_type == "gaussian":
-#         # The gaussian samples are rescaled so that 99% of the samples are between -1 and 1
-#         signal = 1 / 3 * np.random.randn(num_samples)
-#     else:
-#         signal = np.random.uniform(low=-1.0, high=1.0, size=num_samples)
-
-#     # Calculate the RMS of the original signal to be used in a future normalization
-#     rms_original_signal = np.sqrt(np.mean(signal**2))
-
-#     # Use the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
-#     if inverse_filter is not None:
-#         signal = lfilter(inverse_filter, 1, signal)
-
-#     # Applies a 16th-order butterworth band-pass filter to the signal
-#     if filter:
-#         sos = butter(32, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs)
-#         signal = sosfilt(sos, signal)
-
-#     # Normalize the signal
-#     signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
-
-#     # Truncate the signal between -1 and 1
-#     signal = amplitude * signal
-#     signal[(signal < -1)] = -1
-#     signal[(signal > 1)] = 1
-
-#     # Apply a ramp at the beginning and at the end of the signal and the input amplitude factor
-#     ramp_samples = int(np.floor(fs * ramp_time))
-#     ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
-#     ramped_signal = np.concatenate(
-#         (ramp, np.ones(num_samples - ramp_samples * 2), np.flip(ramp)), axis=None
-#     )
-#     white_noise = Sound(
-#         np.multiply(signal, ramped_signal),
-#         np.linspace(0, duration, int(fs * duration)),
-#     )
-
-#     return white_noise
+    @property
+    def ramp_time(self):
+        return self._ramp_time
