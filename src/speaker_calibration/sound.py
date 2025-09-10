@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, cast
 
 import numpy as np
 from multipledispatch import dispatch
-from scipy.signal import butter, lfilter, sosfilt, welch
+from scipy.signal import butter, chirp, lfilter, sosfilt, welch
 from scipy.signal.windows import flattop
 
+from speaker_calibration.utils import REFERENCE_PRESSURE
 from speaker_calibration.utils.decorators import greater_than, validate_range
 
 
@@ -19,23 +20,38 @@ class Sound:
         The 1D array containing the signal itself.
     time : Optional[numpy.ndarray]
         The 1D array containing the time axis of the signal.
-    inverse_filter : Optional[numpy.ndarray]
-        The 1D array containing the inverse filter of the signal.
     """
 
     signal: np.ndarray
+    fs: float
     time: Optional[np.ndarray]
-    inverse_filter: Optional[np.ndarray]
 
     def __init__(
         self,
         signal: np.ndarray,
+        fs: float,
         time: Optional[np.ndarray] = None,
-        inverse_filter: Optional[np.ndarray] = None,
     ):
-        self.signal = signal
-        self.time = time
-        self.inverse_filter = inverse_filter
+        self._signal = signal
+        self._fs = fs
+        self._time = time
+        self._duration = signal.size / fs
+
+    @property
+    def signal(self):
+        return self._signal
+
+    @property
+    def fs(self):
+        return self._fs
+
+    @property
+    def time(self):
+        return self._time
+
+    @property
+    def duration(self):
+        return self._duration
 
     def save(self, filename: Path):
         if self.time is not None:
@@ -46,180 +62,299 @@ class Sound:
         np.save(filename, sound_array)
 
 
-@greater_than("duration", 0)
-@greater_than("fs", 0)
-@validate_range("amplitude", 0, 1)
-@greater_than("ramp_time", 0)
-@validate_range("freq_min", 0, 80000)
-@validate_range("freq_max", 0, 80000)
-def white_noise(
-    duration: float,
-    fs: int,
-    amplitude: float = 1,
-    ramp_time: float = 0.005,
-    filter: bool = True,
-    freq_min: float = 0,
-    freq_max: float = 80000,
-    inverse_filter: Optional[np.ndarray] = None,
-    noise_type: Literal["gaussian", "uniform"] = "gaussian",
-) -> Sound:
-    """
-    Generates a white noise.
+class WhiteNoise(Sound):
+    def __init__(
+        self,
+        duration: float,
+        fs: float,
+        amplitude: float = 1,
+        ramp_time: float = 0.005,
+        filter: bool = False,
+        freq_min: float = 5000,
+        freq_max: float = 20000,
+        eq_filter: Optional[np.ndarray] = None,
+        noise_type: Literal["gaussian", "uniform"] = "gaussian",
+    ):
+        self._amplitude = amplitude
+        self._ramp_time = ramp_time
+        self._type = noise_type
 
-    Parameters
-    ----------
-    duration : float
-        Duration of the signal generated (s).
-    fs : int
-        Sampling frequency of the signal being generated (Hz).
-    amplitude : float, optional
-        Amplitude factor of the speakers.
-    ramp_time : float, optional
-        Ramp time of the signal (s).
-    filter : bool, optional
-        Whether to filter the signal or not.
-    freq_min : float, optional
-        Minimum frequency to consider to pass band (Hz).
-    freq_max : float, optional
-        Maximum frequency to consider to pass band (Hz).
-    inverse_filter : Optional[np.ndarray], optional
-        The inverse filter to be used to flatten the power spectral density of the sound played by the speakers.
-    noise_type : Literal["gaussian", "uniform"], optional
-        Whether the generated white noise should be gaussian or uniform.
+        noise = self._generate_noise(
+            duration,
+            fs,
+            filter,
+            freq_min,
+            freq_max,
+            eq_filter,
+        )
 
-    Returns
-    -------
-    white_noise : Sound
-        The generated white noise.
-    """
-    # Calculate the number of samples of the signal
-    num_samples = int(fs * duration)
+        super().__init__(noise, fs, np.linspace(0, duration, int(fs * duration)))
 
-    # Generate the base white noise (either gaussian or uniform)
-    if noise_type == "gaussian":
-        # The gaussian samples are rescaled so that 99% of the samples are between -1 and 1
-        signal = 1 / 3 * np.random.randn(num_samples)
-    else:
-        signal = np.random.uniform(low=-1.0, high=1.0, size=num_samples)
+    @property
+    def amplitude(self):
+        return self._amplitude
 
-    # Calculate the RMS of the original signal to be used in a future normalization
-    rms_original_signal = np.sqrt(np.mean(signal**2))
+    @property
+    def ramp_time(self):
+        return self._ramp_time
 
-    # Use the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
-    if inverse_filter is not None:
-        signal = lfilter(inverse_filter, 1, signal)
+    @property
+    def type(self):
+        return self._type
 
-    # Applies a 16th-order butterworth band-pass filter to the signal
-    if filter:
-        sos = butter(32, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs)
-        signal = sosfilt(sos, signal)
+    def _generate_noise(
+        self,
+        duration,
+        fs,
+        filter: bool = False,
+        freq_min: float = 5000,
+        freq_max: float = 20000,
+        eq_filter: Optional[np.ndarray] = None,
+    ):
+        # Calculate the number of samples of the signal
+        num_samples = int(fs * duration)
 
-    # Normalize the signal
-    signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
+        # Generate the base white noise (either gaussian or uniform)
+        if self.type == "gaussian":
+            # The gaussian samples are rescaled so that 99% of the samples are between -1 and 1
+            signal = 1 / 3 * np.random.randn(num_samples)
+        else:
+            signal = np.random.uniform(low=-1.0, high=1.0, size=num_samples)
 
-    # Truncate the signal between -1 and 1
-    signal = amplitude * signal
-    signal[(signal < -1)] = -1
-    signal[(signal > 1)] = 1
+        # Calculate the RMS of the original signal to be used in a future normalization
+        rms_original_signal = np.sqrt(np.mean(signal**2))
 
-    # Apply a ramp at the beginning and at the end of the signal and the input amplitude factor
-    ramp_samples = int(np.floor(fs * ramp_time))
-    ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
-    ramped_signal = np.concatenate(
-        (ramp, np.ones(num_samples - ramp_samples * 2), np.flip(ramp)), axis=None
-    )
-    white_noise = Sound(
-        np.multiply(signal, ramped_signal),
-        np.linspace(0, duration, int(fs * duration)),
-    )
+        # Use the calibration factor to flatten the power spectral density of the signal according to the electronics characteristics
+        if eq_filter is not None:
+            signal = lfilter(eq_filter, 1, signal)
 
-    return white_noise
+        # Applies a 16th-order butterworth band-pass filter to the signal
+        if filter:
+            sos = butter(
+                32, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs
+            )
+            signal = sosfilt(sos, signal)
+
+        # Normalize the signal
+        signal = cast(np.ndarray, signal)
+        signal = signal / np.sqrt(np.mean(signal**2)) * rms_original_signal
+
+        # Truncate the signal between -1 and 1
+        signal = self.amplitude * signal
+        signal[(signal < -1)] = -1
+        signal[(signal > 1)] = 1
+
+        # Apply a ramp at the beginning and at the end of the signal and the input amplitude factor
+        signal = _apply_ramp(signal, fs, self.ramp_time)
+
+        return signal
 
 
-@greater_than("duration", 0)
-@greater_than("fs", 0)
-@validate_range("amplitude", 0, 1)
-@greater_than("ramp_time", 0)
-def pure_tone(
-    duration: float,
-    fs: int,
-    freq: float,
-    phase: float = 0,
-    amplitude: float = 1,
-    ramp_time: float = 0.005,
-) -> Sound:
-    """
-    Generates a pure tone.
+class PureTone(Sound):
+    def __init__(
+        self,
+        duration: float,
+        fs: float,
+        freq: float,
+        phase: float = 0,
+        amplitude: float = 1,
+        ramp_time: float = 0.005,
+    ):
+        self._freq = freq
+        self._phase = phase
+        self._amplitude = amplitude
+        self._ramp_time = ramp_time
 
-    Parameters
-    ----------
-    duration : float
-        Duration of the signal generated (s).
-    fs : int
-        Sampling frequency of the signal being generated (Hz).
-    freq : float
-        Frequency of the sinusoidal signal (Hz).
-    phase : float, optional
-        Phase of the sinusoidal signal.
-    amplitude : float, optional
-        Amplitude of the sinusoidal signal.
-    ramp_time : float, optional
-        Ramp time of the signal (s).
+        # Sinusoidal signal generation
+        time = np.linspace(0, duration, int(fs * duration))
+        signal = amplitude * np.sin(2 * np.pi * freq * time + phase)
 
-    Returns
-    -------
-    pure_tone : Sound
-        The generated pure tone.
-    """
-    # Sinusoidal signal generation
-    t = np.linspace(0, duration, int(fs * duration))
-    signal = amplitude * np.sin(2 * np.pi * freq * t + phase)
+        # Apply a ramp at the beginning and at the end of the signal
+        signal = _apply_ramp(signal, fs, self.ramp_time)
 
-    # Apply a ramp at the beginning and at the end of the signal
-    ramp_samples = int(np.floor(fs * ramp_time))
-    ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
-    ramped_signal = np.concatenate(
-        (ramp, np.ones(t.size - ramp_samples * 2), np.flip(ramp)), axis=None
-    )
-    pure_tone = Sound(np.multiply(signal, ramped_signal), t)
+        super().__init__(signal, fs, time)
 
-    return pure_tone
+    @property
+    def freq(self):
+        return self._freq
+
+    @property
+    def phase(self):
+        return self._phase
+
+    @property
+    def amplitude(self):
+        return self._amplitude
+
+    @property
+    def ramp_time(self):
+        return self._ramp_time
 
 
-# TODO: add docstring
-def log_chirp(
-    duration: float,
-    fs: int,
-    freq_min: float,
-    freq_max: float,
-    phase: float = 0,
-    amplitude: float = 1,
-    ramp_time: float = 0.005,
-):
-    # Calculate helper parameter
-    log_param = duration / np.log(freq_max / freq_min)
+class Chirp(Sound):
+    def __init__(
+        self,
+        duration: float,
+        fs: float,
+        freq_start: float,
+        freq_end: float,
+        phase: float = 0,
+        amplitude: float = 1,
+        ramp_time: float = 0.005,
+        chirp_type: Literal[
+            "linear", "quadratic", "logarithmic", "hyperbolic"
+        ] = "logarithmic",
+    ):
+        self._freq_start = freq_start
+        self._freq_end = freq_end
+        self._phase = phase
+        self._amplitude = amplitude
+        self._ramp_time = ramp_time
+        self._type = chirp_type
 
-    # Generate signal
-    time = np.linspace(0, duration, int(fs * duration))
-    signal = amplitude * np.sin(
-        2 * np.pi * freq_min * log_param * (np.exp(time / log_param) - 1) + phase
-    )
+        time = np.linspace(0, duration, int(fs * duration))
+        signal = chirp(
+            time,
+            self.freq_start,
+            duration,
+            self.freq_end,
+            method=self.type,
+            phi=self.phase,
+        )
 
-    # Apply ramp
+        # Apply ramp
+        signal = _apply_ramp(signal, fs, self.ramp_time)
+
+        # Calculate inverse filter
+        log_param = duration / np.log(self.freq_end / self.freq_start)
+        self._inverse_filter = np.flip(signal) * np.exp(-time / log_param)
+
+        super().__init__(signal, fs, time)
+
+    @property
+    def freq_start(self):
+        return self._freq_start
+
+    @property
+    def freq_end(self):
+        return self._freq_end
+
+    @property
+    def phase(self):
+        return self._phase
+
+    @property
+    def amplitude(self):
+        return self._amplitude
+
+    @property
+    def ramp_time(self):
+        return self._ramp_time
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def inverse_filter(self):
+        return self._inverse_filter
+
+
+# TODO: add resample method/function
+class RecordedSound(Sound):
+    def __init__(
+        self,
+        signal: np.ndarray,
+        fs: float,
+        time: Optional[np.ndarray] = None,
+        mic_factor: Optional[float] = None,
+    ):
+        super().__init__(signal, fs, time)
+
+        if mic_factor is not None:
+            self._mic_factor = mic_factor
+        else:
+            self._mic_factor = 1
+
+        self.calculate_db_spl()
+
+    def calculate_db_spl(
+        self,
+        mic_factor: Optional[float] = None,
+        reference_pressure: float = REFERENCE_PRESSURE,
+        domain: Literal["time", "freq"] = "time",
+    ):
+        if mic_factor is not None:
+            self.mic_factor = mic_factor
+
+        # Remove the beginning and end of the acquisition
+        signal = self.signal[int(0.1 * self.signal.size) : int(0.9 * self.signal.size)]
+
+        # Calculate dB SPL either in the time or in the frequency domain
+        if domain == "time":
+            signal_pascal = signal / self.mic_factor
+            rms = np.sqrt(np.mean(signal_pascal**2))
+            self._db_spl = 20 * np.log10(rms / reference_pressure)
+        else:
+            fft = np.abs(np.fft.fft(signal)) ** 2
+            rms = np.sqrt(np.sum(fft) / (fft.size**2 * self.mic_factor**2))
+            self._db_spl = 20 * np.log10(rms / reference_pressure)
+
+        return self._db_spl
+
+    # TODO: window?
+    def fft_welch(self, time_cons: float, win=None):
+        window = flattop(int(time_cons * self.fs), sym=False)
+        win_sum_squared = np.sum(window**2)
+        win_sum = np.sum(window)
+
+        self._freq, fft = welch(
+            self.signal,
+            fs=self.fs,
+            window=window,
+        )
+
+        power_spectrum = fft * (self.fs * win_sum_squared / 2)
+        power_spectrum[0] *= 2
+
+        if self.signal.size % 2 == 0:
+            power_spectrum[-1] *= 2
+
+        abs_y_win = np.sqrt(power_spectrum)
+
+        self._fft = (2 / win_sum) * abs_y_win
+
+        return self._freq, self._fft
+
+    @property
+    def db_spl(self):
+        return self._db_spl
+
+    @property
+    def mic_factor(self):
+        return self._mic_factor
+
+    @mic_factor.setter
+    def mic_factor(self, value: float):
+        self._mic_factor = value
+
+    @property
+    def freq(self):
+        self._freq
+
+    @property
+    def fft(self):
+        self._fft
+
+
+def _apply_ramp(signal: np.ndarray, fs: float, ramp_time: float = 0.005):
     ramp_samples = int(np.floor(fs * ramp_time))
     ramp = np.linspace(0, 1, ramp_samples) ** 2
-    ramped_signal = np.concatenate(
-        (ramp, np.ones(time.size - ramp_samples * 2), np.flip(ramp)), axis=None
+    ramp_signal = np.concatenate(
+        (ramp, np.ones(signal.size - ramp_samples * 2), np.flip(ramp)), axis=None
     )
-    signal = np.multiply(signal, ramped_signal)
 
-    # Calculate inverse filter
-    inverse_filter = np.flip(signal) * np.exp(-time / log_param)
-
-    # Create Sound object
-    chirp = Sound(signal, time, inverse_filter)
-
-    return chirp
+    return np.multiply(signal, ramp_signal)
 
 
 @dispatch(Sound, str, speaker_side=str)
@@ -292,64 +427,3 @@ def create_sound_file(
     # Write the sound to the .bin file
     with open(filename, "wb") as f:
         wave_int.tofile(f)
-
-
-def calculate_db_spl(
-    sound: Sound,
-    mic_factor: float,
-    reference_pressure: float = 0.00002,
-    domain: Literal["time", "freq"] = "time",
-):
-    """
-    Calculates the dB SPL of the recorded signal.
-
-    Parameters
-    ----------
-    sound : Sound
-        The sound from which the dB SPL calculation will be performed.
-    mic_factor : float
-        Factor of the microphone (V/Pa).
-    reference_pressure : float, optional
-        Reference pressure (Pa).
-    domain : Literal["time", "freq"], optional
-        Indicates whether the dB SPL calculation should be performed in the time or in the frequency domain.
-    """
-    # Remove the beginning and end of the acquisition
-    signal = sound.signal[int(0.1 * sound.signal.size) : int(0.9 * sound.signal.size)]
-
-    # Calculate dB SPL either in the time or in the frequency domain
-    if domain == "time":
-        signal_pascal = signal / mic_factor
-        rms = np.sqrt(np.mean(signal_pascal**2))
-        db_spl = 20 * np.log10(rms / reference_pressure)
-    else:
-        fft = np.abs(np.fft.fft(signal)) ** 2
-        rms = np.sqrt(np.sum(fft) / (fft.size**2 * mic_factor**2))
-        db_spl = 20 * np.log10(rms / reference_pressure)
-
-    return db_spl
-
-
-# FIXME: window??
-def fft_welch(noise, fs, time_cons, win=None):
-    window = flattop(int(time_cons * fs), sym=False)
-    win_sum_squared = np.sum(window**2)
-    win_sum = np.sum(window)
-
-    freq, fft = welch(
-        noise,
-        fs=fs,
-        window=window,
-    )
-
-    power_spectrum = fft * (fs * win_sum_squared / 2)
-    power_spectrum[0] *= 2
-
-    if noise.size % 2 == 0:
-        power_spectrum[-1] *= 2
-
-    abs_y_win = np.sqrt(power_spectrum)
-
-    fft = (2 / win_sum) * abs_y_win
-
-    return freq, fft

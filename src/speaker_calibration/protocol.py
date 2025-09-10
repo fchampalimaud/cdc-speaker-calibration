@@ -3,7 +3,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Callable, Literal, Optional
 
 import numpy as np
 import yaml
@@ -39,7 +39,7 @@ class Calibration:
         the object the allows the calibration code to interface with the ADC used in the calibration
     path : Path
         the path to the output file of the current calibration
-    callback : Optional[callable]
+    callback : Optional[Callable]
         a callback function that allows the calibration code to periodically send data to the user interface with some data based on a keyword
     """
 
@@ -47,9 +47,9 @@ class Calibration:
     soundcard: SoundCard
     adc: RecordingDevice
     path: Path
-    callback: Optional[callable]
+    callback: Optional[Callable]
 
-    def __init__(self, settings: Settings, callback: Optional[callable] = None):
+    def __init__(self, settings: Settings, callback: Optional[Callable] = None):
         self.settings = settings
         self.callback = callback
 

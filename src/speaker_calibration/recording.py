@@ -2,6 +2,7 @@ import os
 import threading
 import time
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Optional
 
 import nidaqmx
@@ -9,7 +10,7 @@ import numpy as np
 from moku.instruments import Datalogger
 from nidaqmx.constants import READ_ALL_AVAILABLE, AcquisitionType, TerminalConfiguration
 
-from speaker_calibration.sound import Sound
+from speaker_calibration.sound import RecordedSound
 from speaker_calibration.utils.decorators import greater_than, validate_range
 
 
@@ -29,7 +30,7 @@ class RecordingDevice(ABC):
         self.fs = fs
 
     @abstractmethod
-    def record_signal(self):
+    def record_signal(self) -> Optional[RecordedSound]:
         """
         Records the desired signal. _This is the abstract method to be implemented for the specific recording devices that derive from this abstract class._
         """
@@ -62,7 +63,7 @@ class NiDaq(RecordingDevice):
         start_event: Optional[threading.Event] = None,
         result: Optional[list] = None,
         filename: str = "file",
-    ):
+    ) -> Optional[RecordedSound]:
         """
         Records the signal with the NI-DAQ.
 
@@ -103,8 +104,9 @@ class NiDaq(RecordingDevice):
             recorded_signal = ai_task.read(READ_ALL_AVAILABLE)
             ai_task.stop()
 
-            acquired_signal = Sound(
+            acquired_signal = RecordedSound(
                 signal=np.array(recorded_signal),
+                fs=self.fs,
                 time=np.linspace(0, duration, int(self.fs * duration)),
             )
 
@@ -113,7 +115,7 @@ class NiDaq(RecordingDevice):
                 result.append(acquired_signal)
 
         # Save the acquired signal to a binary file
-        acquired_signal.save(filename)
+        acquired_signal.save(Path(filename))
 
         return acquired_signal
 
@@ -143,7 +145,7 @@ class Moku(RecordingDevice):
         start_event: Optional[threading.Event] = None,
         result: Optional[list] = None,
         filename: str = "file",
-    ):
+    ) -> Optional[RecordedSound]:
         """
         Records the signal with a Moku device.
 
@@ -199,8 +201,9 @@ class Moku(RecordingDevice):
             os.system("mokucli convert " + filename + ".li --format=csv")
             signal_array = np.loadtxt(filename + ".csv", comments="%", delimiter=",")
 
-            acquired_signal = Sound(
+            acquired_signal = RecordedSound(
                 signal=np.array([x[1] for x in signal_array]),
+                fs=self.fs,
                 time=np.array([x[0] for x in signal_array]),
             )
 
