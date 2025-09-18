@@ -1,13 +1,13 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Literal, Optional, cast
 
 import numpy as np
-from multipledispatch import dispatch
-from scipy.signal import butter, chirp, lfilter, sosfilt, welch
+from scipy.signal import butter, chirp, lfilter, resample, sosfilt, welch
 from scipy.signal.windows import flattop
 
 from speaker_calibration.utils import REFERENCE_PRESSURE
-from speaker_calibration.utils.decorators import greater_than, validate_range
 
 
 class Sound:
@@ -40,6 +40,11 @@ class Sound:
     @property
     def signal(self):
         return self._signal
+
+    # TODO: rethink this
+    @signal.setter
+    def signal(self, value: np.ndarray):
+        self._signal = value
 
     @property
     def fs(self):
@@ -260,7 +265,6 @@ class Chirp(Sound):
         return self._inverse_filter
 
 
-# TODO: add resample method/function
 class RecordedSound(Sound):
     def __init__(
         self,
@@ -268,6 +272,7 @@ class RecordedSound(Sound):
         fs: float,
         time: Optional[np.ndarray] = None,
         mic_factor: Optional[float] = None,
+        mic_response: Optional[np.ndarray] = None,
     ):
         super().__init__(signal, fs, time)
 
@@ -275,6 +280,8 @@ class RecordedSound(Sound):
             self._mic_factor = mic_factor
         else:
             self._mic_factor = 1
+
+        self._mic_response = mic_response
 
         self.calculate_db_spl()
 
@@ -303,7 +310,15 @@ class RecordedSound(Sound):
         return self._db_spl
 
     # TODO: window?
-    def fft_welch(self, time_cons: float, win=None):
+    def fft_welch(
+        self,
+        time_cons: float,
+        win=None,
+        mic_response: Optional[np.ndarray] = None,
+    ):
+        if mic_response is not None:
+            self.mic_response = mic_response
+
         window = flattop(int(time_cons * self.fs), sym=False)
         win_sum_squared = np.sum(window**2)
         win_sum = np.sum(window)
@@ -339,12 +354,33 @@ class RecordedSound(Sound):
         self._mic_factor = value
 
     @property
+    def mic_response(self):
+        return self._mic_response
+
+    @mic_response.setter
+    def mic_response(self, value: np.ndarray):
+        self._mic_response = value
+
+    @property
     def freq(self):
         self._freq
 
     @property
     def fft(self):
         self._fft
+
+    @staticmethod
+    def resample(sound: RecordedSound, fs: float) -> RecordedSound:
+        signal = resample(
+            sound.signal,
+            int(fs * sound.duration),
+        )
+
+        resampled_sound = RecordedSound(
+            np.array(signal), fs, sound.signal, sound.mic_factor
+        )
+
+        return resampled_sound
 
 
 def _apply_ramp(signal: np.ndarray, fs: float, ramp_time: float = 0.005):
@@ -355,75 +391,3 @@ def _apply_ramp(signal: np.ndarray, fs: float, ramp_time: float = 0.005):
     )
 
     return np.multiply(signal, ramp_signal)
-
-
-@dispatch(Sound, str, speaker_side=str)
-def create_sound_file(
-    signal: Sound,
-    filename: str,
-    speaker_side: Literal["both", "left", "right"] = "both",
-) -> None:
-    """
-    Creates the .bin sound file to be loaded to the Harp Sound Card.
-
-    Parameters
-    ----------
-    signal : Sound
-        The signal to be written to the .bin file.
-    filename : str
-        The name of the .bin file.
-    speaker_side : Literal["both", "left", "right"], optional
-        Whether the sound plays in both speakers or in a single one. Possible values: "both", "left" or "right.
-    """
-    # Transform the signal from values between -1 to 1 into 24-bit integers
-    amplitude24bits = np.power(2, 31) - 1
-
-    if speaker_side == "both":
-        wave_left = amplitude24bits * signal.signal
-        wave_right = amplitude24bits * signal.signal
-    elif speaker_side == "left":
-        wave_left = amplitude24bits * signal.signal
-        wave_right = 0 * signal.signal
-    else:
-        wave_left = 0 * signal.signal
-        wave_right = amplitude24bits * signal.signal
-
-    # Group the signals to be played in the left and right channels/speakers in a single array
-    stereo = np.stack((wave_left, wave_right), axis=1)
-    wave_int = stereo.astype(np.int32)
-
-    # Write the sound to the .bin file
-    with open(filename, "wb") as f:
-        wave_int.tofile(f)
-
-
-@dispatch(Sound, Sound, str)
-def create_sound_file(
-    signal_left: Sound,
-    signal_right: Sound,
-    filename: str,
-) -> None:
-    """
-    Creates the .bin sound file to be loaded to the Harp Sound Card.
-
-    Parameters
-    ----------
-    signal_left : Sound
-        The signal to be written to the .bin file that is going to be played by the left speaker.
-    signal_right : Sound
-        The signal to be written to the .bin file that is going to be played by the right speaker.
-    filename : str
-        The name of the .bin file.
-    """
-    # Transform the signal from values between -1 to 1 into 24-bit integers
-    amplitude24bits = np.power(2, 31) - 1
-    wave_left = amplitude24bits * signal_left.signal
-    wave_right = amplitude24bits * signal_right.signal
-
-    # Group the signals to be played in the left and right channels/speakers in a single array
-    stereo = np.stack((wave_left, wave_right), axis=1)
-    wave_int = stereo.astype(np.int32)
-
-    # Write the sound to the .bin file
-    with open(filename, "wb") as f:
-        wave_int.tofile(f)

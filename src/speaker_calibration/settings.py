@@ -88,19 +88,29 @@ class CalibrationSettings(BaseModel):
         return self
 
 
-class InverseFilter(BaseModel):
+class EQFilter(BaseModel):
     determine_filter: bool = Field(
-        description="Indicates whether the inverse filter is determined. Noise calibration only!"
+        description="Indicates whether the EQ filter is determined. Noise calibration only!"
     )
     sound_duration: Optional[float] = Field(
-        description="The duration of the sound used to determine the inverse filter.",
+        description="The duration of the sound used to determine the EQ filter.",
         default=None,
         gt=0,
     )
     time_constant: Optional[float] = Field(
-        description="The duration of each division of the original signal that is used to compute the inverse filter (s).",
+        description="The duration of each division of the original signal that is used to compute the EQ filter (s).",
         default=None,
         gt=0,
+    )
+    freq_start: Optional[float] = Field(
+        description="The start frequency of the logarithmic chirp used to calculate the EQ filter (Hz).",
+        ge=0,
+        le=80000,
+    )
+    freq_end: Optional[float] = Field(
+        description="The end frequency of the logarithmic chirp used to calculate the EQ filter (Hz).",
+        gt=0,
+        le=80000,
     )
 
     @model_validator(mode="after")
@@ -216,8 +226,8 @@ class Settings(BaseModel):
     filter: Filter = Field(
         description="The configuration parameters of the band-pass filter used."
     )
-    inverse_filter: Optional[InverseFilter] = Field(
-        description="The settings related to the inverse filter calculation. Noise calibration only!",
+    eq_filter: EQFilter = Field(
+        description="The settings related to the EQ filter calculation. Noise calibration only!",
         default=None,
     )
     calibration: CalibrationSettings = Field(
@@ -240,10 +250,8 @@ class Settings(BaseModel):
 
     @model_validator(mode="after")
     def is_noise(self) -> Self:
-        if self.sound_type == "noise" and not isinstance(
-            self.inverse_filter, InverseFilter
-        ):
-            raise ValueError("The inverse_filter parameter must be filled.")
+        if self.sound_type == "noise" and not isinstance(self.eq_filter, EQFilter):
+            raise ValueError("The eq_filter parameter must be filled.")
         return self
 
 

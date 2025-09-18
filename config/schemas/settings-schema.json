@@ -31,7 +31,7 @@
           ],
           "description": "The frequency-related parameters to be used in the calibration."
         },
-        "att_min": {
+        "amp_min": {
           "anyOf": [
             {
               "maximum": 0,
@@ -42,10 +42,10 @@
             }
           ],
           "default": null,
-          "description": "The minimum attenuation value.",
-          "title": "Att Min"
+          "description": "The minimum amplitude value.",
+          "title": "Amp Min"
         },
-        "att_max": {
+        "amp_max": {
           "anyOf": [
             {
               "maximum": 0,
@@ -56,10 +56,10 @@
             }
           ],
           "default": null,
-          "description": "The maximum attenuation value.",
-          "title": "Att Max"
+          "description": "The maximum amplitude value.",
+          "title": "Amp Max"
         },
-        "att_steps": {
+        "amp_steps": {
           "anyOf": [
             {
               "exclusiveMinimum": 0,
@@ -70,8 +70,8 @@
             }
           ],
           "default": null,
-          "description": "The number of attenuation values to use in the calibration.",
-          "title": "Att Steps"
+          "description": "The number of amplitude values to use in the calibration.",
+          "title": "Amp Steps"
         }
       },
       "required": [
@@ -100,6 +100,78 @@
         "fs"
       ],
       "title": "ComputerSoundCard",
+      "type": "object"
+    },
+    "EQFilter": {
+      "properties": {
+        "determine_filter": {
+          "description": "Indicates whether the EQ filter is determined. Noise calibration only!",
+          "title": "Determine Filter",
+          "type": "boolean"
+        },
+        "sound_duration": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The duration of the sound used to determine the EQ filter.",
+          "title": "Sound Duration"
+        },
+        "time_constant": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The duration of each division of the original signal that is used to compute the EQ filter (s).",
+          "title": "Time Constant"
+        },
+        "freq_start": {
+          "anyOf": [
+            {
+              "maximum": 80000,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The start frequency of the logarithmic chirp used to calculate the EQ filter (Hz).",
+          "title": "Freq Start"
+        },
+        "freq_end": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 80000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The end frequency of the logarithmic chirp used to calculate the EQ filter (Hz).",
+          "title": "Freq End"
+        }
+      },
+      "required": [
+        "determine_filter",
+        "freq_start",
+        "freq_end"
+      ],
+      "title": "EQFilter",
       "type": "object"
     },
     "Filter": {
@@ -194,7 +266,7 @@
       "properties": {
         "com_port": {
           "description": "The COM number the soundcard corresponds to in the computer used for the calibration. The string should be of the format \"COM?\", in which \"?\" is the COM number.",
-          "pattern": "^COM\\d+$",
+          "pattern": "^((COM\\d+)|(/dev/ttyUSB\\d+))$",
           "title": "Com Port",
           "type": "string"
         },
@@ -239,48 +311,6 @@
         "fs"
       ],
       "title": "HarpSoundCard",
-      "type": "object"
-    },
-    "InverseFilter": {
-      "properties": {
-        "determine_filter": {
-          "description": "Indicates whether the inverse filter is determined. Noise calibration only!",
-          "title": "Determine Filter",
-          "type": "boolean"
-        },
-        "sound_duration": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The duration of the sound used to determine the inverse filter.",
-          "title": "Sound Duration"
-        },
-        "time_constant": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The duration of each division of the original signal that is used to compute the inverse filter (s).",
-          "title": "Time Constant"
-        }
-      },
-      "required": [
-        "determine_filter"
-      ],
-      "title": "InverseFilter",
       "type": "object"
     },
     "Moku": {
@@ -475,20 +505,20 @@
       "$ref": "#/$defs/Filter",
       "description": "The configuration parameters of the band-pass filter used."
     },
-    "inverse_filter": {
+    "eq_filter": {
+      "$ref": "#/$defs/EQFilter",
+      "default": null,
+      "description": "The settings related to the EQ filter calculation. Noise calibration only!"
+    },
+    "calibration": {
       "anyOf": [
         {
-          "$ref": "#/$defs/InverseFilter"
+          "$ref": "#/$defs/CalibrationSettings"
         },
         {
           "type": "null"
         }
       ],
-      "default": null,
-      "description": "The settings related to the inverse filter calculation. Noise calibration only!"
-    },
-    "calibration": {
-      "$ref": "#/$defs/CalibrationSettings",
       "description": "The settings used for the actual speaker calibration."
     },
     "test_calibration": {

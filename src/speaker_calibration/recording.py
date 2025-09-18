@@ -11,7 +11,6 @@ from moku.instruments import Datalogger
 from nidaqmx.constants import READ_ALL_AVAILABLE, AcquisitionType, TerminalConfiguration
 
 from speaker_calibration.sound import RecordedSound
-from speaker_calibration.utils.decorators import greater_than, validate_range
 
 
 class RecordingDevice(ABC):
@@ -30,7 +29,7 @@ class RecordingDevice(ABC):
         self.fs = fs
 
     @abstractmethod
-    def record_signal(self) -> Optional[RecordedSound]:
+    def record_signal(self, duration: float) -> Optional[RecordedSound]:
         """
         Records the desired signal. _This is the abstract method to be implemented for the specific recording devices that derive from this abstract class._
         """
@@ -49,13 +48,10 @@ class NiDaq(RecordingDevice):
 
     device_id: int
 
-    @greater_than("device_id", 1)
-    @validate_range("fs", 0, 250000)
     def __init__(self, device_id: int, fs: int = 250000):
         super().__init__(fs)
         self.device_id = device_id
 
-    @validate_range("ai_pin", 0, 7)
     def record_signal(
         self,
         duration: float,
@@ -132,12 +128,10 @@ class Moku(RecordingDevice):
 
     address: str
 
-    @validate_range("fs", 0, 500000)
     def __init__(self, address: str, fs: int = 500000):
         super().__init__(fs)
         self.address = "[" + address + "]"
 
-    @validate_range("channel", 0, 1)
     def record_signal(
         self,
         duration: float,

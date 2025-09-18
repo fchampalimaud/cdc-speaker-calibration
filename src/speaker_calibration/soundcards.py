@@ -4,12 +4,14 @@ import time
 from abc import ABC, abstractmethod
 from typing import Literal, Optional
 
+import numpy as np
+from multipledispatch import dispatch
 from pydantic.types import StringConstraints
 from pyharp.device import Device
 from pyharp.messages import HarpMessage
 from typing_extensions import Annotated
 
-from speaker_calibration.utils.decorators import validate_range
+from speaker_calibration.sound import Sound
 
 
 class SoundCard(ABC):
@@ -57,7 +59,6 @@ class HarpSoundCard(SoundCard):
         super().__init__(fs)
         self.device = Device(serial_port)
 
-    @validate_range("index", 2, 31)
     def play(self, index: int = 2, start_event: Optional[threading.Event] = None):
         """
         Plays a sound from the Harp SoundCard.
@@ -76,7 +77,6 @@ class HarpSoundCard(SoundCard):
         # Play the sound
         self.device.send(HarpMessage.WriteU16(32, index).frame, False)
 
-    @validate_range("index", 2, 31)
     def load_sound(self, filename, index: int = 2):
         """
         Loads the sound to the Harp SoundCard.
@@ -102,6 +102,78 @@ class HarpSoundCard(SoundCard):
                 break
             print(output)
             time.sleep(3)
+
+
+@dispatch(Sound, str, speaker_side=str)
+def create_sound_file(
+    signal: Sound,
+    filename: str,
+    speaker_side: Literal["both", "left", "right"] = "both",
+) -> None:
+    """
+    Creates the .bin sound file to be loaded to the Harp Sound Card.
+
+    Parameters
+    ----------
+    signal : Sound
+        The signal to be written to the .bin file.
+    filename : str
+        The name of the .bin file.
+    speaker_side : Literal["both", "left", "right"], optional
+        Whether the sound plays in both speakers or in a single one. Possible values: "both", "left" or "right.
+    """
+    # Transform the signal from values between -1 to 1 into 24-bit integers
+    amplitude24bits = np.power(2, 31) - 1
+
+    if speaker_side == "both":
+        wave_left = amplitude24bits * signal.signal
+        wave_right = amplitude24bits * signal.signal
+    elif speaker_side == "left":
+        wave_left = amplitude24bits * signal.signal
+        wave_right = 0 * signal.signal
+    else:
+        wave_left = 0 * signal.signal
+        wave_right = amplitude24bits * signal.signal
+
+    # Group the signals to be played in the left and right channels/speakers in a single array
+    stereo = np.stack((wave_left, wave_right), axis=1)
+    wave_int = stereo.astype(np.int32)
+
+    # Write the sound to the .bin file
+    with open(filename, "wb") as f:
+        wave_int.tofile(f)
+
+
+@dispatch(Sound, Sound, str)
+def create_sound_file(
+    signal_left: Sound,
+    signal_right: Sound,
+    filename: str,
+) -> None:
+    """
+    Creates the .bin sound file to be loaded to the Harp Sound Card.
+
+    Parameters
+    ----------
+    signal_left : Sound
+        The signal to be written to the .bin file that is going to be played by the left speaker.
+    signal_right : Sound
+        The signal to be written to the .bin file that is going to be played by the right speaker.
+    filename : str
+        The name of the .bin file.
+    """
+    # Transform the signal from values between -1 to 1 into 24-bit integers
+    amplitude24bits = np.power(2, 31) - 1
+    wave_left = amplitude24bits * signal_left.signal
+    wave_right = amplitude24bits * signal_right.signal
+
+    # Group the signals to be played in the left and right channels/speakers in a single array
+    stereo = np.stack((wave_left, wave_right), axis=1)
+    wave_int = stereo.astype(np.int32)
+
+    # Write the sound to the .bin file
+    with open(filename, "wb") as f:
+        wave_int.tofile(f)
 
 
 # TODO
