@@ -83,7 +83,8 @@ class Calibration:
         """
         # Calculate the EQ filter
         if self.settings.eq_filter.determine_filter:
-            self.eq_filter, eq_signal, eq_recorded = self.calculate_eq_filter()
+            # self.eq_filter, eq_signal, eq_recorded = self.calculate_eq_filter()
+            self.eq_filter, eq_signal, eq_recorded = self.noise_eq_filter()
 
             # Save EQ filter
             np.save(self.path / "eq_filter.npy", self.eq_filter)
@@ -343,6 +344,49 @@ class Calibration:
         response[-1] = 0
 
         final_filter = firwin2(4096, freq, response, fs=self.settings.soundcard.fs)
+
+        return final_filter, signal, resampled_sound
+
+    def noise_eq_filter(self):
+        signal = WhiteNoise(
+            cast(float, self.settings.eq_filter.sound_duration),
+            self.settings.soundcard.fs,
+            self.settings.amplitude,
+            self.settings.ramp_time,
+            filter=True,
+            freq_min=self.settings.freq.min_freq,
+            freq_max=self.settings.freq.max_freq,
+        )
+
+        # Play the sound from the soundcard and record it with the microphone + DAQ system
+        recorded_sound = self.record_sound(
+            signal,
+            self.path / "sounds" / "eq_filter_sound.bin",
+            cast(float, self.settings.eq_filter.sound_duration),
+            # use_mic_response=True,
+        )
+
+        resampled_sound = RecordedSound.resample(
+            recorded_sound, self.settings.soundcard.fs
+        )
+
+        freq, fft = resampled_sound.fft_welch(self.settings.eq_filter.time_constant)
+        transfer_function = 1 / fft
+
+        sos = butter(
+            32,
+            [self.settings.freq.min_freq, self.settings.freq.max_freq],
+            btype="bandpass",
+            output="sos",
+            fs=self.settings.soundcard.fs,
+        )
+        w, h = freqz_sos(sos, fs=self.settings.soundcard.fs)
+
+        new_h = np.interp(freq, w, np.abs(h))
+
+        response = np.multiply(transfer_function, abs(new_h))
+
+        final_filter = firwin2(4097, freq, response, fs=self.settings.soundcard.fs)
 
         return final_filter, signal, resampled_sound
 
