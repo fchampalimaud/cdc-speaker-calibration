@@ -31,10 +31,10 @@ from speaker_calibration.protocol import Calibration
 from speaker_calibration.settings import (
     CalibrationSettings,
     ComputerSoundCard,
+    EQFilter,
     Filter,
     Freq,
     HarpSoundCard,
-    InverseFilter,
     Moku,
     NiDaq,
     Settings,
@@ -257,7 +257,7 @@ class SettingsLayout(QWidget):
         self.if_duration.setMinimum(0)
         self.if_duration.setDecimals(3)
         self.if_duration.setSingleStep(0.005)
-        self.if_duration.setValue(30)
+        self.if_duration.setValue(10)
         self.if_duration.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.time_const_l = QLabel("Time Constant (s)")
@@ -265,7 +265,7 @@ class SettingsLayout(QWidget):
         self.time_const.setMinimum(0)
         self.time_const.setDecimals(3)
         self.time_const.setSingleStep(0.005)
-        self.time_const.setValue(0.005)
+        self.time_const.setValue(0.050)
         self.time_const.setFixedWidth(self.WIDGETS_WIDTH)
 
         form.addRow(self.inverse_filter_l, self.inverse_filter)
@@ -292,7 +292,7 @@ class SettingsLayout(QWidget):
         self.calib_duration.setMinimum(0)
         self.calib_duration.setDecimals(3)
         self.calib_duration.setSingleStep(0.005)
-        self.calib_duration.setValue(15)
+        self.calib_duration.setValue(10)
         self.calib_duration.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.calib_min_freq_l = QLabel("Minimum Frequency (Hz)")
@@ -394,7 +394,7 @@ class SettingsLayout(QWidget):
         self.max_db = QDoubleSpinBox()
         self.max_db.setSingleStep(0.01)
         self.max_db.setMinimum(0)
-        self.max_db.setValue(70)
+        self.max_db.setValue(65)
         self.max_db.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.db_steps_l = QLabel("dB SPL Steps")
@@ -764,7 +764,7 @@ class ApplicationWindow(QMainWindow):
             max_value=self.settings_layout.max_freq_filt.value(),
         )
 
-        inverse_filter = InverseFilter(
+        inverse_filter = EQFilter(
             determine_filter=self.settings_layout.inverse_filter.isChecked(),
             sound_duration=self.settings_layout.if_duration.value(),
             time_constant=self.settings_layout.time_const.value(),
