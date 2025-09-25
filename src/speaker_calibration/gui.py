@@ -265,7 +265,7 @@ class SettingsLayout(QWidget):
         self.time_const.setMinimum(0)
         self.time_const.setDecimals(3)
         self.time_const.setSingleStep(0.005)
-        self.time_const.setValue(0.050)
+        self.time_const.setValue(0.100)
         self.time_const.setFixedWidth(self.WIDGETS_WIDTH)
 
         form.addRow(self.inverse_filter_l, self.inverse_filter)
@@ -706,9 +706,9 @@ class PlotLayout(QWidget):
         self.plots["Inverse Filter Signal"].init_array()
 
     def calibration_callback(self, code: str, *args):
-        if code == "Inverse Filter":
+        if code == "EQ Filter":
             self.plots["Inverse Filter"].add_data(False, *args)
-            self.plots["Inverse Filter Signal"].add_data(False, *args)
+            # self.plots["Inverse Filter Signal"].add_data(False, *args)
         elif code == "Pre-calibration":
             self.plots["Calibration Data"].add_data(True, *args)
         elif code == "Calibration":
@@ -832,7 +832,7 @@ class ApplicationWindow(QMainWindow):
             amplitude=self.settings_layout.amplitude.value(),
             freq=freq,
             filter=filt,
-            inverse_filter=inverse_filter,
+            eq_filter=inverse_filter,
             calibration=calibration,
             test_calibration=test,
             is_harp=self.settings_layout.is_harp.isChecked(),

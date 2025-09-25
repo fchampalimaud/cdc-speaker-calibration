@@ -89,12 +89,9 @@ class Calibration:
             # Save EQ filter
             np.save(self.path / "eq_filter.npy", self.eq_filter)
 
-            # FIXME
-            # # Send EQ filter and signals to the interface
-            # if self.callback is not None:
-            #     self.callback(
-            #         "EQ Filter", self.eq_filter, eq_signal, eq_recorded
-            #     )
+            # Send EQ filter and signals to the interface
+            if self.callback is not None:
+                self.callback("EQ Filter", self.eq_filter)
 
         # Perform the calibration
         if self.settings.calibration.calibrate:
@@ -268,8 +265,8 @@ class Calibration:
         signal = Chirp(
             cast(float, self.settings.eq_filter.sound_duration),
             self.settings.soundcard.fs,
-            cast(float, self.settings.eq_filter.freq_start),
-            cast(float, self.settings.eq_filter.freq_end),
+            2000,
+            30000,
             amplitude=self.settings.amplitude,
             ramp_time=self.settings.ramp_time,
         )
@@ -341,9 +338,8 @@ class Calibration:
         new_h = np.interp(freq, w, np.abs(h))
 
         response = np.multiply(inv_transfer_func, abs(new_h))
-        response[-1] = 0
 
-        final_filter = firwin2(4096, freq, response, fs=self.settings.soundcard.fs)
+        final_filter = firwin2(4097, freq, response, fs=self.settings.soundcard.fs)
 
         return final_filter, signal, resampled_sound
 

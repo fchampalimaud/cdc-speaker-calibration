@@ -102,16 +102,16 @@ class EQFilter(BaseModel):
         default=None,
         gt=0,
     )
-    freq_start: Optional[float] = Field(
-        description="The start frequency of the logarithmic chirp used to calculate the EQ filter (Hz).",
-        ge=0,
-        le=80000,
-    )
-    freq_end: Optional[float] = Field(
-        description="The end frequency of the logarithmic chirp used to calculate the EQ filter (Hz).",
-        gt=0,
-        le=80000,
-    )
+    # freq_start: Optional[float] = Field(
+    #     description="The start frequency of the logarithmic chirp used to calculate the EQ filter (Hz).",
+    #     ge=0,
+    #     le=80000,
+    # )
+    # freq_end: Optional[float] = Field(
+    #     description="The end frequency of the logarithmic chirp used to calculate the EQ filter (Hz).",
+    #     gt=0,
+    #     le=80000,
+    # )
 
     @model_validator(mode="after")
     def calculate_filter(self) -> Self:

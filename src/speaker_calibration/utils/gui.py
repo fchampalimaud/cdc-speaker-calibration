@@ -6,6 +6,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from PySide6.QtWidgets import QVBoxLayout, QWidget
+from scipy.signal import freqz
 
 from speaker_calibration.sound import Sound
 
@@ -104,12 +105,14 @@ class Plot:
             if is_predata:
                 self.data[:, 0] = args[0]
             else:
-                self.data[args[0], 1] = args[3]
+                self.data[args[0], 1] = args[2].calculate_db_spl()
         elif self.calib_type == "Noise" and self.plot_type == "Signals":
             self.data[args[0], 0] = args[1]
             self.data[args[0], 1] = args[2]
         elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter":
-            self.data = args[0]
+            freq, response = freqz(args[0], 1, 192000)
+            filter = np.column_stack((freq, response))
+            self.data = filter
         elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter Signal":
             self.data[0] = args[1]
             self.data[1] = args[2]
@@ -128,10 +131,9 @@ class Plot:
         if self.calib_type == "Noise" and self.plot_type == "Data":
             self.plot.plot[0].set_data(self.data[:, 0], self.data[:, 1])
         elif self.calib_type == "Noise" and self.plot_type == "Signals":
-            signal = self.data[self.amp_index, 0]
             recording = self.data[self.amp_index, 1]
-            self.plot.plot[0].set_data(signal.time, signal.signal)
-            self.plot.plot[1].set_data(recording.time, recording.signal)
+            freq, fft = recording.fft_welch(0.005)
+            self.plot.plot[0].set_data(freq, fft)
         elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter":
             self.plot.plot[0].set_data(self.data[:, 0], self.data[:, 1])
         elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter Signal":

@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime
 from typing import Optional
 
@@ -53,31 +54,37 @@ def upload_sound(
 
     create_sound_file(signal_left, signal_right, filename)
     if soundcard_index is not None:
-        os.system(
-            "cmd /c .\\assets\\toSoundCard.exe "
-            + filename
-            + " "
-            + str(soundcard_index)
-            + " 0 "
-            + str(fs)
-        )
+        while True:
+            output = os.popen(
+                "cmd /c .\\assets\\toSoundCard.exe "
+                + str(filename)
+                + " "
+                + str(soundcard_index)
+                + " 0 "
+                + str(fs)
+            ).read()
+
+            if "Bandwidth: " in output:
+                break
+            print(output)
+            time.sleep(3)
 
 
 def main():
-    calib_left = np.load(
-        "C:/Users/HSP/Desktop/output/left_speaker_setup1/calibration_parameters_speaker0_setup0.csv"
+    path_left = (
+        "C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250925_150000"
     )
-    eq_left = np.load(
-        "C:/Users/HSP/Desktop/output/left_speaker_setup1/inverse_filter_speaker0_setup0.csv"
-    )
-    calib_right = np.load(
-        "C:/Users/HSP/Desktop/output/right_speaker_setup/calibration_parameters_speaker0_setup0.csv"
-    )
-    eq_right = np.load(
-        "C:/Users/HSP/Desktop/output/right_speaker_setup/inverse_filter_speaker0_setup0.csv"
+    path_right = (
+        "C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250925_150000"
     )
 
+    calib_left = np.load(path_left + "/calibration_parameters.npy")
+    eq_left = np.load(path_left + "/eq_filter.npy")
+    calib_right = np.load(path_right + "/calibration_parameters.npy")
+    eq_right = np.load(path_right + "/eq_filter.npy")
+
     date = datetime.now().strftime("%y%m%d_%H%M%S")
+    os.makedirs("output/sounds/" + date)
 
     for i in range(5):
         upload_sound(
@@ -104,5 +111,6 @@ def main():
         soundcard_index=31,
     )
 
-    if __name__ == "__main__":
-        main()
+
+if __name__ == "__main__":
+    main()

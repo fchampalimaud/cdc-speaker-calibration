@@ -339,6 +339,22 @@ class RecordedSound(Sound):
 
         self._fft = (2 / win_sum) * abs_y_win
 
+        # # Use microphone frequency response to calculate the "real" relative FFT, mainly used to calculate the EQ filter
+        # if use_mic_response:
+        #     mic_response = np.loadtxt(
+        #         "assets/mic_freq_response.csv", delimiter=",", skiprows=1
+        #     )  # TODO: de-hardcode file
+        #     freq = np.fft.rfftfreq(
+        #         int(duration * self.settings.adc.fs), d=1 / self.settings.adc.fs
+        #     )
+        #     fft = np.fft.rfft(result[0].signal)
+        #     response_interp = np.interp(freq, mic_response[:, 0], mic_response[:, 2])
+        #     response_interp[(freq < 4) | (freq > 20000)] = 1
+
+        #     fft = fft / response_interp
+
+        #     result[0].signal = np.fft.irfft(fft)
+
         return self._freq, self._fft
 
     @property
