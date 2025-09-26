@@ -133,9 +133,9 @@ class Plot:
         elif self.calib_type == "Noise" and self.plot_type == "Signals":
             recording = self.data[self.amp_index, 1]
             freq, fft = recording.fft_welch(0.005)
-            self.plot.plot[0].set_data(freq, fft)
+            self.plot.plot[0].set_data(freq, 20 * np.log10(fft))
         elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter":
-            self.plot.plot[0].set_data(self.data[:, 0], self.data[:, 1])
+            self.plot.plot[0].set_data(self.data[:, 0], 20 * np.log10(self.data[:, 1]))
         elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter Signal":
             self.plot.plot[0].set_data(self.data[0].time, self.data[0].signal)
             self.plot.plot[1].set_data(self.data[1].time, self.data[1].signal)
