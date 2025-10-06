@@ -227,12 +227,12 @@ class Chirp(Sound):
             phi=self.phase,
         )
 
-        # Apply ramp
-        signal = _apply_ramp(signal, fs, self.ramp_time)
-
         # Calculate inverse filter
         log_param = duration / np.log(self.freq_end / self.freq_start)
         self._inverse_filter = np.flip(signal) * np.exp(-time / log_param)
+
+        # Apply ramp
+        signal = _apply_ramp(signal, fs, self.ramp_time)
 
         super().__init__(signal, fs, time)
 

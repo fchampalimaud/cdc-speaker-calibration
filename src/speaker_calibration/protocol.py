@@ -9,7 +9,7 @@ import numpy as np
 import yaml
 from scipy.interpolate import RBFInterpolator, griddata
 from scipy.ndimage import uniform_filter1d
-from scipy.signal import butter, firwin2, freqz_sos, sosfilt
+from scipy.signal import butter, firwin2, freqz_sos, sosfilt, windows
 
 import speaker_calibration.settings as setts
 from speaker_calibration.recording import Moku, NiDaq, RecordingDevice
@@ -85,6 +85,7 @@ class Calibration:
         if self.settings.eq_filter.determine_filter:
             # self.eq_filter, eq_signal, eq_recorded = self.calculate_eq_filter()
             self.eq_filter, eq_signal, eq_recorded = self.noise_eq_filter()
+            self.eq_filter = self.eq_filter * 10 ** (-80 / 20)
 
             # Save EQ filter
             np.save(self.path / "eq_filter.npy", self.eq_filter)
@@ -256,7 +257,7 @@ class Calibration:
 
     def calculate_eq_filter(
         self,
-        smooth_window: int = 20,
+        smooth_window: int = 1,
         freq_min: float = 5000,
         freq_max: float = 20000,
         min_boost_db: float = -24,
@@ -265,8 +266,8 @@ class Calibration:
         signal = Chirp(
             cast(float, self.settings.eq_filter.sound_duration),
             self.settings.soundcard.fs,
-            2000,
-            30000,
+            100,
+            24000,
             amplitude=self.settings.amplitude,
             ramp_time=self.settings.ramp_time,
         )
@@ -292,7 +293,7 @@ class Calibration:
             output="sos",
             fs=self.settings.soundcard.fs,
         )
-        resampled_sound.signal = cast(np.ndarray, sosfilt(sos, resampled_sound.signal))
+        # resampled_sound.signal = cast(np.ndarray, sosfilt(sos, resampled_sound.signal))
 
         num_fft = resampled_sound.signal.size + signal.inverse_filter.size - 1
         num_fft_samples = int(2 ** nextpow2(num_fft))
@@ -301,28 +302,40 @@ class Calibration:
         ir_fft = np.multiply(signal_fft, inv_fft)
         impulse_response = np.fft.ifft(ir_fft)[0:num_fft]
 
-        peak_pos = max(0, int(np.argmax(np.abs(impulse_response)) - 150))
-        hr_ir = impulse_response[peak_pos : peak_pos + 8192]
+        peak_pos = max(
+            0, int(np.argmax(np.abs(impulse_response)) - 82)
+        )  # 150 originally
+        hr_ir = impulse_response[peak_pos : peak_pos + 8192]  # 8192 originally
+
+        # NEW: add window
+        # window_len = len(hr_ir)
+        # taper = windows.tukey(window_len, alpha=0.01)
+        # hr_ir = hr_ir * taper
+
         new_num_fft = int(2 ** nextpow2(hr_ir.size))
         transfer_function = np.abs(np.fft.fft(hr_ir, new_num_fft))
         freq = np.fft.rfftfreq(new_num_fft, d=1 / self.settings.soundcard.fs)
 
-        transfer_function = uniform_filter1d(
-            transfer_function, smooth_window, mode="nearest"
-        )
+        # NEW: removing smoothing
+        # transfer_function = uniform_filter1d(
+        #     transfer_function, smooth_window, mode="nearest"
+        # )
 
         inv_transfer_func = 1 / (transfer_function + 1e-10)
         inv_transfer_func = inv_transfer_func[0 : freq.size]
 
         mean_gain = np.mean(inv_transfer_func[(freq >= freq_min) & (freq <= freq_max)])
 
-        inv_transfer_func /= mean_gain
+        # inv_transfer_func /= mean_gain
 
-        min_boost_linear = 10 ** (min_boost_db / 20)
-        max_boost_linear = 10 ** (max_boost_db / 20)
+        # min_boost_linear = 10 ** (min_boost_db / 20)
+        # max_boost_linear = 10 ** (max_boost_db / 20)
 
-        inv_transfer_func[inv_transfer_func < min_boost_linear] = min_boost_linear
-        inv_transfer_func[inv_transfer_func > max_boost_linear] = max_boost_linear
+        # inv_transfer_func[inv_transfer_func < min_boost_linear] = min_boost_linear
+        # inv_transfer_func[inv_transfer_func > max_boost_linear] = max_boost_linear
+
+        # # NEW: testing with a constant filter
+        # inv_transfer_func = np.ones_like(inv_transfer_func)
 
         # if filter:
         # TODO: add possibility to filter or to not filter
@@ -337,7 +350,9 @@ class Calibration:
 
         new_h = np.interp(freq, w, np.abs(h))
 
-        response = np.multiply(inv_transfer_func, abs(new_h))
+        # TEST: no bandpass filter
+        # response = np.multiply(inv_transfer_func, abs(new_h))
+        response = inv_transfer_func
 
         final_filter = firwin2(4097, freq, response, fs=self.settings.soundcard.fs)
 
@@ -367,7 +382,10 @@ class Calibration:
         )
 
         freq, fft = resampled_sound.fft_welch(self.settings.eq_filter.time_constant)
-        transfer_function = 1 / fft
+
+        fft = uniform_filter1d(fft, 50, mode="nearest")  # testing smoothing
+
+        transfer_function = 1 / (fft + 1e-10)  # added 1e-10
 
         sos = butter(
             32,
@@ -583,18 +601,18 @@ class Calibration:
         record_thread.join()
 
         # Filter the acquired signal if desired
-        if filter:
-            sos = butter(
-                32,
-                [
-                    self.settings.filter.min_value,
-                    self.settings.filter.max_value,
-                ],
-                btype="bandpass",
-                output="sos",
-                fs=self.adc.fs,
-            )
-            result[0].signal = sosfilt(sos, result[0].signal)
+        # if filter:
+        #     sos = butter(
+        #         32,
+        #         [
+        #             self.settings.filter.min_value,
+        #             self.settings.filter.max_value,
+        #         ],
+        #         btype="bandpass",
+        #         output="sos",
+        #         fs=self.adc.fs,
+        #     )
+        #     result[0].signal = sosfilt(sos, result[0].signal)
 
         return result[0]
 
