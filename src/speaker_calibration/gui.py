@@ -196,7 +196,7 @@ class SettingsLayout(QWidget):
 
         self.amplitude = QDoubleSpinBox()
         self.amplitude.setRange(0, 1)
-        self.amplitude.setValue(1)
+        self.amplitude.setValue(0.9)
         self.amplitude.setSingleStep(0.01)
         self.amplitude.setFixedWidth(self.WIDGETS_WIDTH)
 
@@ -257,7 +257,7 @@ class SettingsLayout(QWidget):
         self.if_duration.setMinimum(0)
         self.if_duration.setDecimals(3)
         self.if_duration.setSingleStep(0.005)
-        self.if_duration.setValue(10)
+        self.if_duration.setValue(15)
         self.if_duration.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.time_const_l = QLabel("Time Constant (s)")
@@ -317,7 +317,7 @@ class SettingsLayout(QWidget):
         self.min_att = QDoubleSpinBox()
         self.min_att.setSingleStep(0.01)
         self.min_att.setRange(-10, 0)
-        self.min_att.setValue(0)
+        self.min_att.setValue(-0.1)
         self.min_att.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.max_att_l = QLabel("Maximum Attenuation")
@@ -362,7 +362,7 @@ class SettingsLayout(QWidget):
         self.test_duration.setMinimum(0)
         self.test_duration.setDecimals(3)
         self.test_duration.setSingleStep(0.005)
-        self.test_duration.setValue(5)
+        self.test_duration.setValue(10)
         self.test_duration.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.test_min_freq_l = QLabel("Minimum Frequency (Hz)")
@@ -394,7 +394,7 @@ class SettingsLayout(QWidget):
         self.max_db = QDoubleSpinBox()
         self.max_db.setSingleStep(0.01)
         self.max_db.setMinimum(0)
-        self.max_db.setValue(65)
+        self.max_db.setValue(68)
         self.max_db.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.db_steps_l = QLabel("dB SPL Steps")

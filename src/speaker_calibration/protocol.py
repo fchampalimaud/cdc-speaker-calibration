@@ -367,7 +367,7 @@ class Calibration:
         )
 
         freq, fft = resampled_sound.fft_welch(self.settings.eq_filter.time_constant)
-        transfer_function = 1 / fft
+        transfer_function = 1 / (fft + 1e-10)
 
         sos = butter(
             32,
@@ -419,7 +419,7 @@ class Calibration:
             signal = WhiteNoise(
                 duration,
                 self.settings.soundcard.fs,
-                self.settings.amplitude * amp_array[i],
+                amp_array[i],
                 self.settings.ramp_time,
                 self.settings.filter.filter_input,
                 cast(float, self.settings.filter.min_value),
