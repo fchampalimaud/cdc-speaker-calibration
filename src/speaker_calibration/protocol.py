@@ -327,7 +327,7 @@ class Calibration:
         # if filter:
         # TODO: add possibility to filter or to not filter
         sos = butter(
-            32,
+            64,
             [5000, 20000],
             btype="bandpass",
             output="sos",
@@ -343,7 +343,11 @@ class Calibration:
 
         return final_filter, signal, resampled_sound
 
-    def noise_eq_filter(self):
+    def noise_eq_filter(
+        self,
+        min_boost_db: float = -24,
+        max_boost_db: float = 12,
+    ):
         signal = WhiteNoise(
             cast(float, self.settings.eq_filter.sound_duration),
             self.settings.soundcard.fs,
@@ -368,6 +372,21 @@ class Calibration:
 
         freq, fft = resampled_sound.fft_welch(self.settings.eq_filter.time_constant)
         transfer_function = 1 / (fft + 1e-10)
+
+        mean_gain = np.mean(
+            transfer_function[
+                (freq >= self.settings.freq.min_freq)
+                & (freq <= self.settings.freq.max_freq)
+            ]
+        )
+
+        transfer_function /= mean_gain
+
+        min_boost_linear = 10 ** (min_boost_db / 20)
+        max_boost_linear = 10 ** (max_boost_db / 20)
+
+        transfer_function[transfer_function < min_boost_linear] = min_boost_linear
+        transfer_function[transfer_function > max_boost_linear] = max_boost_linear
 
         sos = butter(
             32,

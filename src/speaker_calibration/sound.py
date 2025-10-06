@@ -136,7 +136,7 @@ class WhiteNoise(Sound):
         # Applies a 16th-order butterworth band-pass filter to the signal
         if filter:
             sos = butter(
-                32, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs
+                64, [freq_min, freq_max], btype="bandpass", output="sos", fs=fs
             )
             signal = sosfilt(sos, signal)
 
