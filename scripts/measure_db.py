@@ -8,6 +8,8 @@ from pyharp.messages import HarpMessage
 from speaker_calibration.recording import NiDaq
 from speaker_calibration.soundcards import HarpSoundCard
 
+SERIAL_PORT = "COMx"
+
 
 def record_sound(
     desired_db: float,
@@ -15,13 +17,13 @@ def record_sound(
     calibration_path: str,
     filename: str = "sound",
 ):
-    soundcard = HarpSoundCard("COMx")
+    soundcard = HarpSoundCard(SERIAL_PORT)
     adc = NiDaq(1)
     calibration = np.load(calibration_path)
 
-    att = (-20 * (desired_db - calibration[1]) / calibration[2]) * 10
-    soundcard.device.send(HarpMessage.WriteU16(34, att).frame, False)
-    soundcard.device.send(HarpMessage.WriteU16(35, att).frame, False)
+    att = (-20 * (desired_db - calibration[1]) / calibration[0]) * 10
+    soundcard.device.send(HarpMessage.WriteU16(34, int(att)).frame, False)
+    soundcard.device.send(HarpMessage.WriteU16(35, int(att)).frame, False)
 
     # Create the result list to pass to the recording thread
     result = []
