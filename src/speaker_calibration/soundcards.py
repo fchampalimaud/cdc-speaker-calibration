@@ -5,10 +5,9 @@ from abc import ABC, abstractmethod
 from typing import Literal, Optional
 
 import numpy as np
+from harp.devices.soundcard import SoundCard as HSC
 from multipledispatch import dispatch
 from pydantic.types import StringConstraints
-from pyharp.device import Device
-from pyharp.messages import HarpMessage
 from typing_extensions import Annotated
 
 from speaker_calibration.sound import Sound
@@ -47,7 +46,7 @@ class HarpSoundCard(SoundCard):
         The Harp device object responsible for the serial communication with the device.
     """
 
-    device: Device
+    device: HSC
 
     def __init__(
         self,
@@ -57,7 +56,7 @@ class HarpSoundCard(SoundCard):
         fs: Literal[96000, 192000] = 192000,
     ):
         super().__init__(fs)
-        self.device = Device(serial_port)
+        self.device = HSC(serial_port)
 
     def play(self, index: int = 2, start_event: Optional[threading.Event] = None):
         """
@@ -75,7 +74,7 @@ class HarpSoundCard(SoundCard):
             start_event.wait()
 
         # Play the sound
-        self.device.send(HarpMessage.WriteU16(32, index).frame, False)
+        self.device.write_play_sound_or_frequency(index)
 
     def load_sound(self, filename, index: int = 2):
         """

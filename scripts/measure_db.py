@@ -4,7 +4,7 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pyharp.messages import HarpMessage
+
 from speaker_calibration.recording import NiDaq
 from speaker_calibration.soundcards import HarpSoundCard
 
@@ -22,8 +22,8 @@ def record_sound(
     calibration = np.load(calibration_path)
 
     att = (-20 * (desired_db - calibration[1]) / calibration[0]) * 10
-    soundcard.device.send(HarpMessage.WriteU16(34, int(att)).frame, False)
-    soundcard.device.send(HarpMessage.WriteU16(35, int(att)).frame, False)
+    soundcard.device.write_attenuation_left(int(att))
+    soundcard.device.write_attenuation_right(int(att))
 
     # Create the result list to pass to the recording thread
     result = []
@@ -31,7 +31,7 @@ def record_sound(
     # Create the start event and the threads that will play and record the sound
     start_event = threading.Event()
     play_thread = threading.Thread(
-        target=soundcard.play, kwargs={"start_event": start_event}
+        target=soundcard.play, kwargs={"index": index, "start_event": start_event}
     )
     record_thread = threading.Thread(
         target=adc.record_signal,

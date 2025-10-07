@@ -2,7 +2,8 @@ import ctypes
 import sys
 from typing import Literal
 
-from pyharp.device import Device, HarpMessage
+from harp.devices.soundcard import SoundCard as HSC
+from harp.protocol.exceptions import HarpTimeoutError
 from PySide6.QtCore import QObject, Qt, QThread, QThreadPool, Signal, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
@@ -604,19 +605,17 @@ class SettingsLayout(QWidget):
             return
 
         try:
-            self.soundcard = Device(self.serial_port.currentText())
-            if self.soundcard.WHO_AM_I == 1280:
-                self.soundcard.send(HarpMessage.WriteU8(41, 0).frame, False)
-                self.soundcard.send(HarpMessage.WriteU8(44, 2).frame, False)
-                self.soundcard.disconnect()
-
-            else:
-                QMessageBox.warning(self, "Warning", "This is not a Harp Soundcard.")
-                self.serial_port.setCurrentIndex(-1)
-                self.soundcard.disconnect()
+            soundcard = HSC(self.serial_port.currentText())
+            soundcard.disconnect()
+        except HarpTimeoutError:
+            self.serial_port.setCurrentIndex(-1)
+            QMessageBox.warning(self, "Warning", "This is not a Harp device.")
         except SerialException:
             self.serial_port.setCurrentIndex(-1)
             QMessageBox.warning(self, "Warning", "This is not a Harp device.")
+        except Exception:
+            self.serial_port.setCurrentIndex(-1)
+            QMessageBox.warning(self, "Warning", "This is not a Harp Soundcard.")
 
 
 class PlotLayout(QWidget):
