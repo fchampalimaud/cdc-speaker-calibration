@@ -4,26 +4,33 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
-
 from speaker_calibration.recording import NiDaq
 from speaker_calibration.soundcards import HarpSoundCard
 
 SERIAL_PORT = "COMx"
 
 
-def record_sound(
-    desired_db: float,
+def measure_db(
+    abl: float,
+    ild: float,
     index: Literal[2, 4, 6, 8, 10],
-    calibration_path: str,
+    calibration_left: str,
+    calibration_right: str,
     filename: str = "sound",
 ):
     soundcard = HarpSoundCard(SERIAL_PORT)
     adc = NiDaq(1)
-    calibration = np.load(calibration_path)
+    left_cal = np.load(calibration_left)
+    right_cal = np.load(calibration_right)
 
-    att = (-20 * (desired_db - calibration[1]) / calibration[0]) * 10
-    soundcard.device.write_attenuation_left(int(att))
-    soundcard.device.write_attenuation_right(int(att))
+    db_left = abl - ild / 2
+    db_right = abl + ild / 2
+
+    att_left = (-20 * (db_left - left_cal[1]) / left_cal[0]) * 10
+    soundcard.device.write_attenuation_left(int(att_left))
+
+    att_right = (-20 * (db_right - right_cal[1]) / right_cal[0]) * 10
+    soundcard.device.write_attenuation_right(int(att_right))
 
     # Create the result list to pass to the recording thread
     result = []
@@ -60,8 +67,10 @@ def record_sound(
     plt.show()
 
 
-record_sound(
-    desired_db=50,
+measure_db(
+    abl=50,
+    ild=0,
     index=2,
-    calibration_path=r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853",
+    calibration_left=r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853",
+    calibration_right=r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853",
 )

@@ -600,6 +600,7 @@ class SettingsLayout(QWidget):
             self.serial_port.currentText() == "Refresh"
             or self.serial_port.currentText() == ""
         ):
+            self.serial_port.setCurrentIndex(-1)
             self.serial_port.clear()
             self.serial_port.addItems(get_ports())
             return
