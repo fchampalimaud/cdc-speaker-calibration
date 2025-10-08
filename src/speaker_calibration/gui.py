@@ -101,10 +101,18 @@ class SettingsLayout(QWidget):
         self.fs_computer.setValue(48000)
         self.fs_computer.setFixedWidth(self.WIDGETS_WIDTH)
 
+        self.speaker_l = QLabel("Speaker")
+        self.speaker_l.setFixedWidth(self.LABEL_WIDTH)
+        self.speaker = QComboBox()
+        self.speaker.addItems(["Left", "Right"])
+        self.speaker.setCurrentIndex(0)
+        self.speaker.setFixedWidth(self.WIDGETS_WIDTH)
+
         form.addRow("Harp SoundCard", self.is_harp)
         form.addRow(self.serial_port_l, self.serial_port)
         form.addRow(self.fs_harp_l, self.fs_harp)
         form.addRow(self.fs_computer_l, self.fs_computer)
+        form.addRow(self.speaker_l, self.speaker)
 
         soundcard_gb.setLayout(form)
         self.layout.addWidget(soundcard_gb)
@@ -826,6 +834,7 @@ class ApplicationWindow(QMainWindow):
 
         self.settings = Settings(
             sound_type=self.settings_layout.sound_type.currentText(),
+            speaker=self.settings_layout.speaker.currentText(),
             mic_factor=self.settings_layout.mic_factor.value(),
             reference_pressure=self.settings_layout.reference_pressure.value(),
             ramp_time=self.settings_layout.ramp_time.value(),

@@ -211,6 +211,9 @@ class Settings(BaseModel):
     sound_type: Literal["Noise", "Pure Tones"] = Field(
         description="Indicates whether the calibration will be made with noise or pure tones."
     )
+    speaker: Literal["Left", "Right"] = Field(
+        description="Indicates which speaker will be calibrated."
+    )
     mic_factor: float = Field(
         description="The conversion factor of the microphone (V/Pa).", gt=0
     )

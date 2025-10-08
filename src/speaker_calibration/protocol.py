@@ -54,6 +54,11 @@ class Calibration:
         # Create the output directory structure for the current calibration
         os.makedirs(self.path / "sounds")
 
+        save_settings = self.settings.model_dump(by_alias=True, exclude_unset=True)
+
+        with open(self.path / "config.yml", "w") as file:
+            yaml.dump(save_settings, file, default_flow_style=False)
+
         # Initiate the soundcard to be used in the calibration
         # if self.settings.is_harp:
         if isinstance(self.settings.soundcard, setts.HarpSoundCard):
@@ -81,6 +86,15 @@ class Calibration:
         """
         Performs the white noise speaker calibration.
         """
+
+        if isinstance(self.soundcard, HarpSoundCard):
+            if self.settings.speaker == "Left":
+                self.soundcard.device.write_attenuation_left(0)
+                self.soundcard.device.write_attenuation_right(65535)
+            else:
+                self.soundcard.device.write_attenuation_left(65535)
+                self.soundcard.device.write_attenuation_right(0)
+
         # Calculate the EQ filter
         if self.settings.eq_filter.determine_filter:
             # self.eq_filter, eq_signal, eq_recorded = self.calculate_eq_filter()
@@ -465,12 +479,14 @@ class Calibration:
         for i in range(amp_array.size):
             # TODO: non-Harp case not implemented
             if isinstance(self.soundcard, HarpSoundCard):
-                self.soundcard.device.write_attenuation_left(
-                    int(amp_array[i] * 200)
-                )  # x20 because of the 20*log10(x) and x10 due the way this register works (1 LSB = 0.1 dB)
-                self.soundcard.device.write_attenuation_right(
-                    int(amp_array[i] * 200)
-                )  # x20 because of the 20*log10(x) and x10 due the way this register works (1 LSB = 0.1 dB
+                if self.settings.speaker == "Left":
+                    self.soundcard.device.write_attenuation_left(
+                        int(amp_array[i] * 200)
+                    )  # x20 because of the 20*log10(x) and x10 due the way this register works (1 LSB = 0.1 dB)
+                else:
+                    self.soundcard.device.write_attenuation_right(
+                        int(amp_array[i] * 200)
+                    )  # x20 because of the 20*log10(x) and x10 due the way this register works (1 LSB = 0.1 dB
 
             # Play the sound from the soundcard and record it with the microphone + DAQ system
             sounds[i] = self.record_sound(
