@@ -101,7 +101,6 @@ class Calibration:
                 cast(float, self.settings.calibration.amp_max),
                 cast(int, self.settings.calibration.amp_steps),
             )
-            amp_factor = 10**log_amp
 
             # Send amplitudes to be used to the interface
             if self.callback is not None:
@@ -109,7 +108,7 @@ class Calibration:
 
             # Generate and play the sounds for every amplitude value
             self.sounds = self.noise_sweep(
-                amp_factor, cast(float, self.settings.calibration.sound_duration)
+                log_amp, cast(float, self.settings.calibration.sound_duration)
             )
 
             db_spl = [sound.db_spl for sound in self.sounds]
@@ -136,14 +135,13 @@ class Calibration:
                 self.callback("Pre-test", db_test)
 
             # Use the calibration parameters and the dB array to generate the correspondent amplitude values that will be used in the calibration test
-            db_test = (
+            att_test = (
                 db_test - self.calibration_parameters[1]
             ) / self.calibration_parameters[0]
-            db_test = 10**db_test
 
             # Test the calibration curve with the test amplitude factors
             self.test_sounds = self.noise_sweep(
-                db_test,
+                att_test,
                 cast(float, self.settings.test_calibration.sound_duration),
                 type="Test",
             )
@@ -358,6 +356,13 @@ class Calibration:
             freq_max=self.settings.freq.max_freq,
         )
 
+        # Upload the sound to the Harp SoundCard in case one is used
+        if isinstance(self.soundcard, HarpSoundCard):
+            create_sound_file(signal, str(self.path / "sounds" / "eq_filter_sound.bin"))
+            self.soundcard.load_sound(
+                filename=str(self.path / "sounds" / "eq_filter_sound.bin")
+            )
+
         # Play the sound from the soundcard and record it with the microphone + DAQ system
         recorded_sound = self.record_sound(
             signal,
@@ -433,25 +438,35 @@ class Calibration:
         # Initialization of the output arrays
         sounds = np.zeros(amp_array.size, dtype=RecordedSound)
 
-        for i in range(amp_array.size):
-            # Generate the noise
-            signal = WhiteNoise(
-                duration,
-                self.settings.soundcard.fs,
-                amp_array[i],
-                self.settings.ramp_time,
-                self.settings.filter.filter_input,
-                cast(float, self.settings.filter.min_value),
-                cast(float, self.settings.filter.max_value),
-                self.eq_filter,
-                noise_type="gaussian",  # FIXME
-            )
+        # Generate the noise
+        signal = WhiteNoise(
+            duration,
+            self.settings.soundcard.fs,
+            1,  # FIXME
+            self.settings.ramp_time,
+            self.settings.filter.filter_input,
+            cast(float, self.settings.filter.min_value),
+            cast(float, self.settings.filter.max_value),
+            self.eq_filter,
+            noise_type="gaussian",  # FIXME
+        )
 
-            # Save the generated noise
-            if type == "Calibration":
-                filename = "calibration_sound_" + str(i) + ".bin"
-            else:
-                filename = "test_sound_" + str(i) + ".bin"
+        # Save the generated noise
+        if type == "Calibration":
+            filename = "calibration_sound.bin"
+        else:
+            filename = "test_sound.bin"
+
+        # Upload the sound to the Harp SoundCard in case one is used
+        if isinstance(self.soundcard, HarpSoundCard):
+            create_sound_file(signal, str(filename))
+            self.soundcard.load_sound(filename=str(filename))
+
+        for i in range(amp_array.size):
+            # TODO: non-Harp case not implemented
+            if isinstance(self.soundcard, HarpSoundCard):
+                self.soundcard.device.write_attenuation_left(amp_array[i] * 20)
+                self.soundcard.device.write_attenuation_right(amp_array[i] * 20)
 
             # Play the sound from the soundcard and record it with the microphone + DAQ system
             sounds[i] = self.record_sound(
@@ -569,10 +584,10 @@ class Calibration:
         sound : Sound
             The recorded sound.
         """
-        # Upload the sound to the Harp SoundCard in case one is used
-        if isinstance(self.soundcard, HarpSoundCard):
-            create_sound_file(signal, str(filename))
-            self.soundcard.load_sound(filename=str(filename))
+        # # Upload the sound to the Harp SoundCard in case one is used
+        # if isinstance(self.soundcard, HarpSoundCard):
+        #     create_sound_file(signal, str(filename))
+        #     self.soundcard.load_sound(filename=str(filename))
 
         # Create the result list to pass to the recording thread
         result = []
