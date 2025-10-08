@@ -465,8 +465,12 @@ class Calibration:
         for i in range(amp_array.size):
             # TODO: non-Harp case not implemented
             if isinstance(self.soundcard, HarpSoundCard):
-                self.soundcard.device.write_attenuation_left(amp_array[i] * 20)
-                self.soundcard.device.write_attenuation_right(amp_array[i] * 20)
+                self.soundcard.device.write_attenuation_left(
+                    int(amp_array[i] * 200)
+                )  # x20 because of the 20*log10(x) and x10 due the way this register works (1 LSB = 0.1 dB)
+                self.soundcard.device.write_attenuation_right(
+                    int(amp_array[i] * 200)
+                )  # x20 because of the 20*log10(x) and x10 due the way this register works (1 LSB = 0.1 dB
 
             # Play the sound from the soundcard and record it with the microphone + DAQ system
             sounds[i] = self.record_sound(
