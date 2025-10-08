@@ -71,6 +71,6 @@ measure_db(
     abl=50,
     ild=0,
     index=2,
-    calibration_left=r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853",
-    calibration_right=r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853",
+    calibration_left=r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853/calibration_parameters.npy",
+    calibration_right=r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853/calibration_parameters.npy",
 )
