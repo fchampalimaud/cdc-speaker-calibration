@@ -60,7 +60,6 @@ class Calibration:
             yaml.dump(save_settings, file, default_flow_style=False)
 
         # Initiate the soundcard to be used in the calibration
-        # if self.settings.is_harp:
         if isinstance(self.settings.soundcard, setts.HarpSoundCard):
             self.soundcard = HarpSoundCard(
                 self.settings.soundcard.com_port, self.settings.soundcard.fs
@@ -306,10 +305,10 @@ class Calibration:
         )
         resampled_sound.signal = cast(np.ndarray, sosfilt(sos, resampled_sound.signal))
 
-        num_fft = resampled_sound.signal.size + signal.inverse_filter.size - 1
+        num_fft = resampled_sound.signal.size + signal.eq_filter.size - 1
         num_fft_samples = int(2 ** nextpow2(num_fft))
         signal_fft = np.fft.fft(resampled_sound.signal, num_fft_samples)
-        inv_fft = np.fft.fft(signal.inverse_filter, num_fft_samples)
+        inv_fft = np.fft.fft(signal.eq_filter, num_fft_samples)
         ir_fft = np.multiply(signal_fft, inv_fft)
         impulse_response = np.fft.ifft(ir_fft)[0:num_fft]
 
@@ -501,7 +500,7 @@ class Calibration:
 
             # Send information regarding the current noise to the interface
             if self.callback is not None:
-                self.callback(type, i, signal, sounds[i])
+                self.callback(type, i, sounds[i])
 
         return sounds
 

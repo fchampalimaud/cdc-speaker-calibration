@@ -239,9 +239,6 @@ class Settings(BaseModel):
     test_calibration: TestCalibration = Field(
         description="The settings used for the calibration test."
     )
-    is_harp: bool = Field(
-        description="Indicates whether the soundcard being calibrated is a Harp device or not."
-    )
     soundcard: Union[HarpSoundCard, ComputerSoundCard] = Field(
         description="The soundcard details."
     )

@@ -1,7 +1,8 @@
 import ctypes
 import sys
-from typing import Literal
+from typing import Literal, Optional
 
+import nidaqmx
 from harp.devices.soundcard import SoundCard as HSC
 from harp.protocol.exceptions import HarpTimeoutError
 from PySide6.QtCore import QObject, Qt, QThread, QThreadPool, Signal, Slot
@@ -41,7 +42,14 @@ from speaker_calibration.settings import (
     Settings,
     TestCalibration,
 )
-from speaker_calibration.utils.gui import Plot, get_ports
+from speaker_calibration.utils.gui import (
+    EQFilterPlot,
+    NoiseDataPlot,
+    NoiseSignalsPlot,
+    PureTonesDataPlot,
+    PureTonesSignalsPlot,
+    get_ports,
+)
 
 myappid = "fchampalimaud.cdc.speaker_calibration"
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
@@ -59,7 +67,7 @@ class SettingsLayout(QWidget):
         self.generate_adc_layout()
         self.generate_filter_layout()
         self.generate_protocol_layout()
-        self.generate_inverse_filter_layout()
+        self.generate_eq_filter_layout()
         self.generate_calibration_layout()
         self.generate_test_layout()
 
@@ -249,15 +257,15 @@ class SettingsLayout(QWidget):
         protocol_gb.setLayout(form)
         self.layout.addWidget(protocol_gb)
 
-    def generate_inverse_filter_layout(self):
-        self.inverse_filter_gb = QGroupBox("Inverse Filter")
+    def generate_eq_filter_layout(self):
+        self.eq_filter_gb = QGroupBox("EQ Filter")
         form = QFormLayout()
 
-        self.inverse_filter_l = QLabel("Determine Filter")
-        self.inverse_filter_l.setFixedWidth(self.LABEL_WIDTH)
-        self.inverse_filter = QCheckBox()
-        self.inverse_filter.setChecked(True)
-        self.inverse_filter.stateChanged.connect(self.on_inverse_filter_changed)
+        self.eq_filter_l = QLabel("Determine Filter")
+        self.eq_filter_l.setFixedWidth(self.LABEL_WIDTH)
+        self.eq_filter = QCheckBox()
+        self.eq_filter.setChecked(True)
+        self.eq_filter.stateChanged.connect(self.on_eq_filter_changed)
 
         self.if_duration_l = QLabel("Sound Duration (s)")
         self.if_duration_l.setFixedWidth(self.LABEL_WIDTH)
@@ -277,12 +285,12 @@ class SettingsLayout(QWidget):
         self.time_const.setValue(0.100)
         self.time_const.setFixedWidth(self.WIDGETS_WIDTH)
 
-        form.addRow(self.inverse_filter_l, self.inverse_filter)
+        form.addRow(self.eq_filter_l, self.eq_filter)
         form.addRow(self.if_duration_l, self.if_duration)
         form.addRow(self.time_const_l, self.time_const)
 
-        self.inverse_filter_gb.setLayout(form)
-        self.layout.addWidget(self.inverse_filter_gb)
+        self.eq_filter_gb.setLayout(form)
+        self.layout.addWidget(self.eq_filter_gb)
 
     def generate_calibration_layout(self):
         calibrate_gb = QGroupBox("Calibrate")
@@ -480,7 +488,7 @@ class SettingsLayout(QWidget):
 
     def on_sound_type_changed(self, index):
         if self.sound_type.currentText() == "Noise":
-            self.inverse_filter_gb.show()
+            self.eq_filter_gb.show()
             self.min_freq_l.show()
             self.min_freq.show()
             self.max_freq_l.show()
@@ -499,7 +507,7 @@ class SettingsLayout(QWidget):
             self.test_freq_steps.hide()
             self.adjustSize()
         else:
-            self.inverse_filter_gb.hide()
+            self.eq_filter_gb.hide()
             self.min_freq_l.hide()
             self.min_freq.hide()
             self.max_freq_l.hide()
@@ -520,7 +528,7 @@ class SettingsLayout(QWidget):
                 self.test_freq_steps.show()
             self.adjustSize()
 
-    def on_inverse_filter_changed(self, state):
+    def on_eq_filter_changed(self, state):
         if state:
             self.if_duration_l.setVisible(True)
             self.if_duration.setVisible(True)
@@ -632,31 +640,56 @@ class PlotLayout(QWidget):
         super().__init__()
 
         self.layout = QVBoxLayout()
-        self.create_dictionary()
+
+        self.fig = QStackedWidget()
+        self.layout.addWidget(self.fig)
+
+        # self.create_dictionary()
         self.generate_selection()
 
         self.setLayout(self.layout)
 
         self.thread_pool = QThreadPool.globalInstance()
 
-    def create_dictionary(self):
-        self.plots = {
-            "Calibration Data": Plot(plot_type="Data"),
-            "Calibration Signals": Plot(plot_type="Signals"),
-            "Test Data": Plot(plot_type="Data"),
-            "Test Signals": Plot(plot_type="Signals"),
-            "Inverse Filter": Plot(plot_type="Inverse Filter"),
-            "Inverse Filter Signal": Plot(plot_type="Inverse Filter Signal"),
-        }
+    def create_dictionary(
+        self,
+        type: Literal["Noise", "Pure Tones"],
+        num_amp: Optional[int] = None,
+        num_freqs: Optional[int] = None,
+        num_db: Optional[int] = None,
+        num_test_freqs: Optional[int] = None,
+        min_freq=None,
+        max_freq=None,
+    ):
+        while self.plot_selection.count() > 0:
+            self.plot_selection.removeItem(0)
 
-        self.fig = QStackedWidget()
-        self.fig.addWidget(self.plots["Calibration Data"].plot)
-        self.fig.addWidget(self.plots["Calibration Signals"].plot)
-        self.fig.addWidget(self.plots["Test Data"].plot)
-        self.fig.addWidget(self.plots["Test Signals"].plot)
-        self.fig.addWidget(self.plots["Inverse Filter"].plot)
-        self.fig.addWidget(self.plots["Inverse Filter Signal"].plot)
-        self.layout.addWidget(self.fig)
+        if type == "Noise":
+            self.plots = {
+                "Calibration Data": NoiseDataPlot(num_amp),
+                "Calibration Signals": NoiseSignalsPlot(min_freq, max_freq),
+                "Test Data": NoiseDataPlot(num_db),
+                "Test Signals": NoiseSignalsPlot(min_freq, max_freq),
+                "EQ Filter": EQFilterPlot(),
+            }
+            self.fig.addWidget(self.plots["Calibration Data"].figure)
+            self.fig.addWidget(self.plots["Calibration Signals"].figure)
+            self.fig.addWidget(self.plots["Test Data"].figure)
+            self.fig.addWidget(self.plots["Test Signals"].figure)
+            self.fig.addWidget(self.plots["EQ Filter"].figure)
+        else:
+            self.plots = {
+                "Calibration Data": PureTonesDataPlot(num_amp, num_freqs),
+                "Calibration Signals": PureTonesSignalsPlot(num_amp, num_freqs),
+                "Test Data": PureTonesDataPlot(num_db, num_test_freqs),
+                "Test Signals": PureTonesSignalsPlot(num_db, num_test_freqs),
+            }
+            self.fig.addWidget(self.plots["Calibration Data"].figure)
+            self.fig.addWidget(self.plots["Calibration Signals"].figure)
+            self.fig.addWidget(self.plots["Test Data"].figure)
+            self.fig.addWidget(self.plots["Test Signals"].figure)
+
+        self.plot_selection.addItems(self.plots.keys())
 
     def generate_selection(self):
         layout = QHBoxLayout()
@@ -687,46 +720,21 @@ class PlotLayout(QWidget):
 
         self.layout.addLayout(layout)
 
-    def reset_figures(
-        self,
-        calib_type: Literal["Noise", "Pure Tones"],
-        num_amp,
-        num_freqs,
-        num_db,
-        num_test_freqs,
-    ):
-        while self.plot_selection.count() > 0:
-            self.plot_selection.removeItem(0)
-
-        if calib_type == "Noise":
-            self.plot_selection.addItems(self.plots.keys())
-        else:
-            self.plot_selection.addItems(list(self.plots.keys())[:-2])
-
-        for key in self.plots:
-            self.plots[key].generate_plots(calib_type)
-
-        self.plots["Calibration Data"].init_array(num_amp, num_freqs)
-        self.plots["Calibration Signals"].init_array(num_amp, num_freqs)
-        self.plots["Test Data"].init_array(num_db, num_test_freqs)
-        self.plots["Test Signals"].init_array(num_db, num_test_freqs)
-        self.plots["Inverse Filter"].init_array()
-        self.plots["Inverse Filter Signal"].init_array()
-
     def calibration_callback(self, code: str, *args):
         if code == "EQ Filter":
-            self.plots["Inverse Filter"].add_data(False, *args)
-            # self.plots["Inverse Filter Signal"].add_data(False, *args)
+            self.plots["EQ Filter"].add_data(*args)
         elif code == "Pre-calibration":
-            self.plots["Calibration Data"].add_data(True, *args)
+            self.plots["Calibration Data"].add_xx(*args)
         elif code == "Calibration":
-            self.plots["Calibration Data"].add_data(False, *args)
-            self.plots["Calibration Signals"].add_data(False, *args)
+            self.plots["Calibration Data"].add_point(
+                args[0], args[1].calculate_db_spl()
+            )
+            self.plots["Calibration Signals"].plot_signal(args[1])
         elif code == "Pre-test":
-            self.plots["Test Data"].add_data(True, *args)
+            self.plots["Test Data"].add_xx(*args, True)
         elif code == "Test":
-            self.plots["Test Data"].add_data(False, *args)
-            self.plots["Test Signals"].add_data(False, *args)
+            self.plots["Test Data"].add_point(args[0], args[1].calculate_db_spl())
+            self.plots["Test Signals"].plot_signal(args[1])
 
 
 class ApplicationWindow(QMainWindow):
@@ -751,8 +759,8 @@ class ApplicationWindow(QMainWindow):
 
         self.settings_layout.run.clicked.connect(self.run_calibration)
         self.plot.plot_selection.currentIndexChanged.connect(self.switch_plots)
-        self.plot.amp_index.valueChanged.connect(self.update_indexes)
-        self.plot.freq_index.valueChanged.connect(self.update_indexes)
+        # self.plot.amp_index.valueChanged.connect(self.update_indexes)
+        # self.plot.freq_index.valueChanged.connect(self.update_indexes)
 
         layout.addWidget(self.plot)
         layout.addWidget(scroll_area)
@@ -772,8 +780,8 @@ class ApplicationWindow(QMainWindow):
             max_value=self.settings_layout.max_freq_filt.value(),
         )
 
-        inverse_filter = EQFilter(
-            determine_filter=self.settings_layout.inverse_filter.isChecked(),
+        eq_filter = EQFilter(
+            determine_filter=self.settings_layout.eq_filter.isChecked(),
             sound_duration=self.settings_layout.if_duration.value(),
             time_constant=self.settings_layout.time_const.value(),
         )
@@ -809,6 +817,14 @@ class ApplicationWindow(QMainWindow):
         )
 
         if self.settings_layout.is_harp.isChecked():
+            if self.settings_layout.serial_port.currentText() == "":
+                QMessageBox.warning(
+                    self,
+                    "Warning",
+                    "The Harp SoundCard is not connected. Please turn it on.",
+                )
+                return
+
             soundcard = HarpSoundCard(
                 com_port=self.settings_layout.serial_port.currentText(),
                 fs=int(self.settings_layout.fs_harp.currentText()),
@@ -841,22 +857,29 @@ class ApplicationWindow(QMainWindow):
             amplitude=self.settings_layout.amplitude.value(),
             freq=freq,
             filter=filt,
-            eq_filter=inverse_filter,
+            eq_filter=eq_filter,
             calibration=calibration,
             test_calibration=test,
-            is_harp=self.settings_layout.is_harp.isChecked(),
             soundcard=soundcard,
             adc_device=self.settings_layout.adc.currentText(),
             adc=adc,
             output_dir="output",
         )
 
-        self.plot.reset_figures(
+        if self.settings.adc_device == "NI-DAQ" and not self.nidaqmx_available():
+            QMessageBox.warning(
+                self, "Warning", "The NI-DAQ is not connected. Please turn it on."
+            )
+            return
+
+        self.plot.create_dictionary(
             self.settings_layout.sound_type.currentText(),
             num_amp=self.settings_layout.att_steps.value(),
             num_freqs=self.settings_layout.calib_freq_steps.value(),
             num_db=self.settings_layout.db_steps.value(),
             num_test_freqs=self.settings_layout.test_freq_steps.value(),
+            min_freq=self.settings_layout.min_freq_filt.value(),
+            max_freq=self.settings_layout.max_freq_filt.value(),
         )
 
         self.worker_thread = QThread()
@@ -869,6 +892,17 @@ class ApplicationWindow(QMainWindow):
         self.work_requested.emit()
 
         self.settings_layout.run.setEnabled(False)
+
+    def nidaqmx_available(self) -> bool:
+        try:
+            with nidaqmx.Task() as task:
+                task.ai_channels.add_ai_voltage_chan(
+                    "Dev1/ai0", min_val=-10.0, max_val=10.0
+                )
+                task.read()
+            return True
+        except Exception as e:
+            return False
 
     def switch_plots(self, index=None):
         match self.plot.plot_selection.currentText():
@@ -894,20 +928,16 @@ class ApplicationWindow(QMainWindow):
                 self.plot.freq_index.setMaximum(
                     self.settings.test_calibration.freq.num_freqs - 1
                 )
-            case "Inverse Filter":
+            case "EQ Filter":
                 self.plot.fig.setCurrentIndex(4)
-                self.plot.amp_index.setMaximum(0)
-                self.plot.freq_index.setMaximum(0)
-            case "Inverse Filter Signal":
-                self.plot.fig.setCurrentIndex(5)
                 self.plot.amp_index.setMaximum(0)
                 self.plot.freq_index.setMaximum(0)
         self.plot.amp_index.setValue(0)
         self.plot.freq_index.setValue(0)
 
-    def update_indexes(self, index=None):
-        plot = self.plot.plots[self.plot.plot_selection.currentText()]
-        plot.update_indexes(self.plot.amp_index.value(), self.plot.freq_index.value())
+    # def update_indexes(self, index=None):
+    #     plot = self.plot.plots[self.plot.plot_selection.currentText()]
+    #     plot.update_indexes(self.plot.amp_index.value(), self.plot.freq_index.value())
 
     def on_task_finished(self):
         self.settings_layout.run.setEnabled(True)

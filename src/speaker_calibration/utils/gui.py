@@ -1,5 +1,3 @@
-from typing import Literal
-
 import numpy as np
 import serial.tools.list_ports
 from matplotlib.backends.backend_qtagg import FigureCanvas
@@ -8,7 +6,7 @@ from matplotlib.figure import Figure
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 from scipy.signal import freqz
 
-from speaker_calibration.sound import Sound
+from speaker_calibration.sound import RecordedSound, Sound
 
 
 def get_ports():
@@ -34,126 +32,154 @@ class MatplotlibWidget(QWidget):
         self.layout.addWidget(self.canvas)
         self.setLayout(self.layout)
 
-    def generate_plots(
-        self, count: int, heatmap: bool = False, data=np.zeros((1, 1, 3))
-    ):
-        self.ax.clear()
+
+class EQFilterPlot:
+    def __init__(self):
+        self.figure = MatplotlibWidget()
+        self.init_plot()
+
+    def init_plot(self):
+        self.figure.ax.clear()
+        (self.plot,) = self.figure.ax.plot([], [])
+
+    def add_data(self, filter):
+        freq, response = freqz(filter, 1, 192000)
+        self.plot.set_data(freq, 20 * np.log10(response))
+        self.figure.ax.relim()
+        self.figure.ax.autoscale_view()
+        self.figure.canvas.draw()
+
+
+class NoiseDataPlot:
+    def __init__(self, num_amp: int):
+        self.figure = MatplotlibWidget()
+        self.data = np.zeros((num_amp, 3))
+        self.init_plot()
+
+    def init_plot(self):
+        self.figure.ax.clear()
         self.plot = []
-        if not heatmap:
-            for i in range(count):
-                (plot,) = self.ax.plot([], [])
-                self.plot.append(plot)
-        else:
-            plot = self.ax.imshow(data, cmap="viridis", interpolation="nearest")
+
+        (plot,) = self.figure.ax.plot([], [], "o", color="blue")
+        self.plot.append(plot)
+
+        (plot,) = self.figure.ax.plot([], [], "--", color="blue")
+        self.plot.append(plot)
+
+    def add_xx(self, xx, is_test=False):
+        self.data[:, 0] = xx
+        self.plot[0].set_data(self.data[:, 0], self.data[:, 1])
+
+        if is_test:
+            self.plot[1].set_data(self.data[:, 0], self.data[:, 0])
+
+        self.figure.ax.relim()
+        self.figure.ax.autoscale_view()
+        self.figure.canvas.draw()
+
+    def add_point(self, index, data):
+        self.data[index, 1] = data
+        self.plot[0].set_data(self.data[:, 0], self.data[:, 1])
+        self.figure.ax.relim()
+        self.figure.ax.autoscale_view()
+        self.figure.canvas.draw()
+
+    def add_linear_regression(self, slope, intercept):
+        self.data[:, 2] = slope * self.data[:, 0] + intercept
+        self.plot[1].set_data(self.data[:, 0], self.data[:, 2])
+        self.figure.ax.relim()
+        self.figure.ax.autoscale_view()
+        self.figure.canvas.draw()
+
+
+class NoiseSignalsPlot:
+    def __init__(self, min_freq, max_freq):
+        self.figure = MatplotlibWidget()
+        self.init_plot(min_freq, max_freq)
+
+    def init_plot(self, min_freq, max_freq):
+        self.figure.ax.clear()
+        self.figure.ax.set_xlim(max(0, min_freq - 10000), max_freq + 10000)
+
+    def plot_signal(self, signal: RecordedSound):
+        freq, fft = signal.fft_welch(0.005)
+        self.figure.ax.plot(freq, fft)
+        self.figure.ax.relim()
+        self.figure.ax.autoscale_view()
+        self.figure.canvas.draw()
+
+
+class PureTonesDataPlot:
+    def __init__(self, num_amp: int, num_freqs: int):
+        self.figure = MatplotlibWidget()
+        self.data = np.zeros((num_amp, num_freqs, 3))
+        self.init_plot()
+
+    def init_plot(self):
+        data = np.zeros((1, 1, 3))
+        self.plot = self.figure.ax.imshow(data, cmap="viridis", interpolation="nearest")
+        self.figure.fig.colorbar(self.plot, ax=self.figure.ax)
+
+    def add_xx(self, xx):
+        self.data[:, :, 0:2] = xx
+
+    def add_point(self, amp, freq, data):
+        self.data[amp, freq, 2] = data
+        self.plot.set_data(self.data[:, :, 2])
+        self.figure.ax.relim()
+        self.figure.ax.autoscale_view()
+        self.figure.canvas.draw()
+
+
+class PureTonesSignalsPlot:
+    def __init__(self, num_amp: int, num_freqs: int):
+        self.figure = MatplotlibWidget()
+        self.data = np.zeros((num_amp, num_freqs, 2), dtype=RecordedSound)
+        self._amp_index = 0
+        self._freq_index = 0
+        self.init_plot()
+
+    def init_plot(self):
+        self.figure.ax.clear()
+        self.plot = []
+        for i in range(2):
+            (plot,) = self.figure.ax.plot([], [])
             self.plot.append(plot)
-            self.fig.colorbar(self.plot[0], ax=self.ax)
 
+    def add_signal(self, amp: int, freq: int, signal: Sound, recording: RecordedSound):
+        self.data[amp, freq, 0] = signal
+        self.data[amp, freq, 1] = recording
 
-class Plot:
-    def __init__(
-        self,
-        plot_type: Literal[
-            "Data",
-            "Signals",
-            "Inverse Filter",
-            "Inverse Filter Signal",
-        ] = "Data",
-        calib_type: Literal["Noise", "Pure Tones"] = "Noise",
-        num_amp: int = 2,
-        num_freqs: int = 1,
-    ):
-        self.calib_type = calib_type
-        self.plot_type = plot_type
-        self.plot = MatplotlibWidget()
-        self.init_array(num_amp, num_freqs)
+    def plot_signal(self):
+        if isinstance(
+            self.data[self.amp_index, self.freq_index, 0], Sound
+        ) and isinstance(self.data[self.amp_index, self.freq_index, 1], RecordedSound):
+            self.plot[0].set_data(
+                self.data[self.amp_index, self.freq_index, 0].time,
+                self.data[self.amp_index, self.freq_index, 0].signal,
+            )
+            self.plot[1].set_data(
+                self.data[self.amp_index, self.freq_index, 1].time,
+                self.data[self.amp_index, self.freq_index, 1].signal,
+            )
+        self.figure.ax.relim()
+        self.figure.ax.autoscale_view()
+        self.figure.canvas.draw()
 
-    def init_array(self, num_amp: int = 2, num_freqs: int = 1):
-        self.amp_index = 0
-        self.freq_index = 0
+    @property
+    def amp_index(self):
+        return self._amp_index
 
-        if self.calib_type == "Noise" and self.plot_type == "Data":
-            self.data = np.zeros((num_amp, 2))
-        elif self.calib_type == "Noise" and self.plot_type == "Signals":
-            self.data = np.zeros((num_amp, 2), dtype=Sound)
-        elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter":
-            self.data = np.zeros((1, 2))
-        elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter Signal":
-            self.data = np.zeros((2), dtype=Sound)
-        elif self.calib_type == "Pure Tones" and self.plot_type == "Data":
-            self.data = np.zeros((num_amp, num_freqs, 3))
-        elif self.calib_type == "Pure Tones" and self.plot_type == "Signals":
-            self.data = np.zeros((num_amp, num_freqs, 2), dtype=Sound)
+    @amp_index.setter
+    def amp_index(self, value: int):
+        self._amp_index = value
+        self.plot_signal()
 
-    def generate_plots(self, calib_type: Literal["Noise", "Pure Tones"]):
-        self.calib_type = calib_type
+    @property
+    def freq_index(self):
+        return self._freq_index
 
-        if self.calib_type == "Noise" and self.plot_type == "Data":
-            self.plot.generate_plots(2)
-        elif self.calib_type == "Noise" and self.plot_type == "Signals":
-            self.plot.generate_plots(2)
-        elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter":
-            self.plot.generate_plots(1)
-        elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter Signal":
-            self.plot.generate_plots(2)
-        elif self.calib_type == "Pure Tones" and self.plot_type == "Data":
-            self.plot.generate_plots(1, True, self.data)
-        elif self.calib_type == "Pure Tones" and self.plot_type == "Signals":
-            self.plot.generate_plots(2)
-
-    def add_data(self, is_predata: bool, *args):
-        if self.calib_type == "Noise" and self.plot_type == "Data":
-            if is_predata:
-                self.data[:, 0] = args[0]
-            else:
-                self.data[args[0], 1] = args[2].calculate_db_spl()
-        elif self.calib_type == "Noise" and self.plot_type == "Signals":
-            self.data[args[0], 0] = args[1]
-            self.data[args[0], 1] = args[2]
-        elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter":
-            freq, response = freqz(args[0], 1, 192000)
-            filter = np.column_stack((freq, response))
-            self.data = filter
-        elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter Signal":
-            self.data[0] = args[1]
-            self.data[1] = args[2]
-        elif self.calib_type == "Pure Tones" and self.plot_type == "Data":
-            if is_predata:
-                self.data[:, :, 0:2] = args[0]
-            else:
-                self.data[args[0], args[1], 2] = args[4]
-        elif self.calib_type == "Pure Tones" and self.plot_type == "Signals":
-            self.data[args[0], args[1], 0] = args[2]
-            self.data[args[0], args[1], 1] = args[3]
-
-        self.draw_data()
-
-    def draw_data(self):
-        if self.calib_type == "Noise" and self.plot_type == "Data":
-            self.plot.plot[0].set_data(self.data[:, 0], self.data[:, 1])
-        elif self.calib_type == "Noise" and self.plot_type == "Signals":
-            recording = self.data[self.amp_index, 1]
-            freq, fft = recording.fft_welch(0.005)
-            self.plot.plot[0].set_data(freq, 20 * np.log10(fft))
-        elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter":
-            self.plot.plot[0].set_data(self.data[:, 0], 20 * np.log10(self.data[:, 1]))
-        elif self.calib_type == "Noise" and self.plot_type == "Inverse Filter Signal":
-            self.plot.plot[0].set_data(self.data[0].time, self.data[0].signal)
-            self.plot.plot[1].set_data(self.data[1].time, self.data[1].signal)
-        elif self.calib_type == "Pure Tones" and self.plot_type == "Data":
-            self.plot.plot[0].set_data(self.data[:, :, 2])
-            self.plot.plot[0].autoscale()
-        elif self.calib_type == "Pure Tones" and self.plot_type == "Signals":
-            signal = self.data[self.amp_index, self.freq_index, 0]
-            recording = self.data[self.amp_index, self.freq_index, 1]
-            self.plot.plot[0].set_data(signal.time, signal.signal)
-            self.plot.plot[1].set_data(recording.time, recording.signal)
-
-        self.plot.ax.relim()
-        self.plot.ax.autoscale_view()
-        self.plot.canvas.draw()
-
-    def update_indexes(self, amp_index: int, freq_index: int):
-        self.amp_index = amp_index
-        self.freq_index = freq_index
-
-        self.draw_data()
+    @freq_index.setter
+    def freq_index(self, value: int):
+        self._freq_index = value
+        self.plot_signal()

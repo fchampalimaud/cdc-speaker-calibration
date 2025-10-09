@@ -230,9 +230,9 @@ class Chirp(Sound):
         # Apply ramp
         signal = _apply_ramp(signal, fs, self.ramp_time)
 
-        # Calculate inverse filter
+        # Calculate EQ Filter
         log_param = duration / np.log(self.freq_end / self.freq_start)
-        self._inverse_filter = np.flip(signal) * np.exp(-time / log_param)
+        self._eq_filter = np.flip(signal) * np.exp(-time / log_param)
 
         super().__init__(signal, fs, time)
 
@@ -261,8 +261,8 @@ class Chirp(Sound):
         return self._type
 
     @property
-    def inverse_filter(self):
-        return self._inverse_filter
+    def eq_filter(self):
+        return self._eq_filter
 
 
 class RecordedSound(Sound):

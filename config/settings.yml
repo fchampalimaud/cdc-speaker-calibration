@@ -12,7 +12,7 @@ filter:
   filter_acquisition: true
   min_value: 5000
   max_value: 20000
-inverse_filter: 
+eq_filter: 
   determine_filter: true
   sound_duration: 1
   time_constant: 0.005
@@ -36,7 +36,6 @@ test_calibration:
   db_min: 30
   db_max: 70
   db_steps: 3
-is_harp: true
 soundcard:
   com_port: COM17
   fs: 192000
