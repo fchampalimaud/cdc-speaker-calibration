@@ -4,10 +4,17 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import butter, sosfilt
+
 from speaker_calibration.recording import NiDaq
 from speaker_calibration.soundcards import HarpSoundCard
 
 SERIAL_PORT = "COMx"
+ABL = 50
+ILD = 0
+INDEX = 2
+CALIBRATION_LEFT = r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853/calibration_parameters.npy"
+CALIBRATION_RIGHT = r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853/calibration_parameters.npy"
 
 
 def measure_db(
@@ -59,6 +66,9 @@ def measure_db(
     start_event.set()
     record_thread.join()
 
+    sos = butter(32, [5000, 20000], btype="bandpass", output="sos", fs=192000)
+    result[0].signal = sosfilt(sos, result[0].signal)
+
     print(result[0].calculate_db_spl(mic_factor=0.41887))
 
     freq, fft = result[0].fft_welch(0.005)
@@ -68,9 +78,9 @@ def measure_db(
 
 
 measure_db(
-    abl=50,
-    ild=0,
-    index=2,
-    calibration_left=r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853/calibration_parameters.npy",
-    calibration_right=r"C:/Users/RenartLab/Desktop/cdc-speaker-calibration/output/250819_142853/calibration_parameters.npy",
+    abl=ABL,
+    ild=ILD,
+    index=INDEX,
+    calibration_left=CALIBRATION_LEFT,
+    calibration_right=CALIBRATION_RIGHT,
 )
