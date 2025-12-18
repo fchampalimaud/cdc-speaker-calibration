@@ -18,4 +18,4 @@ jobs:
       - name: Install project dependencies
         run: uv sync --group dev
 
-      - run: uv run mkdocs gh-deploy
+      - run: uv run mkdocs gh-deploy --force --clean --verbose
