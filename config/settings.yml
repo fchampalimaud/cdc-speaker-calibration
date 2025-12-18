@@ -1,48 +1,34 @@
 # yaml-language-server: $schema=schemas/settings-schema.json
-sound_type: Pure Tones
-mic_factor: 0.41887
-reference_pressure: 0.00002
-ramp_time: 0.005
-amplitude: 1
-freq:
-  min_freq: 5000
-  max_freq: 20000
+soundcard: 
+  serial_port: COM4
+  fs: 192000
+  speaker: Left
+adc:
+  fs: 250000
+  device_id: 1
+  channel: 1
 filter:
   filter_input: true
   filter_acquisition: true
-  min_value: 5000
-  max_value: 20000
-eq_filter: 
-  determine_filter: true
-  sound_duration: 1
-  time_constant: 0.005
-calibration:
-  calibrate: true
-  sound_duration: 0.150
-  freq:
-    min_freq: 5000
-    max_freq: 20000
-    num_freqs: 3
-  amp_min: 0
-  amp_max: -1
-  amp_steps: 3
-test_calibration:
-  test: true
-  sound_duration: 0.150
-  freq:
-    min_freq: 6000
-    max_freq: 19000
-    num_freqs: 3
-  db_min: 30
-  db_max: 70
-  db_steps: 3
-soundcard:
-  com_port: COM17
-  fs: 192000
-adc_device: Moku:Go
-adc:
-  fs: 500000
-  # device_id: 1
-  address: fe80:0000:0000:0000:7269:79ff:feb9:62a2
-  channel: 1
+  min_freq: 5000
+  max_freq: 20000
+protocol:
+  min_freq: 5000
+  max_freq: 20000
+  mic_factor: 0.41887
+  reference_pressure: 0.00002
+  eq_filter:
+    sound_duration: 20
+    time_constant: 0.005
+    amplitude: 1
+  calibration:
+    sound_duration: 10
+    min_amp: 0
+    max_amp: -1
+    amp_steps: 12
+  test_calibration: 
+    sound_duration: 5
+    min_db: 30
+    max_db: 68
+    db_steps: 7
 output_dir: output

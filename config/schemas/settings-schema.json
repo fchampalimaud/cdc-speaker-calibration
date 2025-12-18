@@ -2,81 +2,35 @@
   "$defs": {
     "CalibrationSettings": {
       "properties": {
-        "calibrate": {
-          "description": "Indicates whether the calibration is performed.",
-          "title": "Calibrate",
-          "type": "boolean"
-        },
         "sound_duration": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
           "description": "The duration of the calibration sounds.",
-          "title": "Sound Duration"
+          "title": "Sound Duration",
+          "type": "number"
         },
-        "freq": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Freq"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "The frequency-related parameters to be used in the calibration."
-        },
-        "amp_min": {
-          "anyOf": [
-            {
-              "maximum": 0,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+        "min_amp": {
           "description": "The minimum amplitude value.",
-          "title": "Amp Min"
+          "maximum": 0,
+          "title": "Min Amp",
+          "type": "number"
         },
-        "amp_max": {
-          "anyOf": [
-            {
-              "maximum": 0,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+        "max_amp": {
           "description": "The maximum amplitude value.",
-          "title": "Amp Max"
+          "maximum": 0,
+          "title": "Max Amp",
+          "type": "number"
         },
         "amp_steps": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
           "description": "The number of amplitude values to use in the calibration.",
-          "title": "Amp Steps"
+          "exclusiveMinimum": 0,
+          "title": "Amp Steps",
+          "type": "integer"
         }
       },
       "required": [
-        "calibrate",
-        "freq"
+        "sound_duration",
+        "min_amp",
+        "max_amp",
+        "amp_steps"
       ],
       "title": "CalibrationSettings",
       "type": "object"
@@ -93,83 +47,51 @@
           "exclusiveMinimum": 0,
           "title": "Fs",
           "type": "integer"
+        },
+        "speaker": {
+          "description": "Indicates which speaker will be calibrated.",
+          "enum": [
+            "Left",
+            "Right"
+          ],
+          "title": "Speaker",
+          "type": "string"
         }
       },
       "required": [
         "soundcard_name",
-        "fs"
+        "fs",
+        "speaker"
       ],
       "title": "ComputerSoundCard",
       "type": "object"
     },
     "EQFilter": {
       "properties": {
-        "determine_filter": {
-          "description": "Indicates whether the EQ filter is determined. Noise calibration only!",
-          "title": "Determine Filter",
-          "type": "boolean"
-        },
         "sound_duration": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
           "description": "The duration of the sound used to determine the EQ filter.",
-          "title": "Sound Duration"
+          "exclusiveMinimum": 0,
+          "title": "Sound Duration",
+          "type": "number"
         },
         "time_constant": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "default": 0.005,
           "description": "The duration of each division of the original signal that is used to compute the EQ filter (s).",
-          "title": "Time Constant"
+          "exclusiveMinimum": 0,
+          "title": "Time Constant",
+          "type": "number"
         },
-        "freq_start": {
-          "anyOf": [
-            {
-              "maximum": 80000,
-              "minimum": 0,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "The start frequency of the logarithmic chirp used to calculate the EQ filter (Hz).",
-          "title": "Freq Start"
-        },
-        "freq_end": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "maximum": 80000,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "The end frequency of the logarithmic chirp used to calculate the EQ filter (Hz).",
-          "title": "Freq End"
+        "amplitude": {
+          "default": 1,
+          "description": "The amplitude of the speakers.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Amplitude",
+          "type": "number"
         }
       },
       "required": [
-        "determine_filter",
-        "freq_start",
-        "freq_end"
+        "sound_duration"
       ],
       "title": "EQFilter",
       "type": "object"
@@ -177,78 +99,26 @@
     "Filter": {
       "properties": {
         "filter_input": {
+          "default": true,
           "description": "Indicates whether the band-pass filter is applied to the input sound.",
           "title": "Filter Input",
           "type": "boolean"
         },
         "filter_acquisition": {
+          "default": true,
           "description": "Indicates whether the band-pass filter is applied to the acquired sound.",
           "title": "Filter Acquisition",
           "type": "boolean"
         },
-        "min_value": {
-          "anyOf": [
-            {
-              "maximum": 80000,
-              "minimum": 0,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The low cuttoff frequency of the filter (Hz).",
-          "title": "Min Value"
-        },
-        "max_value": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "maximum": 80000,
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The high cuttoff frequency of the filter (Hz).",
-          "title": "Max Value"
-        }
-      },
-      "required": [
-        "filter_input",
-        "filter_acquisition"
-      ],
-      "title": "Filter",
-      "type": "object"
-    },
-    "Freq": {
-      "properties": {
-        "num_freqs": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The number of frequencies to use in the pure tone calibration.",
-          "title": "Num Freqs"
-        },
         "min_freq": {
-          "description": "The minimum frequency value (Hz).",
+          "description": "The low cuttoff frequency of the filter (Hz).",
           "maximum": 80000,
           "minimum": 0,
           "title": "Min Freq",
           "type": "number"
         },
         "max_freq": {
-          "description": "The maximum frequency value (Hz).",
+          "description": "The high cuttoff frequency of the filter (Hz).",
           "exclusiveMinimum": 0,
           "maximum": 80000,
           "title": "Max Freq",
@@ -259,15 +129,15 @@
         "min_freq",
         "max_freq"
       ],
-      "title": "Freq",
+      "title": "Filter",
       "type": "object"
     },
     "HarpSoundCard": {
       "properties": {
-        "com_port": {
-          "description": "The COM number the soundcard corresponds to in the computer used for the calibration. The string should be of the format \"COM?\", in which \"?\" is the COM number.",
+        "serial_port": {
+          "description": "The serial port of the soundcard used for the calibration. The string should be of the format \"COM?\" in Windows and \"/dev/ttyUSB?\" in Linux, in which \"?\" is the serial port number.",
           "pattern": "^((COM\\d+)|(/dev/ttyUSB\\d+))$",
-          "title": "Com Port",
+          "title": "Serial Port",
           "type": "string"
         },
         "fs": {
@@ -279,9 +149,19 @@
           "title": "Fs",
           "type": "integer"
         },
+        "speaker": {
+          "description": "Indicates which speaker will be calibrated.",
+          "enum": [
+            "Left",
+            "Right"
+          ],
+          "title": "Speaker",
+          "type": "string"
+        },
         "soundcard_id": {
           "anyOf": [
             {
+              "pattern": "^V\\d.\\d X\\d{4}$",
               "type": "string"
             },
             {
@@ -295,6 +175,7 @@
         "audio_amp_id": {
           "anyOf": [
             {
+              "pattern": "^V\\d.\\d X\\d{4}$",
               "type": "string"
             },
             {
@@ -307,8 +188,9 @@
         }
       },
       "required": [
-        "com_port",
-        "fs"
+        "serial_port",
+        "fs",
+        "speaker"
       ],
       "title": "HarpSoundCard",
       "type": "object"
@@ -374,162 +256,270 @@
       "title": "NiDaq",
       "type": "object"
     },
-    "TestCalibration": {
+    "NoiseProtocol": {
       "properties": {
-        "test": {
-          "description": "Indicates whether the calibration is tested.",
-          "title": "Test",
-          "type": "boolean"
+        "min_freq": {
+          "description": "The minimum frequency of the noise spectrum (Hz).",
+          "exclusiveMinimum": 0,
+          "maximum": 80000,
+          "title": "Min Freq",
+          "type": "number"
         },
-        "sound_duration": {
+        "max_freq": {
+          "description": "The maximum frequency of the noise spectrum (Hz).",
+          "exclusiveMinimum": 0,
+          "maximum": 80000,
+          "title": "Max Freq",
+          "type": "number"
+        },
+        "mic_factor": {
+          "description": "The conversion factor of the microphone (V/Pa).",
+          "exclusiveMinimum": 0,
+          "title": "Mic Factor",
+          "type": "number"
+        },
+        "reference_pressure": {
+          "description": "The reference pressure (Pa).",
+          "exclusiveMinimum": 0,
+          "title": "Reference Pressure",
+          "type": "number"
+        },
+        "ramp_time": {
+          "default": 0.005,
+          "description": "The ramp time of the sounds used during the calibration process (s).",
+          "minimum": 0,
+          "title": "Ramp Time",
+          "type": "number"
+        },
+        "eq_filter": {
+          "$ref": "#/$defs/EQFilter",
+          "description": "The settings related to the EQ filter calculation. Noise calibration only!"
+        },
+        "calibration": {
+          "$ref": "#/$defs/CalibrationSettings",
+          "description": "The settings used for the actual speaker calibration."
+        },
+        "test_calibration": {
           "anyOf": [
             {
-              "exclusiveMinimum": 0,
-              "type": "number"
+              "$ref": "#/$defs/TestSettings"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "The duration of the test sounds.",
-          "title": "Sound Duration"
-        },
-        "freq": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Freq"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "The frequency-related parameters to be used in the calibration."
-        },
-        "db_min": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The minimum nominal dB SPL value to be tested.",
-          "title": "Db Min"
-        },
-        "db_max": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The maximum nominal dB SPL value to be tested.",
-          "title": "Db Max"
-        },
-        "db_steps": {
-          "anyOf": [
-            {
-              "exclusiveMinimum": 0,
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "The number of dB SPL values to be tested.",
-          "title": "Db Steps"
+          "description": "The settings used for the calibration test."
         }
       },
       "required": [
-        "test",
-        "freq"
+        "min_freq",
+        "max_freq",
+        "mic_factor",
+        "reference_pressure",
+        "eq_filter",
+        "calibration"
       ],
-      "title": "TestCalibration",
+      "title": "NoiseProtocol",
+      "type": "object"
+    },
+    "PureToneCalibrationSettings": {
+      "properties": {
+        "sound_duration": {
+          "description": "The duration of the calibration sounds.",
+          "title": "Sound Duration",
+          "type": "number"
+        },
+        "min_amp": {
+          "description": "The minimum amplitude value.",
+          "maximum": 0,
+          "title": "Min Amp",
+          "type": "number"
+        },
+        "max_amp": {
+          "description": "The maximum amplitude value.",
+          "maximum": 0,
+          "title": "Max Amp",
+          "type": "number"
+        },
+        "amp_steps": {
+          "description": "The number of amplitude values to use in the calibration.",
+          "exclusiveMinimum": 0,
+          "title": "Amp Steps",
+          "type": "integer"
+        },
+        "min_freq": {
+          "description": "The minimum frequency to use in the pure tone calibration protocol (Hz).",
+          "exclusiveMinimum": 0,
+          "maximum": 80000,
+          "title": "Min Freq",
+          "type": "number"
+        },
+        "max_freq": {
+          "description": "The maximum frequency to use in the pure tone calibration protocol (Hz).",
+          "exclusiveMinimum": 0,
+          "maximum": 80000,
+          "title": "Max Freq",
+          "type": "number"
+        },
+        "freq_steps": {
+          "description": "The number of pure tones to use in the calibration.",
+          "exclusiveMinimum": 0,
+          "title": "Freq Steps",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sound_duration",
+        "min_amp",
+        "max_amp",
+        "amp_steps",
+        "min_freq",
+        "max_freq",
+        "freq_steps"
+      ],
+      "title": "PureToneCalibrationSettings",
+      "type": "object"
+    },
+    "PureToneProtocol": {
+      "properties": {
+        "mic_factor": {
+          "description": "The conversion factor of the microphone (V/Pa).",
+          "exclusiveMinimum": 0,
+          "title": "Mic Factor",
+          "type": "number"
+        },
+        "reference_pressure": {
+          "description": "The reference pressure (Pa).",
+          "exclusiveMinimum": 0,
+          "title": "Reference Pressure",
+          "type": "number"
+        },
+        "ramp_time": {
+          "default": 0.005,
+          "description": "The ramp time of the sounds used during the calibration process (s).",
+          "minimum": 0,
+          "title": "Ramp Time",
+          "type": "number"
+        },
+        "calibration": {
+          "$ref": "#/$defs/PureToneCalibrationSettings",
+          "description": "The settings used for the actual speaker calibration."
+        },
+        "test_calibration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PureToneTestSettings"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The settings used for the calibration test."
+        }
+      },
+      "required": [
+        "mic_factor",
+        "reference_pressure",
+        "calibration"
+      ],
+      "title": "PureToneProtocol",
+      "type": "object"
+    },
+    "PureToneTestSettings": {
+      "properties": {
+        "sound_duration": {
+          "description": "The duration of the test sounds.",
+          "exclusiveMinimum": 0,
+          "title": "Sound Duration",
+          "type": "number"
+        },
+        "min_db": {
+          "description": "The minimum nominal dB SPL value to be tested.",
+          "title": "Min Db",
+          "type": "number"
+        },
+        "max_db": {
+          "description": "The maximum nominal dB SPL value to be tested.",
+          "title": "Max Db",
+          "type": "number"
+        },
+        "db_steps": {
+          "description": "The number of dB SPL values to be tested.",
+          "exclusiveMinimum": 0,
+          "title": "Db Steps",
+          "type": "integer"
+        },
+        "min_freq": {
+          "description": "The minimum frequency to use in the pure tone calibration protocol (Hz).",
+          "exclusiveMinimum": 0,
+          "maximum": 80000,
+          "title": "Min Freq",
+          "type": "number"
+        },
+        "max_freq": {
+          "description": "The maximum frequency to use in the pure tone calibration protocol (Hz).",
+          "exclusiveMinimum": 0,
+          "maximum": 80000,
+          "title": "Max Freq",
+          "type": "number"
+        },
+        "freq_steps": {
+          "description": "The number of pure tones to use in the calibration.",
+          "exclusiveMinimum": 0,
+          "title": "Freq Steps",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sound_duration",
+        "min_db",
+        "max_db",
+        "db_steps",
+        "min_freq",
+        "max_freq",
+        "freq_steps"
+      ],
+      "title": "PureToneTestSettings",
+      "type": "object"
+    },
+    "TestSettings": {
+      "properties": {
+        "sound_duration": {
+          "description": "The duration of the test sounds.",
+          "exclusiveMinimum": 0,
+          "title": "Sound Duration",
+          "type": "number"
+        },
+        "min_db": {
+          "description": "The minimum nominal dB SPL value to be tested.",
+          "title": "Min Db",
+          "type": "number"
+        },
+        "max_db": {
+          "description": "The maximum nominal dB SPL value to be tested.",
+          "title": "Max Db",
+          "type": "number"
+        },
+        "db_steps": {
+          "description": "The number of dB SPL values to be tested.",
+          "exclusiveMinimum": 0,
+          "title": "Db Steps",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sound_duration",
+        "min_db",
+        "max_db",
+        "db_steps"
+      ],
+      "title": "TestSettings",
       "type": "object"
     }
   },
   "properties": {
-    "sound_type": {
-      "description": "Indicates whether the calibration will be made with noise or pure tones.",
-      "enum": [
-        "Noise",
-        "Pure Tones"
-      ],
-      "title": "Sound Type",
-      "type": "string"
-    },
-    "mic_factor": {
-      "description": "The conversion factor of the microphone (V/Pa).",
-      "exclusiveMinimum": 0,
-      "title": "Mic Factor",
-      "type": "number"
-    },
-    "reference_pressure": {
-      "description": "The reference pressure (Pa).",
-      "exclusiveMinimum": 0,
-      "title": "Reference Pressure",
-      "type": "number"
-    },
-    "ramp_time": {
-      "description": "The ramp time of the sounds used during the calibration process (s).",
-      "minimum": 0,
-      "title": "Ramp Time",
-      "type": "number"
-    },
-    "amplitude": {
-      "description": "The amplitude of the speakers.",
-      "maximum": 1,
-      "minimum": 0,
-      "title": "Amplitude",
-      "type": "number"
-    },
-    "freq": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/Freq"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "description": "The frequency-related parameters to be used in the calibration."
-    },
-    "filter": {
-      "$ref": "#/$defs/Filter",
-      "description": "The configuration parameters of the band-pass filter used."
-    },
-    "eq_filter": {
-      "$ref": "#/$defs/EQFilter",
-      "default": null,
-      "description": "The settings related to the EQ filter calculation. Noise calibration only!"
-    },
-    "calibration": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/CalibrationSettings"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "description": "The settings used for the actual speaker calibration."
-    },
-    "test_calibration": {
-      "$ref": "#/$defs/TestCalibration",
-      "description": "The settings used for the calibration test."
-    },
-    "is_harp": {
-      "description": "Indicates whether the soundcard being calibrated is a Harp device or not.",
-      "title": "Is Harp",
-      "type": "boolean"
-    },
     "soundcard": {
       "anyOf": [
         {
@@ -541,15 +531,6 @@
       ],
       "description": "The soundcard details.",
       "title": "Soundcard"
-    },
-    "adc_device": {
-      "description": "Indicates which device is being used as an ADC.",
-      "enum": [
-        "NI-DAQ",
-        "Moku:Go"
-      ],
-      "title": "Adc Device",
-      "type": "string"
     },
     "adc": {
       "anyOf": [
@@ -563,6 +544,27 @@
       "description": "The ADC details.",
       "title": "Adc"
     },
+    "filter": {
+      "$ref": "#/$defs/Filter",
+      "default": {
+        "filter_input": true,
+        "filter_acquisition": true,
+        "min_freq": 5000.0,
+        "max_freq": 20000.0
+      },
+      "description": "The configuration parameters of the band-pass filter used."
+    },
+    "protocol": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/NoiseProtocol"
+        },
+        {
+          "$ref": "#/$defs/PureToneProtocol"
+        }
+      ],
+      "title": "Protocol"
+    },
     "output_dir": {
       "description": "The path to the output directory.",
       "title": "Output Dir",
@@ -570,19 +572,9 @@
     }
   },
   "required": [
-    "sound_type",
-    "mic_factor",
-    "reference_pressure",
-    "ramp_time",
-    "amplitude",
-    "freq",
-    "filter",
-    "calibration",
-    "test_calibration",
-    "is_harp",
     "soundcard",
-    "adc_device",
     "adc",
+    "protocol",
     "output_dir"
   ],
   "title": "Settings",

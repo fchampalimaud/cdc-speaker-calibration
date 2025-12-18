@@ -35,12 +35,11 @@ from speaker_calibration.settings import (
     ComputerSoundCard,
     EQFilter,
     Filter,
-    Freq,
     HarpSoundCard,
     Moku,
     NiDaq,
     Settings,
-    TestCalibration,
+    TestSettings,
 )
 from speaker_calibration.utils.gui import (
     EQFilterPlot,
@@ -807,7 +806,7 @@ class ApplicationWindow(QMainWindow):
             num_freqs=self.settings_layout.test_freq_steps.value(),
         )
 
-        test = TestCalibration(
+        test = TestSettings(
             test=self.settings_layout.test.isChecked(),
             sound_duration=self.settings_layout.test_duration.value(),
             freq=test_freq,

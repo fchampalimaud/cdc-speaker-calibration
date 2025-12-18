@@ -62,7 +62,7 @@ class Calibration:
         # Initiate the soundcard to be used in the calibration
         if isinstance(self.settings.soundcard, setts.HarpSoundCard):
             self.soundcard = HarpSoundCard(
-                self.settings.soundcard.com_port, self.settings.soundcard.fs
+                self.settings.soundcard.serial_port, self.settings.soundcard.fs
             )
         else:
             # TODO: implement interface with computer soundcard
