@@ -2,6 +2,7 @@ import os
 import threading
 import time
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Literal, Optional
 
 import numpy as np
@@ -76,7 +77,7 @@ class HarpSoundCard(SoundCard):
         # Play the sound
         self.device.write_play_sound_or_frequency(index)
 
-    def load_sound(self, filename, index: int = 2):
+    def load_sound(self, filename: Path, index: int = 2):
         """
         Loads the sound to the Harp SoundCard.
 
@@ -90,7 +91,7 @@ class HarpSoundCard(SoundCard):
         while True:
             output = os.popen(
                 "cmd /c .\\assets\\toSoundCard.exe "
-                + filename
+                + str(filename)
                 + " "
                 + str(index)
                 + " 0 "
@@ -106,7 +107,7 @@ class HarpSoundCard(SoundCard):
 @dispatch(Sound, str, speaker_side=str)
 def create_sound_file(
     signal: Sound,
-    filename: str,
+    filename: Path,
     speaker_side: Literal["both", "left", "right"] = "both",
 ) -> None:
     """
@@ -116,7 +117,7 @@ def create_sound_file(
     ----------
     signal : Sound
         The signal to be written to the .bin file.
-    filename : str
+    filename : Path
         The name of the .bin file.
     speaker_side : Literal["both", "left", "right"], optional
         Whether the sound plays in both speakers or in a single one. Possible values: "both", "left" or "right.
@@ -147,7 +148,7 @@ def create_sound_file(
 def create_sound_file(
     signal_left: Sound,
     signal_right: Sound,
-    filename: str,
+    filename: Path,
 ) -> None:
     """
     Creates the .bin sound file to be loaded to the Harp Sound Card.
@@ -158,7 +159,7 @@ def create_sound_file(
         The signal to be written to the .bin file that is going to be played by the left speaker.
     signal_right : Sound
         The signal to be written to the .bin file that is going to be played by the right speaker.
-    filename : str
+    filename : Path
         The name of the .bin file.
     """
     # Transform the signal from values between -1 to 1 into 24-bit integers

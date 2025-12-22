@@ -58,7 +58,7 @@ class NiDaq(RecordingDevice):
         ai_pin: int = 1,
         start_event: Optional[threading.Event] = None,
         result: Optional[list] = None,
-        filename: str = "file",
+        filename: Optional[Path] = None,
     ) -> Optional[RecordedSound]:
         """
         Records the signal with the NI-DAQ.
@@ -73,7 +73,7 @@ class NiDaq(RecordingDevice):
             A thread event used to synchronize the start of the sound with the start of the recording. If `start_event` is not provided, the sound will play as soon as possible.
         result : list, optional
             A list to which the acquired signal will be appended.
-        filename : str, optional
+        filename : Path, optional
             The path to the file that will be saved with the acquired signal.
         """
         with nidaqmx.Task() as ai_task:
@@ -111,7 +111,8 @@ class NiDaq(RecordingDevice):
                 result.append(acquired_signal)
 
         # Save the acquired signal to a binary file
-        acquired_signal.save(Path(filename))
+        if filename is not None:
+            acquired_signal.save(filename)
 
         return acquired_signal
 
