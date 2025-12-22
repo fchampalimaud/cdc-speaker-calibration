@@ -38,6 +38,7 @@ from speaker_calibration.settings import (
     HarpSoundCard,
     Moku,
     NiDaq,
+    NoiseProtocol,
     Settings,
     TestSettings,
 )
@@ -767,52 +768,45 @@ class ApplicationWindow(QMainWindow):
         self.showMaximized()
 
     def run_calibration(self):
-        freq = Freq(
-            min_freq=self.settings_layout.min_freq.value(),
-            max_freq=self.settings_layout.max_freq.value(),
-        )
-
         filt = Filter(
             filter_input=self.settings_layout.filter_input.isChecked(),
             filter_acquisition=self.settings_layout.filter_acquisition.isChecked(),
-            min_value=self.settings_layout.min_freq_filt.value(),
-            max_value=self.settings_layout.max_freq_filt.value(),
+            min_freq=self.settings_layout.min_freq_filt.value(),
+            max_freq=self.settings_layout.max_freq_filt.value(),
         )
 
         eq_filter = EQFilter(
-            determine_filter=self.settings_layout.eq_filter.isChecked(),
+            # determine_filter=self.settings_layout.eq_filter.isChecked(),
             sound_duration=self.settings_layout.if_duration.value(),
             time_constant=self.settings_layout.time_const.value(),
-        )
-
-        calib_freq = Freq(
-            min_freq=self.settings_layout.calib_min_freq.value(),
-            max_freq=self.settings_layout.calib_max_freq.value(),
-            num_freqs=self.settings_layout.calib_freq_steps.value(),
+            amplitude=self.settings_layout.amplitude.value(),
         )
 
         calibration = CalibrationSettings(
-            calibrate=self.settings_layout.calibrate.isChecked(),
+            # calibrate=self.settings_layout.calibrate.isChecked(),
             sound_duration=self.settings_layout.calib_duration.value(),
-            freq=calib_freq,
-            amp_min=self.settings_layout.min_att.value(),
-            amp_max=self.settings_layout.max_att.value(),
+            min_amp=self.settings_layout.min_att.value(),
+            max_amp=self.settings_layout.max_att.value(),
             amp_steps=self.settings_layout.att_steps.value(),
         )
 
-        test_freq = Freq(
-            min_freq=self.settings_layout.test_min_freq.value(),
-            max_freq=self.settings_layout.test_max_freq.value(),
-            num_freqs=self.settings_layout.test_freq_steps.value(),
+        test = TestSettings(
+            # test=self.settings_layout.test.isChecked(),
+            sound_duration=self.settings_layout.test_duration.value(),
+            min_db=self.settings_layout.min_db.value(),
+            max_db=self.settings_layout.max_db.value(),
+            db_steps=self.settings_layout.db_steps.value(),
         )
 
-        test = TestSettings(
-            test=self.settings_layout.test.isChecked(),
-            sound_duration=self.settings_layout.test_duration.value(),
-            freq=test_freq,
-            db_min=self.settings_layout.min_db.value(),
-            db_max=self.settings_layout.max_db.value(),
-            db_steps=self.settings_layout.db_steps.value(),
+        protocol = NoiseProtocol(
+            min_freq=self.settings_layout.calib_min_freq.value(),
+            max_freq=self.settings_layout.calib_max_freq.value(),
+            mic_factor=self.settings_layout.mic_factor.value(),
+            reference_pressure=self.settings_layout.reference_pressure.value(),
+            ramp_time=self.settings_layout.ramp_time.value(),
+            eq_filter=eq_filter,
+            calibration=calibration,
+            test_calibration=test,
         )
 
         if self.settings_layout.is_harp.isChecked():
@@ -825,8 +819,9 @@ class ApplicationWindow(QMainWindow):
                 return
 
             soundcard = HarpSoundCard(
-                com_port=self.settings_layout.serial_port.currentText(),
+                serial_port=self.settings_layout.serial_port.currentText(),
                 fs=int(self.settings_layout.fs_harp.currentText()),
+                speaker=self.settings_layout.speaker.currentText(),
             )
         else:
             soundcard = ComputerSoundCard(
@@ -848,20 +843,10 @@ class ApplicationWindow(QMainWindow):
             )
 
         self.settings = Settings(
-            sound_type=self.settings_layout.sound_type.currentText(),
-            speaker=self.settings_layout.speaker.currentText(),
-            mic_factor=self.settings_layout.mic_factor.value(),
-            reference_pressure=self.settings_layout.reference_pressure.value(),
-            ramp_time=self.settings_layout.ramp_time.value(),
-            amplitude=self.settings_layout.amplitude.value(),
-            freq=freq,
-            filter=filt,
-            eq_filter=eq_filter,
-            calibration=calibration,
-            test_calibration=test,
             soundcard=soundcard,
-            adc_device=self.settings_layout.adc.currentText(),
             adc=adc,
+            filter=filt,
+            protocol=protocol,
             output_dir="output",
         )
 
@@ -900,7 +885,7 @@ class ApplicationWindow(QMainWindow):
                 )
                 task.read()
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def switch_plots(self, index=None):

@@ -31,4 +31,5 @@ protocol:
     min_db: 30
     max_db: 68
     db_steps: 7
-output_dir: output
+paths:
+  output: output

@@ -36,6 +36,8 @@ class EQFilter(BaseModel):
     amplitude: float = Field(
         description="The amplitude of the speakers.", ge=0, le=1, default=1
     )
+    min_boost_db: float = Field(description="TODO", default=-24)
+    max_boost_db: float = Field(description="TODO", default=12)
 
 
 class Filter(BaseModel):
@@ -197,6 +199,20 @@ class PureToneProtocol(BaseModel):
     )
 
 
+class Paths(BaseModel):
+    output: str = Field(
+        description="The path to the output directory, where the output date will be saved."
+    )
+    eq_filter: Optional[Annotated[str, StringConstraints(pattern=r"\.npy$")]] = Field(
+        description="The path to the EQ filter to be used in the calibration.",
+        default=None,
+    )
+    calibration: Optional[Annotated[str, StringConstraints(pattern=r"\.npy$")]] = Field(
+        description="The calibration parameters to be used to test the calibration.",
+        default=None,
+    )
+
+
 class Settings(BaseModel):
     soundcard: Union[HarpSoundCard, ComputerSoundCard] = Field(
         description="The soundcard details."
@@ -209,7 +225,9 @@ class Settings(BaseModel):
         ),
     )
     protocol: Union[NoiseProtocol, PureToneProtocol]
-    output_dir: str = Field(description="The path to the output directory.")
+    paths: Paths = Field(
+        description="Contains paths to files that will be used in the calibration protocol."
+    )
 
 
 if __name__ == "__main__":

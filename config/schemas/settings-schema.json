@@ -323,6 +323,48 @@
       "title": "NoiseProtocol",
       "type": "object"
     },
+    "Paths": {
+      "properties": {
+        "output": {
+          "description": "The path to the output directory, where the output date will be saved.",
+          "title": "Output",
+          "type": "string"
+        },
+        "eq_filter": {
+          "anyOf": [
+            {
+              "pattern": "\\.npy$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The path to the EQ filter to be used in the calibration.",
+          "title": "Eq Filter"
+        },
+        "calibration": {
+          "anyOf": [
+            {
+              "pattern": "\\.npy$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The calibration parameters to be used to test the calibration.",
+          "title": "Calibration"
+        }
+      },
+      "required": [
+        "output"
+      ],
+      "title": "Paths",
+      "type": "object"
+    },
     "PureToneCalibrationSettings": {
       "properties": {
         "sound_duration": {
@@ -565,17 +607,16 @@
       ],
       "title": "Protocol"
     },
-    "output_dir": {
-      "description": "The path to the output directory.",
-      "title": "Output Dir",
-      "type": "string"
+    "paths": {
+      "$ref": "#/$defs/Paths",
+      "description": "Contains paths to files that will be used in the calibration protocol."
     }
   },
   "required": [
     "soundcard",
     "adc",
     "protocol",
-    "output_dir"
+    "paths"
   ],
   "title": "Settings",
   "type": "object"

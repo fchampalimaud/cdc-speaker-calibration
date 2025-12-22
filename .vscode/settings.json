@@ -7,5 +7,5 @@
         "source.organizeImports": "explicit"
     },
     "notebook.formatOnSave.enabled": true,
-    "python.pyrefly.displayTypeErrors": "force-on",
+    // "python.pyrefly.displayTypeErrors": "force-on",
 }
