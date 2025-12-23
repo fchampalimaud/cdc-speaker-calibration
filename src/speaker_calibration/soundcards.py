@@ -104,7 +104,7 @@ class HarpSoundCard(SoundCard):
             time.sleep(3)
 
 
-@dispatch(Sound, str, speaker_side=str)
+@dispatch(Sound, Path, speaker_side=str)
 def create_sound_file(
     signal: Sound,
     filename: Path,
@@ -144,7 +144,7 @@ def create_sound_file(
         wave_int.tofile(f)
 
 
-@dispatch(Sound, Sound, str)
+@dispatch(Sound, Sound, Path)
 def create_sound_file(
     signal_left: Sound,
     signal_right: Sound,

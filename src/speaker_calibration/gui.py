@@ -41,6 +41,7 @@ from speaker_calibration.settings import (
     NoiseProtocol,
     Settings,
     TestSettings,
+    Paths,
 )
 from speaker_calibration.utils.gui import (
     EQFilterPlot,
@@ -847,10 +848,13 @@ class ApplicationWindow(QMainWindow):
             adc=adc,
             filter=filt,
             protocol=protocol,
-            output_dir="output",
+            paths=Paths(output="output"),
         )
 
-        if self.settings.adc_device == "NI-DAQ" and not self.nidaqmx_available():
+        if (
+            self.settings_layout.adc.currentText() == "NI-DAQ"
+            and not self.nidaqmx_available()
+        ):
             QMessageBox.warning(
                 self, "Warning", "The NI-DAQ is not connected. Please turn it on."
             )

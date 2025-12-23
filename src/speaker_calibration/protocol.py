@@ -76,13 +76,13 @@ class Calibration:
             self.soundcard = None
 
         # Initiate the ADC to be used in the calibration
-        if self.settings.adc_device == "NI-DAQ":
+        if isinstance(self.settings.adc, setts.NiDaq):
             self.adc = NiDaq(self.settings.adc.device_id, self.settings.adc.fs)
         else:
             self.adc = Moku(self.settings.adc.address, self.settings.adc.fs)
 
         # Perform the calibration according to the sound type (Noise or Pure Tone)
-        if self.settings.sound_type == "Noise":
+        if isinstance(self.settings.protocol, setts.NoiseProtocol):
             self.noise_calibration()
         else:
             self.pure_tone_calibration()
@@ -279,7 +279,7 @@ class Calibration:
             cast(float, self.settings.protocol.eq_filter.sound_duration),
             self.settings.soundcard.fs,
             self.settings.protocol.eq_filter.amplitude,
-            self.settings.ramp_time,
+            self.settings.protocol.ramp_time,
             filter=True,
             freq_min=self.settings.protocol.min_freq,
             freq_max=self.settings.protocol.max_freq,
@@ -393,7 +393,7 @@ class Calibration:
         for i in range(amp_array.size):
             # TODO: non-Harp case not implemented
             if isinstance(self.soundcard, HarpSoundCard):
-                if self.settings.speaker == "Left":
+                if self.settings.soundcard.speaker == "Left":
                     self.soundcard.device.write_attenuation_left(
                         int(-amp_array[i] * 200)
                     )  # x20 because of the 20*log10(x) and x10 due the way this register works (1 LSB = 0.1 dB)
@@ -405,7 +405,7 @@ class Calibration:
             # Play the sound from the soundcard and record it with the microphone + DAQ system
             rec_path = self.path / "sounds" / (rec_file + "_" + str(i) + ".npy")
             sounds[i] = self.record_sound(
-                signal, rec_path, duration, self.settings.filter.filter_acquisition
+                rec_path, duration, self.settings.filter.filter_acquisition
             )
 
             # Calculate the intensity in dB SPL
@@ -452,7 +452,7 @@ class Calibration:
                 self.settings.soundcard.fs,
                 calib_array[i, 0, 0],
                 amplitude=calib_array[i, -1, 1],
-                ramp_time=self.settings.ramp_time,
+                ramp_time=self.settings.protocol.ramp_time,
             )
 
             # Save the generated pure tone
@@ -486,7 +486,7 @@ class Calibration:
 
                 # TODO: non-Harp case not implemented
                 if isinstance(self.soundcard, HarpSoundCard):
-                    if self.settings.speaker == "Left":
+                    if self.settings.soundcard.speaker == "Left":
                         self.soundcard.device.write_attenuation_left(
                             int(-200 * np.log10(calib_array[i, j, 1]))
                         )  # x20 because of the 20*log10(x) and x10 due the way this register works (1 LSB = 0.1 dB)
