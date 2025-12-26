@@ -29,21 +29,21 @@ from PySide6.QtWidgets import (
 )
 from serial import SerialException
 
-from speaker_calibration.protocol import Calibration
-from speaker_calibration.settings import (
-    CalibrationSettings,
+from speaker_calibration.__main__ import main
+from speaker_calibration.config import (
+    Calibration,
     ComputerSoundCard,
+    Config,
     EQFilter,
     Filter,
     HarpSoundCard,
     Moku,
     NiDaq,
-    NoiseProtocol,
-    Settings,
-    TestSettings,
+    NoiseProtocolSettings,
     Paths,
+    Test,
 )
-from speaker_calibration.utils.gui import (
+from speaker_calibration.gui.utils import (
     EQFilterPlot,
     NoiseDataPlot,
     NoiseSignalsPlot,
@@ -783,7 +783,7 @@ class ApplicationWindow(QMainWindow):
             amplitude=self.settings_layout.amplitude.value(),
         )
 
-        calibration = CalibrationSettings(
+        calibration = Calibration(
             # calibrate=self.settings_layout.calibrate.isChecked(),
             sound_duration=self.settings_layout.calib_duration.value(),
             min_amp=self.settings_layout.min_att.value(),
@@ -791,7 +791,7 @@ class ApplicationWindow(QMainWindow):
             amp_steps=self.settings_layout.att_steps.value(),
         )
 
-        test = TestSettings(
+        test = Test(
             # test=self.settings_layout.test.isChecked(),
             sound_duration=self.settings_layout.test_duration.value(),
             min_db=self.settings_layout.min_db.value(),
@@ -799,7 +799,7 @@ class ApplicationWindow(QMainWindow):
             db_steps=self.settings_layout.db_steps.value(),
         )
 
-        protocol = NoiseProtocol(
+        protocol = NoiseProtocolSettings(
             min_freq=self.settings_layout.calib_min_freq.value(),
             max_freq=self.settings_layout.calib_max_freq.value(),
             mic_factor=self.settings_layout.mic_factor.value(),
@@ -807,7 +807,7 @@ class ApplicationWindow(QMainWindow):
             ramp_time=self.settings_layout.ramp_time.value(),
             eq_filter=eq_filter,
             calibration=calibration,
-            test_calibration=test,
+            test=test,
         )
 
         if self.settings_layout.is_harp.isChecked():
@@ -843,7 +843,7 @@ class ApplicationWindow(QMainWindow):
                 channel=self.settings_layout.channel.value(),
             )
 
-        self.settings = Settings(
+        self.settings = Config(
             soundcard=soundcard,
             adc=adc,
             filter=filt,

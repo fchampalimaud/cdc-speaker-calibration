@@ -12,6 +12,7 @@ from pydantic.types import StringConstraints
 from typing_extensions import Annotated
 
 from speaker_calibration.sound import Sound
+from speaker_calibration.utils import Speaker
 
 
 class SoundCard(ABC):
@@ -25,12 +26,18 @@ class SoundCard(ABC):
     """
 
     fs: float | int
+    speaker: Speaker
 
-    def __init__(self, fs: float | int):
+    def __init__(self, fs: float | int, speaker: Speaker = Speaker.BOTH):
         self.fs = fs
+        self.speaker = speaker
 
     @abstractmethod
-    def play(self):
+    def play(
+        self,
+        amplitude: float = 1,
+        start_event: Optional[threading.Event] = None,
+    ):
         """
         Plays a sound. _This is the abstract method to be implemented for the specific soundcards that derive from this abstract class._
         """
@@ -55,11 +62,18 @@ class HarpSoundCard(SoundCard):
             str, StringConstraints(pattern=r"^((COM\d+)|(/dev/ttyUSB\d+))$")
         ],
         fs: Literal[96000, 192000] = 192000,
+        speaker: Speaker = Speaker.BOTH,
     ):
-        super().__init__(fs)
+        super().__init__(fs, speaker)
         self.device = HSC(serial_port)
+        self._change_amplitude(1)
 
-    def play(self, index: int = 2, start_event: Optional[threading.Event] = None):
+    def play(
+        self,
+        index: int = 2,
+        amplitude: float = 1,
+        start_event: Optional[threading.Event] = None,
+    ):
         """
         Plays a sound from the Harp SoundCard.
 
@@ -70,6 +84,8 @@ class HarpSoundCard(SoundCard):
         start_event : threading.Event, optional
             A thread event used to synchronize the start of the sound with the start of the recording. If `start_event` is not provided, the sound will play as soon as possible.
         """
+        self._change_amplitude(amplitude)
+
         # Wait for the event if it exists
         if start_event is not None:
             start_event.wait()
@@ -102,6 +118,19 @@ class HarpSoundCard(SoundCard):
                 break
             print(output)
             time.sleep(3)
+
+    def _change_amplitude(self, amplitude: float):
+        # x20 because of the 20*log10(x) and x10 due the way this register works (1 LSB = 0.1 dB)
+        match self.speaker:
+            case Speaker.LEFT:
+                self.device.write_attenuation_left(int(-200 * np.log10(amplitude)))
+                self.device.write_attenuation_right(65535)
+            case Speaker.RIGHT:
+                self.device.write_attenuation_left(65535)
+                self.device.write_attenuation_right(int(-200 * np.log10(amplitude)))
+            case Speaker.BOTH:
+                self.device.write_attenuation_left(int(-200 * np.log10(amplitude)))
+                self.device.write_attenuation_right(int(-200 * np.log10(amplitude)))
 
 
 @dispatch(Sound, Path, speaker_side=str)

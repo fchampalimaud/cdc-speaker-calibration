@@ -22,8 +22,8 @@ dependencies = [
 ]
 
 [project.scripts]
-cli-app = "speaker_calibration.protocol:main"
-gui-app = "speaker_calibration.gui:main"
+cli-app = "speaker_calibration.__main__:main"
+gui-app = "speaker_calibration.gui.__init__:main"
 
 [build-system]
 requires = ["hatchling"]

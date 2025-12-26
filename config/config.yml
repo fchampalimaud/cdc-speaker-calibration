@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=schemas/settings-schema.json
+# yaml-language-server: $schema=schemas/config-schema.json
 soundcard: 
   serial_port: COM4
   fs: 192000

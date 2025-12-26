@@ -5,15 +5,17 @@ from pydantic import BaseModel, Field
 from pydantic.types import StringConstraints
 from typing_extensions import Annotated
 
+from speaker_calibration.utils import Speaker
 
-class TestSettings(BaseModel):
+
+class Test(BaseModel):
     sound_duration: float = Field(description="The duration of the test sounds.", gt=0)
     min_db: float = Field(description="The minimum nominal dB SPL value to be tested.")
     max_db: float = Field(description="The maximum nominal dB SPL value to be tested.")
     db_steps: int = Field(description="The number of dB SPL values to be tested.", gt=0)
 
 
-class CalibrationSettings(BaseModel):
+class Calibration(BaseModel):
     sound_duration: float = Field(description="The duration of the calibration sounds.")
     min_amp: float = Field(description="The minimum amplitude value.", le=0)
     max_amp: float = Field(description="The maximum amplitude value.", le=0)
@@ -66,9 +68,7 @@ class ComputerSoundCard(BaseModel):
         description="The name of the soundcard being used in the calibration."
     )
     fs: int = Field(description="The sampling frequency of the soundcard (Hz).", gt=0)
-    speaker: Literal["Left", "Right"] = Field(
-        description="Indicates which speaker will be calibrated."
-    )
+    speaker: Speaker = Field(description="Indicates which speaker will be calibrated.")
 
 
 class HarpSoundCard(BaseModel):
@@ -80,9 +80,7 @@ class HarpSoundCard(BaseModel):
     fs: Literal[96000, 192000] = Field(
         description="The sampling frequency of the soundcard (Hz)."
     )
-    speaker: Literal["Left", "Right"] = Field(
-        description="Indicates which speaker will be calibrated."
-    )
+    speaker: Speaker = Field(description="Indicates which speaker will be calibrated.")
     soundcard_id: Optional[
         Annotated[str, StringConstraints(pattern=r"^V\d.\d X\d{4}$")]
     ] = Field(
@@ -122,7 +120,7 @@ class Moku(BaseModel):
     )
 
 
-class NoiseProtocol(BaseModel):
+class NoiseProtocolSettings(BaseModel):
     min_freq: float = Field(
         description="The minimum frequency of the noise spectrum (Hz).", gt=0, le=80000
     )
@@ -141,15 +139,21 @@ class NoiseProtocol(BaseModel):
     eq_filter: EQFilter = Field(
         description="The settings related to the EQ filter calculation. Noise calibration only!",
     )
-    calibration: CalibrationSettings = Field(
+    calibration: Calibration = Field(
         description="The settings used for the actual speaker calibration."
     )
-    test_calibration: Optional[TestSettings] = Field(
+    test: Optional[Test] = Field(
         description="The settings used for the calibration test.", default=None
     )
+    filter: Filter = Field(
+        description="The configuration parameters of the band-pass filter used.",
+        default=Filter(
+            filter_input=True, filter_acquisition=True, min_freq=5000, max_freq=20000
+        ),
+    )
 
 
-class PureToneCalibrationSettings(CalibrationSettings):
+class PureToneCalibration(Calibration):
     min_freq: float = Field(
         description="The minimum frequency to use in the pure tone calibration protocol (Hz).",
         gt=0,
@@ -165,7 +169,7 @@ class PureToneCalibrationSettings(CalibrationSettings):
     )
 
 
-class PureToneTestSettings(TestSettings):
+class PureToneTest(Test):
     min_freq: float = Field(
         description="The minimum frequency to use in the pure tone calibration protocol (Hz).",
         gt=0,
@@ -181,7 +185,7 @@ class PureToneTestSettings(TestSettings):
     )
 
 
-class PureToneProtocol(BaseModel):
+class PureToneProtocolSettings(BaseModel):
     mic_factor: float = Field(
         description="The conversion factor of the microphone (V/Pa).", gt=0
     )
@@ -191,11 +195,17 @@ class PureToneProtocol(BaseModel):
         ge=0,
         default=0.005,
     )
-    calibration: PureToneCalibrationSettings = Field(
+    calibration: PureToneCalibration = Field(
         description="The settings used for the actual speaker calibration."
     )
-    test_calibration: Optional[PureToneTestSettings] = Field(
+    test: Optional[PureToneTest] = Field(
         description="The settings used for the calibration test.", default=None
+    )
+    filter: Filter = Field(
+        description="The configuration parameters of the band-pass filter used.",
+        default=Filter(
+            filter_input=True, filter_acquisition=True, min_freq=5000, max_freq=20000
+        ),
     )
 
 
@@ -213,23 +223,17 @@ class Paths(BaseModel):
     )
 
 
-class Settings(BaseModel):
+class Config(BaseModel):
     soundcard: Union[HarpSoundCard, ComputerSoundCard] = Field(
         description="The soundcard details."
     )
     adc: Union[NiDaq, Moku] = Field(description="The ADC details.")
-    filter: Filter = Field(
-        description="The configuration parameters of the band-pass filter used.",
-        default=Filter(
-            filter_input=True, filter_acquisition=True, min_freq=5000, max_freq=20000
-        ),
-    )
-    protocol: Union[NoiseProtocol, PureToneProtocol]
+    protocol: Union[NoiseProtocolSettings, PureToneProtocolSettings]
     paths: Paths = Field(
         description="Contains paths to files that will be used in the calibration protocol."
     )
 
 
 if __name__ == "__main__":
-    with open("config/schemas/settings-schema.json", "w") as file:
-        json.dump(Settings.model_json_schema(), file, indent=2)
+    with open("config/schemas/config-schema.json", "w") as file:
+        json.dump(Config.model_json_schema(), file, indent=2)
