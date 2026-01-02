@@ -22,7 +22,7 @@ dependencies = [
 ]
 
 [project.scripts]
-cli-app = "speaker_calibration.__main__:main"
+cli-app = "speaker_calibration.__main__:run_calibration"
 gui-app = "speaker_calibration.gui.__init__:main"
 
 [build-system]

@@ -3,8 +3,6 @@ import sys
 from typing import Literal, Optional
 
 import nidaqmx
-from harp.devices.soundcard import SoundCard as HSC
-from harp.protocol.exceptions import HarpTimeoutError
 from PySide6.QtCore import QObject, Qt, QThread, QThreadPool, Signal, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
@@ -16,20 +14,17 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QMainWindow,
     QMessageBox,
     QPushButton,
-    QRadioButton,
     QScrollArea,
     QSpinBox,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
-from serial import SerialException
 
-from speaker_calibration.__main__ import main
+from speaker_calibration.__main__ import run_calibration
 from speaker_calibration.config import (
     Calibration,
     ComputerSoundCard,
@@ -42,14 +37,19 @@ from speaker_calibration.config import (
     NoiseProtocolSettings,
     Paths,
     Test,
+    PureToneProtocolSettings,
+    PureToneCalibration,
+    PureToneTest,
 )
+from speaker_calibration.gui.soundcard import SoundCardLayout
+from speaker_calibration.gui.adc import ADCLayout
+from speaker_calibration.gui.filter import FilterLayout
 from speaker_calibration.gui.utils import (
     EQFilterPlot,
     NoiseDataPlot,
     NoiseSignalsPlot,
     PureTonesDataPlot,
     PureTonesSignalsPlot,
-    get_ports,
 )
 
 myappid = "fchampalimaud.cdc.speaker_calibration"
@@ -63,142 +63,28 @@ class SettingsLayout(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.layout = QVBoxLayout()
-        self.generate_soundcard_layout()
-        self.generate_adc_layout()
-        self.generate_filter_layout()
+        self.vlayout = QVBoxLayout()
+
+        self.sc = SoundCardLayout()
+        self.vlayout.addWidget(self.sc)
+
+        self.adc = ADCLayout()
+        self.vlayout.addWidget(self.adc)
+
+        self.filter = FilterLayout()
+        self.vlayout.addWidget(self.filter)
+
         self.generate_protocol_layout()
         self.generate_eq_filter_layout()
         self.generate_calibration_layout()
         self.generate_test_layout()
 
         self.run = QPushButton("Run")
-        self.layout.addWidget(self.run)
+        self.vlayout.addWidget(self.run)
 
-        self.setLayout(self.layout)
+        self.setLayout(self.vlayout)
 
-        self.on_is_harp_changed(True)
-        self.on_adc_changed(True)
         self.on_sound_type_changed(0)
-
-    def generate_soundcard_layout(self):
-        soundcard_gb = QGroupBox("Soundcard")
-        form = QFormLayout()
-
-        self.is_harp = QCheckBox()
-        self.is_harp.setChecked(True)
-        self.is_harp.stateChanged.connect(self.on_is_harp_changed)
-
-        self.serial_port_l = QLabel("Serial Port")
-        self.serial_port_l.setFixedWidth(self.LABEL_WIDTH)
-        self.serial_port = QComboBox()
-        self.serial_port.setPlaceholderText("COMx")
-        self.serial_port.addItems(get_ports())
-        self.serial_port.setFixedWidth(self.WIDGETS_WIDTH)
-        self.serial_port.currentIndexChanged.connect(self.connect_soundcard)
-
-        self.fs_harp_l = QLabel("Sampling Frequency (Hz)")
-        self.fs_harp = QComboBox()
-        self.fs_harp.addItems(["96000", "192000"])
-        self.fs_harp.setCurrentIndex(1)
-        self.fs_harp.setFixedWidth(self.WIDGETS_WIDTH)
-
-        self.fs_computer_l = QLabel("Sampling Frequency (Hz)")
-        self.fs_computer_l.setFixedWidth(self.LABEL_WIDTH)
-        self.fs_computer = QSpinBox()
-        self.fs_computer.setRange(1, 48000)
-        self.fs_computer.setValue(48000)
-        self.fs_computer.setFixedWidth(self.WIDGETS_WIDTH)
-
-        self.speaker_l = QLabel("Speaker")
-        self.speaker_l.setFixedWidth(self.LABEL_WIDTH)
-        self.speaker = QComboBox()
-        self.speaker.addItems(["Left", "Right"])
-        self.speaker.setCurrentIndex(0)
-        self.speaker.setFixedWidth(self.WIDGETS_WIDTH)
-
-        form.addRow("Harp SoundCard", self.is_harp)
-        form.addRow(self.serial_port_l, self.serial_port)
-        form.addRow(self.fs_harp_l, self.fs_harp)
-        form.addRow(self.fs_computer_l, self.fs_computer)
-        form.addRow(self.speaker_l, self.speaker)
-
-        soundcard_gb.setLayout(form)
-        self.layout.addWidget(soundcard_gb)
-
-    def generate_adc_layout(self):
-        adc_gb = QGroupBox("ADC")
-        form = QFormLayout()
-
-        self.adc_l = QLabel("ADC")
-        self.adc_l.setFixedWidth(self.LABEL_WIDTH)
-        self.adc = QComboBox()
-        self.adc.addItems(["NI-DAQ", "Moku:Go"])
-        self.adc.setCurrentIndex(0)
-        self.adc.setFixedWidth(self.WIDGETS_WIDTH)
-        self.adc.currentIndexChanged.connect(self.on_adc_changed)
-
-        self.fs_adc = QSpinBox()
-        self.fs_adc.setRange(1, 250000)
-        self.fs_adc.setValue(250000)
-        self.fs_adc.setFixedWidth(self.WIDGETS_WIDTH)
-
-        self.device_id_l = QLabel("Device ID")
-        self.device_id_l.setFixedWidth(self.LABEL_WIDTH)
-        self.device_id = QSpinBox()
-        self.device_id.setMinimum(1)
-        self.device_id.setFixedWidth(self.WIDGETS_WIDTH)
-
-        self.address_l = QLabel("Device Address")
-        self.address = QLineEdit()
-
-        self.channel = QSpinBox()
-        self.channel.setRange(0, 7)
-        self.channel.setFixedWidth(self.WIDGETS_WIDTH)
-
-        form.addRow(self.adc_l, self.adc)
-        form.addRow("ADC Sampling Frequency (Hz)", self.fs_adc)
-        form.addRow(self.device_id_l, self.device_id)
-        form.addRow(self.address_l, self.address)
-        form.addRow("Channel", self.channel)
-
-        adc_gb.setLayout(form)
-        self.layout.addWidget(adc_gb)
-
-    def generate_filter_layout(self):
-        filter_gb = QGroupBox("Filter")
-        form = QFormLayout()
-
-        self.filter_input_l = QLabel("Filter Input")
-        self.filter_input_l.setFixedWidth(self.LABEL_WIDTH)
-        self.filter_input = QCheckBox()
-        self.filter_input.setChecked(True)
-        self.filter_input.stateChanged.connect(self.on_filter_changed)
-
-        self.filter_acquisition = QCheckBox()
-        self.filter_acquisition.setChecked(True)
-        self.filter_acquisition.stateChanged.connect(self.on_filter_changed)
-
-        self.min_freq_filt_l = QLabel("Minimum Frequency (Hz)")
-        self.min_freq_filt_l.setFixedWidth(self.LABEL_WIDTH)
-        self.min_freq_filt = QSpinBox()
-        self.min_freq_filt.setRange(0, 80000)
-        self.min_freq_filt.setValue(5000)
-        self.min_freq_filt.setFixedWidth(self.WIDGETS_WIDTH)
-
-        self.max_freq_filt_l = QLabel("Maximum Frequency (Hz)")
-        self.max_freq_filt = QSpinBox()
-        self.max_freq_filt.setRange(0, 80000)
-        self.max_freq_filt.setValue(20000)
-        self.max_freq_filt.setFixedWidth(self.WIDGETS_WIDTH)
-
-        form.addRow(self.filter_input_l, self.filter_input)
-        form.addRow("Filter Acquisition", self.filter_acquisition)
-        form.addRow(self.min_freq_filt_l, self.min_freq_filt)
-        form.addRow(self.max_freq_filt_l, self.max_freq_filt)
-
-        filter_gb.setLayout(form)
-        self.layout.addWidget(filter_gb)
 
     def generate_protocol_layout(self):
         protocol_gb = QGroupBox("Protocol")
@@ -211,12 +97,6 @@ class SettingsLayout(QWidget):
         self.sound_type.setCurrentIndex(0)
         self.sound_type.setFixedWidth(self.WIDGETS_WIDTH)
         self.sound_type.currentIndexChanged.connect(self.on_sound_type_changed)
-
-        self.amplitude = QDoubleSpinBox()
-        self.amplitude.setRange(0, 1)
-        self.amplitude.setValue(0.9)
-        self.amplitude.setSingleStep(0.01)
-        self.amplitude.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.ramp_time = QDoubleSpinBox()
         self.ramp_time.setMinimum(0)
@@ -248,7 +128,6 @@ class SettingsLayout(QWidget):
         self.reference_pressure.setSingleStep(0.000005)
 
         form.addRow(self.sound_type_l, self.sound_type)
-        form.addRow("Amplitude", self.amplitude)
         form.addRow("Ramp Time (s)", self.ramp_time)
         form.addRow(self.min_freq_l, self.min_freq)
         form.addRow(self.max_freq_l, self.max_freq)
@@ -256,17 +135,11 @@ class SettingsLayout(QWidget):
         form.addRow("Reference Pressure (Pa)", self.reference_pressure)
 
         protocol_gb.setLayout(form)
-        self.layout.addWidget(protocol_gb)
+        self.vlayout.addWidget(protocol_gb)
 
     def generate_eq_filter_layout(self):
         self.eq_filter_gb = QGroupBox("EQ Filter")
         form = QFormLayout()
-
-        self.eq_filter_l = QLabel("Determine Filter")
-        self.eq_filter_l.setFixedWidth(self.LABEL_WIDTH)
-        self.eq_filter = QCheckBox()
-        self.eq_filter.setChecked(True)
-        self.eq_filter.stateChanged.connect(self.on_eq_filter_changed)
 
         self.if_duration_l = QLabel("Sound Duration (s)")
         self.if_duration_l.setFixedWidth(self.LABEL_WIDTH)
@@ -286,22 +159,22 @@ class SettingsLayout(QWidget):
         self.time_const.setValue(0.100)
         self.time_const.setFixedWidth(self.WIDGETS_WIDTH)
 
-        form.addRow(self.eq_filter_l, self.eq_filter)
+        self.amplitude = QDoubleSpinBox()
+        self.amplitude.setRange(0, 1)
+        self.amplitude.setValue(0.9)
+        self.amplitude.setSingleStep(0.01)
+        self.amplitude.setFixedWidth(self.WIDGETS_WIDTH)
+
         form.addRow(self.if_duration_l, self.if_duration)
         form.addRow(self.time_const_l, self.time_const)
+        form.addRow("Amplitude", self.amplitude)
 
         self.eq_filter_gb.setLayout(form)
-        self.layout.addWidget(self.eq_filter_gb)
+        self.vlayout.addWidget(self.eq_filter_gb)
 
     def generate_calibration_layout(self):
-        calibrate_gb = QGroupBox("Calibrate")
+        calibrate_gb = QGroupBox("Calibration")
         form = QFormLayout()
-
-        self.calibrate_l = QLabel("Calibrate")
-        self.calibrate_l.setFixedWidth(self.LABEL_WIDTH)
-        self.calibrate = QCheckBox()
-        self.calibrate.setChecked(True)
-        self.calibrate.stateChanged.connect(self.on_calibration_changed)
 
         self.calib_duration_l = QLabel("Sound Duration (s)")
         self.calib_duration_l.setFixedWidth(self.LABEL_WIDTH)
@@ -348,10 +221,9 @@ class SettingsLayout(QWidget):
         self.att_steps_l = QLabel("Attenuation Steps")
         self.att_steps = QSpinBox()
         self.att_steps.setMinimum(2)
-        self.att_steps.setValue(15)
+        self.att_steps.setValue(12)
         self.att_steps.setFixedWidth(self.WIDGETS_WIDTH)
 
-        form.addRow(self.calibrate_l, self.calibrate)
         form.addRow(self.calib_duration_l, self.calib_duration)
         form.addRow(self.calib_min_freq_l, self.calib_min_freq)
         form.addRow(self.calib_max_freq_l, self.calib_max_freq)
@@ -361,7 +233,7 @@ class SettingsLayout(QWidget):
         form.addRow(self.att_steps_l, self.att_steps)
 
         calibrate_gb.setLayout(form)
-        self.layout.addWidget(calibrate_gb)
+        self.vlayout.addWidget(calibrate_gb)
 
     def generate_test_layout(self):
         test_gb = QGroupBox("Test Calibration")
@@ -418,7 +290,7 @@ class SettingsLayout(QWidget):
         self.db_steps_l = QLabel("dB SPL Steps")
         self.db_steps = QSpinBox()
         self.db_steps.setMinimum(2)
-        self.db_steps.setValue(5)
+        self.db_steps.setValue(7)
         self.db_steps.setFixedWidth(self.WIDGETS_WIDTH)
 
         form.addRow(self.test_l, self.test)
@@ -431,61 +303,7 @@ class SettingsLayout(QWidget):
         form.addRow(self.db_steps_l, self.db_steps)
 
         test_gb.setLayout(form)
-        self.layout.addWidget(test_gb)
-
-    def on_is_harp_changed(self, state):
-        if state:
-            self.serial_port.setVisible(True)
-            self.serial_port_l.setVisible(True)
-            self.fs_harp.setVisible(True)
-            self.fs_harp_l.setVisible(True)
-            self.fs_computer.setVisible(False)
-            self.fs_computer_l.setVisible(False)
-            # self.adjustSize()
-        else:
-            self.serial_port.setVisible(False)
-            self.serial_port_l.setVisible(False)
-            self.fs_harp.setVisible(False)
-            self.fs_harp_l.setVisible(False)
-            self.fs_computer.setVisible(True)
-            self.fs_computer_l.setVisible(True)
-            # self.adjustSize()
-
-    def on_adc_changed(self, index):
-        if self.adc.currentText() == "NI-DAQ":
-            self.device_id_l.show()
-            self.device_id.show()
-            self.address_l.hide()
-            self.address.hide()
-            self.fs_adc.setRange(1, 250000)
-            self.fs_adc.setValue(250000)
-            self.channel.setRange(0, 7)
-            self.channel.setValue(1)
-            self.adjustSize()
-        else:
-            self.device_id_l.hide()
-            self.device_id.hide()
-            self.address_l.show()
-            self.address.show()
-            self.fs_adc.setRange(1, 500000)
-            self.fs_adc.setValue(500000)
-            self.channel.setRange(1, 2)
-            self.channel.setValue(1)
-            self.adjustSize()
-
-    def on_filter_changed(self, state):
-        if self.filter_input.isChecked() or self.filter_acquisition.isChecked():
-            self.min_freq_filt_l.show()
-            self.min_freq_filt.show()
-            self.max_freq_filt_l.show()
-            self.max_freq_filt.show()
-            self.adjustSize()
-        else:
-            self.min_freq_filt_l.hide()
-            self.min_freq_filt.hide()
-            self.max_freq_filt_l.hide()
-            self.max_freq_filt.hide()
-            self.adjustSize()
+        self.vlayout.addWidget(test_gb)
 
     def on_sound_type_changed(self, index):
         if self.sound_type.currentText() == "Noise":
@@ -513,13 +331,12 @@ class SettingsLayout(QWidget):
             self.min_freq.hide()
             self.max_freq_l.hide()
             self.max_freq.hide()
-            if self.calibrate.isChecked():
-                self.calib_min_freq_l.show()
-                self.calib_min_freq.show()
-                self.calib_max_freq_l.show()
-                self.calib_max_freq.show()
-                self.calib_freq_steps_l.show()
-                self.calib_freq_steps.show()
+            self.calib_min_freq_l.show()
+            self.calib_min_freq.show()
+            self.calib_max_freq_l.show()
+            self.calib_max_freq.show()
+            self.calib_freq_steps_l.show()
+            self.calib_freq_steps.show()
             if self.test.isChecked():
                 self.test_min_freq_l.show()
                 self.test_min_freq.show()
@@ -582,18 +399,19 @@ class SettingsLayout(QWidget):
         if state:
             self.test_duration_l.setVisible(True)
             self.test_duration.setVisible(True)
-            self.test_min_freq_l.setVisible(True)
-            self.test_min_freq.setVisible(True)
-            self.test_max_freq_l.setVisible(True)
-            self.test_max_freq.setVisible(True)
-            self.test_freq_steps_l.setVisible(True)
-            self.test_freq_steps.setVisible(True)
             self.min_db_l.setVisible(True)
             self.min_db.setVisible(True)
             self.max_db_l.setVisible(True)
             self.max_db.setVisible(True)
             self.db_steps_l.setVisible(True)
             self.db_steps.setVisible(True)
+            if self.sound_type.currentText() == "Pure Tones":
+                self.test_min_freq_l.setVisible(True)
+                self.test_min_freq.setVisible(True)
+                self.test_max_freq_l.setVisible(True)
+                self.test_max_freq.setVisible(True)
+                self.test_freq_steps_l.setVisible(True)
+                self.test_freq_steps.setVisible(True)
             self.adjustSize()
         else:
             self.test_duration_l.setVisible(False)
@@ -612,43 +430,23 @@ class SettingsLayout(QWidget):
             self.db_steps.setVisible(False)
             self.adjustSize()
 
-    def connect_soundcard(self, index):
-        if (
-            self.serial_port.currentText() == "Refresh"
-            or self.serial_port.currentText() == ""
-        ):
-            self.serial_port.setCurrentIndex(-1)
-            self.serial_port.clear()
-            self.serial_port.addItems(get_ports())
-            return
-
-        try:
-            soundcard = HSC(self.serial_port.currentText())
-            soundcard.disconnect()
-        except HarpTimeoutError:
-            self.serial_port.setCurrentIndex(-1)
-            QMessageBox.warning(self, "Warning", "This is not a Harp device.")
-        except SerialException:
-            self.serial_port.setCurrentIndex(-1)
-            QMessageBox.warning(self, "Warning", "This is not a Harp device.")
-        except Exception:
-            self.serial_port.setCurrentIndex(-1)
-            QMessageBox.warning(self, "Warning", "This is not a Harp Soundcard.")
-
 
 class PlotLayout(QWidget):
+    WIDGETS_WIDTH = 160
+    LABEL_WIDTH = 30
+
     def __init__(self):
         super().__init__()
 
-        self.layout = QVBoxLayout()
+        self.vlayout = QVBoxLayout()
 
         self.fig = QStackedWidget()
-        self.layout.addWidget(self.fig)
+        self.vlayout.addWidget(self.fig)
 
         # self.create_dictionary()
         self.generate_selection()
 
-        self.setLayout(self.layout)
+        self.setLayout(self.vlayout)
 
         self.thread_pool = QThreadPool.globalInstance()
 
@@ -696,30 +494,14 @@ class PlotLayout(QWidget):
         layout = QHBoxLayout()
 
         self.plot_l = QLabel("Plot: ")
+        self.plot_l.setFixedWidth(self.LABEL_WIDTH)
         self.plot_selection = QComboBox()
+        self.plot_selection.setFixedWidth(self.WIDGETS_WIDTH)
 
-        self.amp_index_l = QLabel("Plot Index: ")
-        self.amp_index = QSpinBox()
+        layout.addWidget(self.plot_l)
+        layout.addWidget(self.plot_selection, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        self.freq_index_l = QLabel("Frequency Index: ")
-        self.freq_index = QSpinBox()
-
-        self.original = QRadioButton("Original Signal")
-        self.recorded = QRadioButton("Recorded Sound")
-        self.both = QRadioButton("Both")
-        self.both.setChecked(True)
-
-        layout.addWidget(self.plot_l, alignment=Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.plot_selection)
-        layout.addWidget(self.amp_index_l, alignment=Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.amp_index)
-        layout.addWidget(self.freq_index_l, alignment=Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.freq_index)
-        layout.addWidget(self.original, alignment=Qt.AlignmentFlag.AlignHCenter)
-        layout.addWidget(self.recorded, alignment=Qt.AlignmentFlag.AlignHCenter)
-        layout.addWidget(self.both, alignment=Qt.AlignmentFlag.AlignHCenter)
-
-        self.layout.addLayout(layout)
+        self.vlayout.addLayout(layout)
 
     def calibration_callback(self, code: str, *args):
         if code == "EQ Filter":
@@ -751,17 +533,15 @@ class ApplicationWindow(QMainWindow):
         layout = QHBoxLayout(self._main)
 
         self.plot = PlotLayout()
-        self.settings_layout = SettingsLayout()
+        self.config = SettingsLayout()
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.settings_layout)
+        scroll_area.setWidget(self.config)
         scroll_area.setFixedWidth(320)
 
-        self.settings_layout.run.clicked.connect(self.run_calibration)
+        self.config.run.clicked.connect(self.run_calibration)
         self.plot.plot_selection.currentIndexChanged.connect(self.switch_plots)
-        # self.plot.amp_index.valueChanged.connect(self.update_indexes)
-        # self.plot.freq_index.valueChanged.connect(self.update_indexes)
 
         layout.addWidget(self.plot)
         layout.addWidget(scroll_area)
@@ -769,49 +549,8 @@ class ApplicationWindow(QMainWindow):
         self.showMaximized()
 
     def run_calibration(self):
-        filt = Filter(
-            filter_input=self.settings_layout.filter_input.isChecked(),
-            filter_acquisition=self.settings_layout.filter_acquisition.isChecked(),
-            min_freq=self.settings_layout.min_freq_filt.value(),
-            max_freq=self.settings_layout.max_freq_filt.value(),
-        )
-
-        eq_filter = EQFilter(
-            # determine_filter=self.settings_layout.eq_filter.isChecked(),
-            sound_duration=self.settings_layout.if_duration.value(),
-            time_constant=self.settings_layout.time_const.value(),
-            amplitude=self.settings_layout.amplitude.value(),
-        )
-
-        calibration = Calibration(
-            # calibrate=self.settings_layout.calibrate.isChecked(),
-            sound_duration=self.settings_layout.calib_duration.value(),
-            min_amp=self.settings_layout.min_att.value(),
-            max_amp=self.settings_layout.max_att.value(),
-            amp_steps=self.settings_layout.att_steps.value(),
-        )
-
-        test = Test(
-            # test=self.settings_layout.test.isChecked(),
-            sound_duration=self.settings_layout.test_duration.value(),
-            min_db=self.settings_layout.min_db.value(),
-            max_db=self.settings_layout.max_db.value(),
-            db_steps=self.settings_layout.db_steps.value(),
-        )
-
-        protocol = NoiseProtocolSettings(
-            min_freq=self.settings_layout.calib_min_freq.value(),
-            max_freq=self.settings_layout.calib_max_freq.value(),
-            mic_factor=self.settings_layout.mic_factor.value(),
-            reference_pressure=self.settings_layout.reference_pressure.value(),
-            ramp_time=self.settings_layout.ramp_time.value(),
-            eq_filter=eq_filter,
-            calibration=calibration,
-            test=test,
-        )
-
-        if self.settings_layout.is_harp.isChecked():
-            if self.settings_layout.serial_port.currentText() == "":
+        if self.config.sc.is_harp.isChecked():
+            if self.config.sc.serial_port.currentText() == "":
                 QMessageBox.warning(
                     self,
                     "Warning",
@@ -820,54 +559,130 @@ class ApplicationWindow(QMainWindow):
                 return
 
             soundcard = HarpSoundCard(
-                serial_port=self.settings_layout.serial_port.currentText(),
-                fs=int(self.settings_layout.fs_harp.currentText()),
-                speaker=self.settings_layout.speaker.currentText(),
+                serial_port=self.config.sc.serial_port.currentText(),
+                fs=int(self.config.sc.fs_harp.currentText()),
+                speaker=self.config.sc.convert_speaker(),
             )
         else:
             soundcard = ComputerSoundCard(
                 soundcard_name="",  # FIXME
-                fs=self.settings_layout.fs_computer.value(),
+                fs=self.config.sc.serial_port.fs_computer.value(),
+                speaker=self.config.sc.convert_speaker(),
             )
 
-        if self.settings_layout.adc.currentText() == "NI-DAQ":
-            adc = NiDaq(
-                fs=self.settings_layout.fs_adc.value(),
-                device_id=self.settings_layout.device_id.value(),
-                channel=self.settings_layout.channel.value(),
-            )
-        else:
-            adc = Moku(
-                fs=self.settings_layout.fs_adc.value(),
-                address=self.settings_layout.address.text(),
-                channel=self.settings_layout.channel.value(),
-            )
+        match self.config.adc.adc.currentText():
+            case "NI-DAQ":
+                if not self.nidaqmx_available():
+                    QMessageBox.warning(
+                        self,
+                        "Warning",
+                        "The NI-DAQ is not connected. Please turn it on.",
+                    )
+                    return
+
+                adc = NiDaq(
+                    fs=self.config.adc.fs_adc.value(),
+                    device_id=self.config.adc.device_id.value(),
+                    channel=self.config.adc.channel.value(),
+                )
+            case "Moku":
+                adc = Moku(
+                    fs=self.config.adc.fs_adc.value(),
+                    address=self.config.adc.address.text(),
+                    channel=self.config.adc.channel.value(),
+                )
+
+        filt = Filter(
+            filter_input=self.config.filter.filter_input.isChecked(),
+            filter_acquisition=self.config.filter.filter_acquisition.isChecked(),
+            min_freq=self.config.filter.min_freq_filt.value(),
+            max_freq=self.config.filter.max_freq_filt.value(),
+        )
+
+        match self.config.sound_type.currentText():
+            case "Noise":
+                eq_filter = EQFilter(
+                    sound_duration=self.config.if_duration.value(),
+                    time_constant=self.config.time_const.value(),
+                    amplitude=self.config.amplitude.value(),
+                )
+
+                calibration = Calibration(
+                    sound_duration=self.config.calib_duration.value(),
+                    min_amp=self.config.min_att.value(),
+                    max_amp=self.config.max_att.value(),
+                    amp_steps=self.config.att_steps.value(),
+                )
+
+                if self.config.test.isChecked():
+                    test = Test(
+                        sound_duration=self.config.test_duration.value(),
+                        min_db=self.config.min_db.value(),
+                        max_db=self.config.max_db.value(),
+                        db_steps=self.config.db_steps.value(),
+                    )
+                else:
+                    test = None
+
+                protocol = NoiseProtocolSettings(
+                    min_freq=self.config.min_freq.value(),
+                    max_freq=self.config.max_freq.value(),
+                    mic_factor=self.config.mic_factor.value(),
+                    reference_pressure=self.config.reference_pressure.value(),
+                    ramp_time=self.config.ramp_time.value(),
+                    eq_filter=eq_filter,
+                    calibration=calibration,
+                    test=test,
+                    filter=filt,
+                )
+            case "Pure Tones":
+                calibration = PureToneCalibration(
+                    sound_duration=self.config.calib_duration.value(),
+                    min_freq=self.config.calib_min_freq.value(),
+                    max_freq=self.config.calib_max_freq.value(),
+                    freq_steps=self.config.calib_freq_steps.value(),
+                    min_amp=self.config.min_att.value(),
+                    max_amp=self.config.max_att.value(),
+                    amp_steps=self.config.att_steps.value(),
+                )
+
+                if self.config.test.isChecked():
+                    test = PureToneTest(
+                        sound_duration=self.config.test_duration.value(),
+                        min_freq=self.config.test_min_freq.value(),
+                        max_freq=self.config.test_max_freq.value(),
+                        freq_steps=self.config.test_freq_steps.value(),
+                        min_db=self.config.min_db.value(),
+                        max_db=self.config.max_db.value(),
+                        db_steps=self.config.db_steps.value(),
+                    )
+                else:
+                    test = None
+
+                protocol = PureToneProtocolSettings(
+                    mic_factor=self.config.mic_factor.value(),
+                    reference_pressure=self.config.reference_pressure.value(),
+                    ramp_time=self.config.ramp_time.value(),
+                    calibration=calibration,
+                    test=test,
+                    filter=filt,
+                )
 
         self.settings = Config(
             soundcard=soundcard,
             adc=adc,
-            filter=filt,
             protocol=protocol,
             paths=Paths(output="output"),
         )
 
-        if (
-            self.settings_layout.adc.currentText() == "NI-DAQ"
-            and not self.nidaqmx_available()
-        ):
-            QMessageBox.warning(
-                self, "Warning", "The NI-DAQ is not connected. Please turn it on."
-            )
-            return
-
         self.plot.create_dictionary(
-            self.settings_layout.sound_type.currentText(),
-            num_amp=self.settings_layout.att_steps.value(),
-            num_freqs=self.settings_layout.calib_freq_steps.value(),
-            num_db=self.settings_layout.db_steps.value(),
-            num_test_freqs=self.settings_layout.test_freq_steps.value(),
-            min_freq=self.settings_layout.min_freq_filt.value(),
-            max_freq=self.settings_layout.max_freq_filt.value(),
+            self.config.sound_type.currentText(),
+            num_amp=self.config.att_steps.value(),
+            num_freqs=self.config.calib_freq_steps.value(),
+            num_db=self.config.db_steps.value(),
+            num_test_freqs=self.config.test_freq_steps.value(),
+            min_freq=self.config.filter.min_freq_filt.value(),
+            max_freq=self.config.filter.max_freq_filt.value(),
         )
 
         self.worker_thread = QThread()
@@ -879,7 +694,7 @@ class ApplicationWindow(QMainWindow):
 
         self.work_requested.emit()
 
-        self.settings_layout.run.setEnabled(False)
+        self.config.run.setEnabled(False)
 
     def nidaqmx_available(self) -> bool:
         try:
@@ -896,39 +711,17 @@ class ApplicationWindow(QMainWindow):
         match self.plot.plot_selection.currentText():
             case "Calibration Data":
                 self.plot.fig.setCurrentIndex(0)
-                self.plot.amp_index.setMaximum(0)
-                self.plot.freq_index.setMaximum(0)
             case "Calibration Signals":
                 self.plot.fig.setCurrentIndex(1)
-                self.plot.amp_index.setMaximum(self.settings.calibration.amp_steps - 1)
-                self.plot.freq_index.setMaximum(
-                    self.settings.calibration.freq.num_freqs - 1
-                )
             case "Test Data":
                 self.plot.fig.setCurrentIndex(2)
-                self.plot.amp_index.setMaximum(0)
-                self.plot.freq_index.setMaximum(0)
             case "Test Signals":
                 self.plot.fig.setCurrentIndex(3)
-                self.plot.amp_index.setMaximum(
-                    self.settings.test_calibration.db_steps - 1
-                )
-                self.plot.freq_index.setMaximum(
-                    self.settings.test_calibration.freq.num_freqs - 1
-                )
             case "EQ Filter":
                 self.plot.fig.setCurrentIndex(4)
-                self.plot.amp_index.setMaximum(0)
-                self.plot.freq_index.setMaximum(0)
-        self.plot.amp_index.setValue(0)
-        self.plot.freq_index.setValue(0)
-
-    # def update_indexes(self, index=None):
-    #     plot = self.plot.plots[self.plot.plot_selection.currentText()]
-    #     plot.update_indexes(self.plot.amp_index.value(), self.plot.freq_index.value())
 
     def on_task_finished(self):
-        self.settings_layout.run.setEnabled(True)
+        self.config.run.setEnabled(True)
         self.worker_thread.quit()
 
     def closeEvent(self, event):
@@ -940,14 +733,14 @@ class ApplicationWindow(QMainWindow):
 class Worker(QObject):
     finished = Signal()
 
-    def __init__(self, settings, calibration_callback):
+    def __init__(self, config, calibration_callback):
         super(Worker, self).__init__()
-        self.settings = settings
+        self.config = config
         self.calibration_callback = calibration_callback
 
     @Slot()
     def run(self):
-        Calibration(self.settings, self.calibration_callback)
+        run_calibration(self.config, self.calibration_callback)
         self.finished.emit()
 
 

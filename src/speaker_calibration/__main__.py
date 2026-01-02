@@ -12,7 +12,7 @@ from speaker_calibration.recording import Moku, NiDaq
 from speaker_calibration.soundcards import HarpSoundCard
 
 
-def main(config: Config, callback: Optional[Callable] = None):
+def run_calibration(config: Config, callback: Optional[Callable] = None):
     # Define the path for the output directory for the current calibration
     path = Path() / config.paths.output / datetime.now().strftime("%y%m%d_%H%M%S")
     # Create the output directory structure for the current calibration
