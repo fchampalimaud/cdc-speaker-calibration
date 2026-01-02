@@ -9,19 +9,34 @@ from speaker_calibration.utils import Speaker
 
 
 class Test(BaseModel):
-    sound_duration: float = Field(description="The duration of the test sounds.", gt=0)
-    min_db: float = Field(description="The minimum nominal dB SPL value to be tested.")
-    max_db: float = Field(description="The maximum nominal dB SPL value to be tested.")
-    db_steps: int = Field(description="The number of dB SPL values to be tested.", gt=0)
+    sound_duration: float = Field(
+        description="The duration of the test sounds.", gt=0, default=10
+    )
+    min_db: float = Field(
+        description="The minimum nominal dB SPL value to be tested.", default=30
+    )
+    max_db: float = Field(
+        description="The maximum nominal dB SPL value to be tested.", default=68
+    )
+    db_steps: int = Field(
+        description="The number of dB SPL values to be tested.", gt=0, default=7
+    )
 
 
 class Calibration(BaseModel):
-    sound_duration: float = Field(description="The duration of the calibration sounds.")
-    min_amp: float = Field(description="The minimum amplitude value.", le=0)
-    max_amp: float = Field(description="The maximum amplitude value.", le=0)
+    sound_duration: float = Field(
+        description="The duration of the calibration sounds.", default=10
+    )
+    min_amp: float = Field(
+        description="The minimum amplitude value.", le=0, default=-0.1
+    )
+    max_amp: float = Field(
+        description="The maximum amplitude value.", le=0, default=-1.0
+    )
     amp_steps: int = Field(
         description="The number of amplitude values to use in the calibration.",
         gt=0,
+        default=12,
     )
 
 
@@ -29,6 +44,7 @@ class EQFilter(BaseModel):
     sound_duration: float = Field(
         description="The duration of the sound used to determine the EQ filter.",
         gt=0,
+        default=15,
     )
     time_constant: float = Field(
         description="The duration of each division of the original signal that is used to compute the EQ filter (s).",

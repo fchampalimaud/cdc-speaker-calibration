@@ -1,38 +1,36 @@
 {
   "$defs": {
-    "CalibrationSettings": {
+    "Calibration": {
       "properties": {
         "sound_duration": {
+          "default": 10,
           "description": "The duration of the calibration sounds.",
           "title": "Sound Duration",
           "type": "number"
         },
         "min_amp": {
+          "default": -0.1,
           "description": "The minimum amplitude value.",
           "maximum": 0,
           "title": "Min Amp",
           "type": "number"
         },
         "max_amp": {
+          "default": -1.0,
           "description": "The maximum amplitude value.",
           "maximum": 0,
           "title": "Max Amp",
           "type": "number"
         },
         "amp_steps": {
+          "default": 12,
           "description": "The number of amplitude values to use in the calibration.",
           "exclusiveMinimum": 0,
           "title": "Amp Steps",
           "type": "integer"
         }
       },
-      "required": [
-        "sound_duration",
-        "min_amp",
-        "max_amp",
-        "amp_steps"
-      ],
-      "title": "CalibrationSettings",
+      "title": "Calibration",
       "type": "object"
     },
     "ComputerSoundCard": {
@@ -49,13 +47,8 @@
           "type": "integer"
         },
         "speaker": {
-          "description": "Indicates which speaker will be calibrated.",
-          "enum": [
-            "Left",
-            "Right"
-          ],
-          "title": "Speaker",
-          "type": "string"
+          "$ref": "#/$defs/Speaker",
+          "description": "Indicates which speaker will be calibrated."
         }
       },
       "required": [
@@ -69,6 +62,7 @@
     "EQFilter": {
       "properties": {
         "sound_duration": {
+          "default": 15,
           "description": "The duration of the sound used to determine the EQ filter.",
           "exclusiveMinimum": 0,
           "title": "Sound Duration",
@@ -88,11 +82,20 @@
           "minimum": 0,
           "title": "Amplitude",
           "type": "number"
+        },
+        "min_boost_db": {
+          "default": -24,
+          "description": "TODO",
+          "title": "Min Boost Db",
+          "type": "number"
+        },
+        "max_boost_db": {
+          "default": 12,
+          "description": "TODO",
+          "title": "Max Boost Db",
+          "type": "number"
         }
       },
-      "required": [
-        "sound_duration"
-      ],
       "title": "EQFilter",
       "type": "object"
     },
@@ -150,13 +153,8 @@
           "type": "integer"
         },
         "speaker": {
-          "description": "Indicates which speaker will be calibrated.",
-          "enum": [
-            "Left",
-            "Right"
-          ],
-          "title": "Speaker",
-          "type": "string"
+          "$ref": "#/$defs/Speaker",
+          "description": "Indicates which speaker will be calibrated."
         },
         "soundcard_id": {
           "anyOf": [
@@ -256,7 +254,7 @@
       "title": "NiDaq",
       "type": "object"
     },
-    "NoiseProtocol": {
+    "NoiseProtocolSettings": {
       "properties": {
         "min_freq": {
           "description": "The minimum frequency of the noise spectrum (Hz).",
@@ -296,13 +294,13 @@
           "description": "The settings related to the EQ filter calculation. Noise calibration only!"
         },
         "calibration": {
-          "$ref": "#/$defs/CalibrationSettings",
+          "$ref": "#/$defs/Calibration",
           "description": "The settings used for the actual speaker calibration."
         },
-        "test_calibration": {
+        "test": {
           "anyOf": [
             {
-              "$ref": "#/$defs/TestSettings"
+              "$ref": "#/$defs/Test"
             },
             {
               "type": "null"
@@ -310,6 +308,16 @@
           ],
           "default": null,
           "description": "The settings used for the calibration test."
+        },
+        "filter": {
+          "$ref": "#/$defs/Filter",
+          "default": {
+            "filter_input": true,
+            "filter_acquisition": true,
+            "min_freq": 5000.0,
+            "max_freq": 20000.0
+          },
+          "description": "The configuration parameters of the band-pass filter used."
         }
       },
       "required": [
@@ -320,7 +328,7 @@
         "eq_filter",
         "calibration"
       ],
-      "title": "NoiseProtocol",
+      "title": "NoiseProtocolSettings",
       "type": "object"
     },
     "Paths": {
@@ -365,26 +373,30 @@
       "title": "Paths",
       "type": "object"
     },
-    "PureToneCalibrationSettings": {
+    "PureToneCalibration": {
       "properties": {
         "sound_duration": {
+          "default": 10,
           "description": "The duration of the calibration sounds.",
           "title": "Sound Duration",
           "type": "number"
         },
         "min_amp": {
+          "default": -0.1,
           "description": "The minimum amplitude value.",
           "maximum": 0,
           "title": "Min Amp",
           "type": "number"
         },
         "max_amp": {
+          "default": -1.0,
           "description": "The maximum amplitude value.",
           "maximum": 0,
           "title": "Max Amp",
           "type": "number"
         },
         "amp_steps": {
+          "default": 12,
           "description": "The number of amplitude values to use in the calibration.",
           "exclusiveMinimum": 0,
           "title": "Amp Steps",
@@ -412,18 +424,14 @@
         }
       },
       "required": [
-        "sound_duration",
-        "min_amp",
-        "max_amp",
-        "amp_steps",
         "min_freq",
         "max_freq",
         "freq_steps"
       ],
-      "title": "PureToneCalibrationSettings",
+      "title": "PureToneCalibration",
       "type": "object"
     },
-    "PureToneProtocol": {
+    "PureToneProtocolSettings": {
       "properties": {
         "mic_factor": {
           "description": "The conversion factor of the microphone (V/Pa).",
@@ -445,13 +453,13 @@
           "type": "number"
         },
         "calibration": {
-          "$ref": "#/$defs/PureToneCalibrationSettings",
+          "$ref": "#/$defs/PureToneCalibration",
           "description": "The settings used for the actual speaker calibration."
         },
-        "test_calibration": {
+        "test": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PureToneTestSettings"
+              "$ref": "#/$defs/PureToneTest"
             },
             {
               "type": "null"
@@ -459,6 +467,16 @@
           ],
           "default": null,
           "description": "The settings used for the calibration test."
+        },
+        "filter": {
+          "$ref": "#/$defs/Filter",
+          "default": {
+            "filter_input": true,
+            "filter_acquisition": true,
+            "min_freq": 5000.0,
+            "max_freq": 20000.0
+          },
+          "description": "The configuration parameters of the band-pass filter used."
         }
       },
       "required": [
@@ -466,28 +484,32 @@
         "reference_pressure",
         "calibration"
       ],
-      "title": "PureToneProtocol",
+      "title": "PureToneProtocolSettings",
       "type": "object"
     },
-    "PureToneTestSettings": {
+    "PureToneTest": {
       "properties": {
         "sound_duration": {
+          "default": 10,
           "description": "The duration of the test sounds.",
           "exclusiveMinimum": 0,
           "title": "Sound Duration",
           "type": "number"
         },
         "min_db": {
+          "default": 30,
           "description": "The minimum nominal dB SPL value to be tested.",
           "title": "Min Db",
           "type": "number"
         },
         "max_db": {
+          "default": 68,
           "description": "The maximum nominal dB SPL value to be tested.",
           "title": "Max Db",
           "type": "number"
         },
         "db_steps": {
+          "default": 7,
           "description": "The number of dB SPL values to be tested.",
           "exclusiveMinimum": 0,
           "title": "Db Steps",
@@ -515,49 +537,52 @@
         }
       },
       "required": [
-        "sound_duration",
-        "min_db",
-        "max_db",
-        "db_steps",
         "min_freq",
         "max_freq",
         "freq_steps"
       ],
-      "title": "PureToneTestSettings",
+      "title": "PureToneTest",
       "type": "object"
     },
-    "TestSettings": {
+    "Speaker": {
+      "enum": [
+        1,
+        2,
+        3
+      ],
+      "title": "Speaker",
+      "type": "integer"
+    },
+    "Test": {
       "properties": {
         "sound_duration": {
+          "default": 10,
           "description": "The duration of the test sounds.",
           "exclusiveMinimum": 0,
           "title": "Sound Duration",
           "type": "number"
         },
         "min_db": {
+          "default": 30,
           "description": "The minimum nominal dB SPL value to be tested.",
           "title": "Min Db",
           "type": "number"
         },
         "max_db": {
+          "default": 68,
           "description": "The maximum nominal dB SPL value to be tested.",
           "title": "Max Db",
           "type": "number"
         },
         "db_steps": {
+          "default": 7,
           "description": "The number of dB SPL values to be tested.",
           "exclusiveMinimum": 0,
           "title": "Db Steps",
           "type": "integer"
         }
       },
-      "required": [
-        "sound_duration",
-        "min_db",
-        "max_db",
-        "db_steps"
-      ],
-      "title": "TestSettings",
+      "title": "Test",
       "type": "object"
     }
   },
@@ -586,23 +611,13 @@
       "description": "The ADC details.",
       "title": "Adc"
     },
-    "filter": {
-      "$ref": "#/$defs/Filter",
-      "default": {
-        "filter_input": true,
-        "filter_acquisition": true,
-        "min_freq": 5000.0,
-        "max_freq": 20000.0
-      },
-      "description": "The configuration parameters of the band-pass filter used."
-    },
     "protocol": {
       "anyOf": [
         {
-          "$ref": "#/$defs/NoiseProtocol"
+          "$ref": "#/$defs/NoiseProtocolSettings"
         },
         {
-          "$ref": "#/$defs/PureToneProtocol"
+          "$ref": "#/$defs/PureToneProtocolSettings"
         }
       ],
       "title": "Protocol"
@@ -618,6 +633,6 @@
     "protocol",
     "paths"
   ],
-  "title": "Settings",
+  "title": "Config",
   "type": "object"
 }
