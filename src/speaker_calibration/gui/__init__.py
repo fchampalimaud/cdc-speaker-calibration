@@ -165,9 +165,23 @@ class SettingsLayout(QWidget):
         self.amplitude.setSingleStep(0.01)
         self.amplitude.setFixedWidth(self.WIDGETS_WIDTH)
 
-        form.addRow(self.if_duration_l, self.if_duration)
+        self.min_boost_db = QDoubleSpinBox()
+        self.min_boost_db.setRange(-100, 100)
+        self.min_boost_db.setValue(-24)
+        self.min_boost_db.setSingleStep(0.1)
+        self.min_boost_db.setFixedWidth(self.WIDGETS_WIDTH)
+
+        self.max_boost_db = QDoubleSpinBox()
+        self.max_boost_db.setRange(-100, 100)
+        self.max_boost_db.setValue(12)
+        self.max_boost_db.setSingleStep(0.1)
+        self.max_boost_db.setFixedWidth(self.WIDGETS_WIDTH)
+
+        form.addRow(self.eq_duration_l, self.eq_duration)
         form.addRow(self.time_const_l, self.time_const)
         form.addRow("Amplitude", self.amplitude)
+        form.addRow("Min Boost dB", self.min_boost_db)
+        form.addRow("Max Boost dB", self.max_boost_db)
 
         self.eq_filter_gb.setLayout(form)
         self.vlayout.addWidget(self.eq_filter_gb)
@@ -605,6 +619,8 @@ class ApplicationWindow(QMainWindow):
                     sound_duration=self.config.if_duration.value(),
                     time_constant=self.config.time_const.value(),
                     amplitude=self.config.amplitude.value(),
+                    min_boost_db=self.config.min_boost_db.value(),
+                    max_boost_db=self.config.max_boost_db.value(),
                 )
 
                 calibration = Calibration(
