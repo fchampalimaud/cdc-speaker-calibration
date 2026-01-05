@@ -141,15 +141,15 @@ class SettingsLayout(QWidget):
         self.eq_filter_gb = QGroupBox("EQ Filter")
         form = QFormLayout()
 
-        self.if_duration_l = QLabel("Sound Duration (s)")
-        self.if_duration_l.setFixedWidth(self.LABEL_WIDTH)
-        self.if_duration = QDoubleSpinBox()
-        self.if_duration.setSingleStep(0.01)
-        self.if_duration.setMinimum(0)
-        self.if_duration.setDecimals(3)
-        self.if_duration.setSingleStep(0.005)
-        self.if_duration.setValue(15)
-        self.if_duration.setFixedWidth(self.WIDGETS_WIDTH)
+        self.eq_duration_l = QLabel("Sound Duration (s)")
+        self.eq_duration_l.setFixedWidth(self.LABEL_WIDTH)
+        self.eq_duration = QDoubleSpinBox()
+        self.eq_duration.setSingleStep(0.01)
+        self.eq_duration.setMinimum(0)
+        self.eq_duration.setDecimals(3)
+        self.eq_duration.setSingleStep(0.005)
+        self.eq_duration.setValue(15)
+        self.eq_duration.setFixedWidth(self.WIDGETS_WIDTH)
 
         self.time_const_l = QLabel("Time Constant (s)")
         self.time_const = QDoubleSpinBox()
@@ -362,14 +362,14 @@ class SettingsLayout(QWidget):
 
     def on_eq_filter_changed(self, state):
         if state:
-            self.if_duration_l.setVisible(True)
-            self.if_duration.setVisible(True)
+            self.eq_duration_l.setVisible(True)
+            self.eq_duration.setVisible(True)
             self.time_const_l.setVisible(True)
             self.time_const.setVisible(True)
             self.adjustSize()
         else:
-            self.if_duration_l.setVisible(False)
-            self.if_duration.setVisible(False)
+            self.eq_duration_l.setVisible(False)
+            self.eq_duration.setVisible(False)
             self.time_const_l.setVisible(False)
             self.time_const.setVisible(False)
             self.adjustSize()
@@ -616,7 +616,7 @@ class ApplicationWindow(QMainWindow):
         match self.config.sound_type.currentText():
             case "Noise":
                 eq_filter = EQFilter(
-                    sound_duration=self.config.if_duration.value(),
+                    sound_duration=self.config.eq_duration.value(),
                     time_constant=self.config.time_const.value(),
                     amplitude=self.config.amplitude.value(),
                     min_boost_db=self.config.min_boost_db.value(),
