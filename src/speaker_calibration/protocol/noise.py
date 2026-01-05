@@ -196,11 +196,11 @@ class NoiseProtocol(Protocol):
             case SweepType.CALIBRATION:
                 filename = self.output_path / "sounds" / "calibration_sound.bin"
                 rec_file = "calibration"
-                code = "Calibration"
+                code = "Noise Calibration"
             case SweepType.TEST:
                 filename = self.output_path / "sounds" / "test_sound.bin"
                 rec_file = "test"
-                code = "Test"
+                code = "Noise Test"
 
         # Upload the sound to the Harp SoundCard in case one is used
         if isinstance(self.soundcard, HarpSoundCard):

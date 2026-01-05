@@ -485,6 +485,9 @@ class PlotLayout(QWidget):
         while self.plot_selection.count() > 0:
             self.plot_selection.removeItem(0)
 
+        while self.fig.count() > 0:
+            self.fig.removeWidget(self.fig.currentWidget())
+
         if type == "Noise":
             self.plots = {
                 "Calibration Data": NoiseDataPlot(num_amp),
@@ -544,7 +547,7 @@ class PlotLayout(QWidget):
             )
         elif code == "Pre-test":
             self.plots["Test Data"].add_xx(*args, True)
-        elif code == "Calibration Test":
+        elif code == "Noise Test":
             self.plots["Test Data"].add_point(args[0], args[1].calculate_db_spl())
             self.plots["Test Signals"].plot_signal(args[1])
         elif code == "Pure Tone Test":

@@ -134,7 +134,7 @@ class PureTonesDataPlot:
 class PureTonesSignalsPlot:
     def __init__(self, num_amp: int, num_freqs: int):
         self.figure = MatplotlibWidget()
-        self.data = np.zeros((num_amp, num_freqs, 2), dtype=RecordedSound)
+        self.data = np.zeros((num_freqs, num_amp, 2), dtype=RecordedSound)
         self._amp_index = 0
         self._freq_index = 0
         self.init_plot()
