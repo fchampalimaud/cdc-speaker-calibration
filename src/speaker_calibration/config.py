@@ -183,6 +183,12 @@ class PureToneCalibration(Calibration):
     freq_steps: int = Field(
         description="The number of pure tones to use in the calibration.", gt=0
     )
+    min_amp: float = Field(
+        description="The minimum amplitude value.", gt=0, le=1, default=0.1
+    )
+    max_amp: float = Field(
+        description="The maximum amplitude value.", gt=0, le=1, default=1.0
+    )
 
 
 class PureToneTest(Test):

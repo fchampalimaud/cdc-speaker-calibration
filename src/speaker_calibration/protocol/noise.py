@@ -52,7 +52,7 @@ class NoiseProtocol(Protocol):
 
             # Generate and play the sounds for every amplitude value
             self.sounds = self.sound_sweep(
-                log_amp, cast(float, self.settings.protocol.calibration.sound_duration)
+                log_amp, cast(float, self.settings.calibration.sound_duration)
             )
 
             db_spl = [sound.db_spl for sound in self.sounds]
@@ -196,9 +196,11 @@ class NoiseProtocol(Protocol):
             case SweepType.CALIBRATION:
                 filename = self.output_path / "sounds" / "calibration_sound.bin"
                 rec_file = "calibration"
+                code = "Calibration"
             case SweepType.TEST:
                 filename = self.output_path / "sounds" / "test_sound.bin"
                 rec_file = "test"
+                code = "Test"
 
         # Upload the sound to the Harp SoundCard in case one is used
         if isinstance(self.soundcard, HarpSoundCard):
@@ -220,6 +222,6 @@ class NoiseProtocol(Protocol):
 
             # Send information regarding the current noise to the interface
             if self.callback is not None:
-                self.callback(type, i, sounds[i])
+                self.callback(code, i, sounds[i])
 
         return sounds

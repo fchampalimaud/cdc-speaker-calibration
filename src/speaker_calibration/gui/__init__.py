@@ -339,6 +339,10 @@ class SettingsLayout(QWidget):
             self.test_freq_steps_l.hide()
             self.test_freq_steps.hide()
             self.adjustSize()
+            self.min_att.setRange(-10, 0)
+            self.min_att.setValue(-0.1)
+            self.max_att.setRange(-10, 0)
+            self.max_att.setValue(-1)
         else:
             self.eq_filter_gb.hide()
             self.min_freq_l.hide()
@@ -359,6 +363,10 @@ class SettingsLayout(QWidget):
                 self.test_freq_steps_l.show()
                 self.test_freq_steps.show()
             self.adjustSize()
+            self.min_att.setRange(0, 1)
+            self.min_att.setValue(0.1)
+            self.max_att.setRange(0, 1)
+            self.max_att.setValue(1)
 
     def on_eq_filter_changed(self, state):
         if state:
@@ -522,16 +530,28 @@ class PlotLayout(QWidget):
             self.plots["EQ Filter"].add_data(*args)
         elif code == "Pre-calibration":
             self.plots["Calibration Data"].add_xx(*args)
-        elif code == "Calibration":
+        elif code == "Noise Calibration":
             self.plots["Calibration Data"].add_point(
                 args[0], args[1].calculate_db_spl()
             )
             self.plots["Calibration Signals"].plot_signal(args[1])
+        elif code == "Pure Tone Calibration":
+            self.plots["Calibration Data"].add_point(
+                args[0], args[1], args[3].calculate_db_spl()
+            )
+            self.plots["Calibration Signals"].add_signal(
+                args[0], args[1], args[2], args[3]
+            )
         elif code == "Pre-test":
             self.plots["Test Data"].add_xx(*args, True)
-        elif code == "Test":
+        elif code == "Calibration Test":
             self.plots["Test Data"].add_point(args[0], args[1].calculate_db_spl())
             self.plots["Test Signals"].plot_signal(args[1])
+        elif code == "Pure Tone Test":
+            self.plots["Test Data"].add_point(
+                args[0], args[1], args[3].calculate_db_spl()
+            )
+            self.plots["Test Signals"].add_signal(args[0], args[1], args[2], args[3])
 
 
 class ApplicationWindow(QMainWindow):

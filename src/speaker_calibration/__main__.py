@@ -48,3 +48,6 @@ def run_calibration(config: Config, callback: Optional[Callable] = None):
             PureToneProtocol(
                 config.protocol, soundcard, adc, path, config.paths, callback
             )
+
+    if isinstance(soundcard, HarpSoundCard):
+        soundcard.device.disconnect()

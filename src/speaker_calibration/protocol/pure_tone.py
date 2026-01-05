@@ -33,12 +33,16 @@ class PureToneProtocol(Protocol):
             freq = np.linspace(
                 self.settings.calibration.min_freq,
                 self.settings.calibration.max_freq,
-                self.settings.calibration.num_freqs,
+                self.settings.calibration.freq_steps,
             )
 
             # Generate the array of amplitudes to be used in the calibration
             # TODO: check whether it's better to use log spaced amp_array
-            amp = np.linspace(0, 1, self.settings.calibration.amp_steps)
+            amp = np.linspace(
+                self.settings.calibration.min_amp,
+                self.settings.calibration.max_amp,
+                self.settings.calibration.amp_steps,
+            )
 
             # Generate the input calibration array
             freq, amp = np.meshgrid(freq, amp, indexing="ij")
@@ -57,7 +61,7 @@ class PureToneProtocol(Protocol):
 
             # Convert calibration array to 2D array and save it as a CSV file
             calib = calib_array.reshape(calib_array.shape[0] * calib_array.shape[1], 3)
-            np.save(self.path / "calibration.npy", calib)
+            np.save(self.output_path / "calibration.npy", calib)
 
             amp = amp.reshape(-1)
         else:
@@ -70,7 +74,7 @@ class PureToneProtocol(Protocol):
             test_freq = np.linspace(
                 self.settings.test.min_freq,
                 self.settings.test.max_freq,
-                self.settings.test.num_freqs,
+                self.settings.test.freq_steps,
             )
 
             # Generate the array of dB values to be used in the calibration test
@@ -122,7 +126,7 @@ class PureToneProtocol(Protocol):
             )
 
             # Save the calibration test results
-            np.save(self.path / "test.npy", test)
+            np.save(self.output_path / "test.npy", test)
 
     def sound_sweep(
         self,
@@ -166,16 +170,18 @@ class PureToneProtocol(Protocol):
             match type:
                 case SweepType.CALIBRATION:
                     filename = (
-                        self.path
+                        self.output_path
                         / "sounds"
                         / ("calibration_" + str(round(calib_array[i, 0, 0])) + "hz.bin")
                     )
+                    code = "Pure Tone Calibration"
                 case SweepType.TEST:
                     filename = (
-                        self.path
+                        self.output_path
                         / "sounds"
                         / ("test_" + str(round(calib_array[i, 0, 0])) + "hz.bin")
                     )
+                    code = "Pure Tone Test"
 
             # Upload the sound to the Harp SoundCard in case one is used
             if isinstance(self.soundcard, HarpSoundCard):
@@ -207,7 +213,7 @@ class PureToneProtocol(Protocol):
                     )
 
                 sounds[i, j] = self.record_sound(
-                    self.path / "sounds" / rec_file,
+                    self.output_path / "sounds" / rec_file,
                     duration,
                     calib_array[i, j, 1],
                     self.settings.filter.filter_acquisition,
@@ -220,6 +226,6 @@ class PureToneProtocol(Protocol):
 
                 # Send information regarding the current pure tone to the interface
                 if self.callback is not None:
-                    self.callback(type, i, j, signal, sounds[i, j])
+                    self.callback(code, i, j, signal, sounds[i, j])
 
         return calib_array, sounds

@@ -27,10 +27,10 @@ class MatplotlibWidget(QWidget):
         self.fig = Figure(figsize=(5, 3))
         self.ax = self.fig.add_subplot()
         self.canvas = FigureCanvas(self.fig)
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(NavigationToolbar(self.canvas, self))
-        self.layout.addWidget(self.canvas)
-        self.setLayout(self.layout)
+        self.vlayout = QVBoxLayout()
+        self.vlayout.addWidget(NavigationToolbar(self.canvas, self))
+        self.vlayout.addWidget(self.canvas)
+        self.setLayout(self.vlayout)
 
 
 class EQFilterPlot:
@@ -101,9 +101,9 @@ class NoiseSignalsPlot:
         self.figure.ax.clear()
         self.figure.ax.set_xlim(max(0, min_freq - 10000), max_freq + 10000)
 
-    def plot_signal(self, signal: RecordedSound):
+    def plot_signal(self, signal: RecordedSound, reference_pressure: float = 0.00002):
         freq, fft = signal.fft_welch(0.005)
-        self.figure.ax.plot(freq, fft)
+        self.figure.ax.plot(freq, 20 * np.log10(fft / reference_pressure))
         self.figure.ax.relim()
         self.figure.ax.autoscale_view()
         self.figure.canvas.draw()
@@ -112,7 +112,7 @@ class NoiseSignalsPlot:
 class PureTonesDataPlot:
     def __init__(self, num_amp: int, num_freqs: int):
         self.figure = MatplotlibWidget()
-        self.data = np.zeros((num_amp, num_freqs, 3))
+        self.data = np.zeros((num_freqs, num_amp, 3))
         self.init_plot()
 
     def init_plot(self):
@@ -150,7 +150,7 @@ class PureTonesSignalsPlot:
         self.data[amp, freq, 0] = signal
         self.data[amp, freq, 1] = recording
 
-    def plot_signal(self):
+    def plot_signal(self, reference_pressure: float = 0.00002):
         if isinstance(
             self.data[self.amp_index, self.freq_index, 0], Sound
         ) and isinstance(self.data[self.amp_index, self.freq_index, 1], RecordedSound):
