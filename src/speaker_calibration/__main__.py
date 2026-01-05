@@ -12,6 +12,14 @@ from speaker_calibration.recording import Moku, NiDaq
 from speaker_calibration.soundcards import HarpSoundCard
 
 
+def main():
+    with open("./config/config.yml", "r") as file:
+        config_dict = yaml.safe_load(file)
+
+    config = Config(**config_dict)
+    run_calibration(config)
+
+
 def run_calibration(config: Config, callback: Optional[Callable] = None):
     # Define the path for the output directory for the current calibration
     path = Path() / config.paths.output / datetime.now().strftime("%y%m%d_%H%M%S")
