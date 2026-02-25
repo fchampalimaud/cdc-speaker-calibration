@@ -401,7 +401,7 @@ class RecordedSound(Sound):
 
 def _apply_ramp(signal: np.ndarray, fs: float, ramp_time: float = 0.005):
     ramp_samples = int(np.floor(fs * ramp_time))
-    ramp = np.linspace(0, 1, ramp_samples) ** 2
+    ramp = (0.5 * (1 - np.cos(np.linspace(0, np.pi, ramp_samples)))) ** 2
     ramp_signal = np.concatenate(
         (ramp, np.ones(signal.size - ramp_samples * 2), np.flip(ramp)), axis=None
     )
